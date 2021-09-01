@@ -16,8 +16,6 @@ private:
     unsigned short* tagArraySet2;
     unsigned char* validArraySet2;
     unsigned char* lastAccessedArraySet2;
-    // FSB control
-    bool waitingForData = 0;
 
 public:
     ReadOnlyCache(void);
@@ -31,5 +29,5 @@ public:
     unsigned read(unsigned address);
 
 public:
-    void fsbWriteCache(unsigned address, unsigned data);
+    void fsbWriteCache(unsigned address, unsigned data, bool secondSet);
 };

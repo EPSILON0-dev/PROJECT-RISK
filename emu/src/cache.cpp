@@ -75,6 +75,7 @@ unsigned ReadOnlyCache::read(unsigned address)
     cacheStatus = cOk;
 
     // Decode address
+    unsigned block = (address >> 2) & 0x7;
     unsigned tag = address >> 14;
     unsigned index = (address >> 5) & 0xFF;
 
@@ -88,7 +89,7 @@ unsigned ReadOnlyCache::read(unsigned address)
         Log::log("[ Cache ]: ");
         Log::log("Checking arrays for tag: [1: ");
         Log::log(((hit1)? "hit":"miss"));
-        Log::log("] [2:");
+        Log::log("] [2: ");
         Log::log(((hit2)? "hit":"miss"));
         Log::log("]\n");
     #endif
@@ -100,8 +101,22 @@ unsigned ReadOnlyCache::read(unsigned address)
             Log::log("Data not found in cache, requesting read from main RAM\n");
         #endif
 
-        // TODO: Set selection, tag update, everything else
-        FSB.callRead(address & 0xFFFFFFE0, 0);
+        // Request read
+        bool secondSet = (lastAccessedArraySet1[index]) ? 1 : 0;
+        FSB.callRead((tag << 14) | (index << 5), 0, secondSet);
+        
+        // Update tag
+        if (secondSet) {
+            tagArraySet2[index] = tag;
+            validArraySet2[index] = 1;
+            lastAccessedArraySet2[index] = 1;
+            lastAccessedArraySet1[index] = 0;
+        } else {
+            tagArraySet1[index] = tag;
+            validArraySet1[index] = 1;
+            lastAccessedArraySet1[index] = 1;
+            lastAccessedArraySet2[index] = 0;
+        }
         cacheStatus = cWait;
         return 0;
     } 
@@ -111,26 +126,26 @@ unsigned ReadOnlyCache::read(unsigned address)
         #ifdef DEBUG
             Log::log("[ Cache ]: ");
             Log::log("Reading data from set 1: ");
-            Log::logHex(memoryArraySet1[index], 8);
-            Log::log("\n");
+            Log::logHex(memoryArraySet1[(index << 3) + block], 8);
+            Log::log("\n[ Cache ]: ");
             Log::log("Setting block as last used\n");
         #endif
 
         lastAccessedArraySet1[index] = 1;
         lastAccessedArraySet2[index] = 0;
-        return memoryArraySet1[index];
+        return memoryArraySet1[(index << 3) + block];
     } else {
         #ifdef DEBUG
             Log::log("[ Cache ]: ");
             Log::log("Reading data from set 2: ");
-            Log::logHex(memoryArraySet2[index], 8);
-            Log::log("\n");
+            Log::logHex(memoryArraySet2[(index << 3) + block], 8);
+            Log::log("\n[ Cache ]: ");
             Log::log("Setting block as last used\n");
         #endif
 
-        lastAccessedArraySet1[index] = 1;
-        lastAccessedArraySet2[index] = 0;
-        return memoryArraySet2[index];
+        lastAccessedArraySet1[index] = 0;
+        lastAccessedArraySet2[index] = 1;
+        return memoryArraySet2[(index << 3) + block];
     }
 }
 
@@ -140,7 +155,10 @@ unsigned ReadOnlyCache::read(unsigned address)
  * @param data 32 bits of data
  * 
  */
-void ReadOnlyCache::fsbWriteCache(unsigned address, unsigned data)
+void ReadOnlyCache::fsbWriteCache(unsigned address, unsigned data, bool secondSet)
 {
-    // TODO cache write
+    if (secondSet) 
+        memoryArraySet2[address] = data;
+    else
+        memoryArraySet1[address] = data;
 }
