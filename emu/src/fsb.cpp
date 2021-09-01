@@ -13,8 +13,8 @@
  * 
  */
 
-#include "../common/log.h"
-#include "../cache/cache.h"
+#include "log.h"
+#include "cache.h"
 #include "fsb.h"
 
 #define DEBUG
@@ -41,6 +41,7 @@ FrontSideBus::FrontSideBus(void)
     // Each read source gets it's own request register
     readRequest = new bool[3];
     readRequestAddress = new unsigned[3];
+    readRequestStatus = new char[3];
     for (unsigned i = 0; i < 3; i++) {
         readRequest[i] = 0;
         readRequestAddress[i] = 0;

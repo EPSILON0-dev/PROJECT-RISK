@@ -15,8 +15,8 @@
  * Tag array:  __----____----____--
  */
 
-#include "../common/log.h"
-#include "../fsb/fsb.h"
+#include "log.h"
+#include "fsb.h"
 #include "cache.h"
 
 #define DEBUG

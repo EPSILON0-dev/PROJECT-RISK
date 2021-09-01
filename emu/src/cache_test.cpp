@@ -3,9 +3,9 @@
  * 
  */
 
-#include "../common/log.h"
-#include "../fsb/fsb.h"
-#include "../cache/cache.h"
+#include "log.h"
+#include "fsb.h"
+#include "cache.h"
 
 FrontSideBus FSB;
 ReadOnlyCache roCache;
