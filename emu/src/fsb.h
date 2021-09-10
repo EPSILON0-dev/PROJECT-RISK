@@ -17,10 +17,6 @@ private:
     char currentRequest;
     enum eSource { cNone, cRead0, cRead1, cRead2, cWrite };
 
-    char state;
-    char burstByte;
-    enum eState { cIdle, cCas, cRas, cDelay, cRead };
-
 public:
     FrontSideBus(void);
     ~FrontSideBus(void);

@@ -18,10 +18,10 @@
 #include "log.h"
 #include "fsb.h"
 #include "cache.h"
+#include "config.h"
+#include "debug.h"
 
-#define DEBUG
-
-extern FrontSideBus FSB; 
+extern FrontSideBus fsb; 
 
 /**
  * @brief Constructor
@@ -68,11 +68,16 @@ unsigned ReadOnlyCache::read(unsigned address)
 {
     // If waiting for requested data, keep waiting
     if (cacheStatus)
-        if (FSB.readRequestStatus[0] != FSB.cComplete)
+        if (fsb.readRequestStatus[0] != fsb.cComplete)
             return 0;
 
-    // If done waiting change the status
-    cacheStatus = cOk;
+    // Print CACHE_DEBUG message
+    #ifdef CACHE_DEBUG
+        Log::logSrc("Cache", COLOR_BLUE);
+        Log::log("Reading from address ");
+        Log::logHex(address, COLOR_MAGENTA, 8);
+        Log::log("...\n");
+    #endif
 
     // Decode address
     unsigned block = (address >> 2) & 0x7;
@@ -84,26 +89,26 @@ unsigned ReadOnlyCache::read(unsigned address)
     hit1 = (tagArraySet1[index] == tag && validArraySet1[index]);
     hit2 = (tagArraySet2[index] == tag && validArraySet2[index]);
 
-    // Print debug message
-    #ifdef DEBUG
-        Log::log("[ Cache ]: ");
+    // Print CACHE_DEBUG message
+    #ifdef CACHE_DEBUG
+        Log::logSrc("Cache", COLOR_BLUE);
         Log::log("Checking arrays for tag: [1: ");
-        Log::log(((hit1)? "hit":"miss"));
+        Log::log(((hit1)? "hit":"miss"), (hit1)? COLOR_GREEN : COLOR_NONE);
         Log::log("] [2: ");
-        Log::log(((hit2)? "hit":"miss"));
+        Log::log(((hit2)? "hit":"miss"), (hit2)? COLOR_GREEN : COLOR_NONE);
         Log::log("]\n");
     #endif
 
     // Request data when not found in cache
     if (!hit1 && !hit2) {
-        #ifdef DEBUG
-            Log::log("[ Cache ]: ");
+        #ifdef CACHE_DEBUG
+            Log::logSrc("Cache", COLOR_BLUE);
             Log::log("Data not found in cache, requesting read from main RAM\n");
         #endif
 
         // Request read
         bool secondSet = (lastAccessedArraySet1[index]) ? 1 : 0;
-        FSB.callRead((tag << 14) | (index << 5), 0, secondSet);
+        fsb.callRead((tag << 14) | (index << 5), 0, secondSet);
         
         // Update tag
         if (secondSet) {
@@ -123,11 +128,12 @@ unsigned ReadOnlyCache::read(unsigned address)
 
     // Read data from cache
     if (hit1) {
-        #ifdef DEBUG
-            Log::log("[ Cache ]: ");
+        #ifdef CACHE_DEBUG
+            Log::logSrc("Cache", COLOR_BLUE);
             Log::log("Reading data from set 1: ");
-            Log::logHex(memoryArraySet1[(index << 3) + block], 8);
-            Log::log("\n[ Cache ]: ");
+            Log::logHex(memoryArraySet1[(index << 3) + block], COLOR_MAGENTA, 8);
+            Log::log("\n");
+            Log::logSrc("Cache", COLOR_BLUE);
             Log::log("Setting block as last used\n");
         #endif
 
@@ -135,11 +141,12 @@ unsigned ReadOnlyCache::read(unsigned address)
         lastAccessedArraySet2[index] = 0;
         return memoryArraySet1[(index << 3) + block];
     } else {
-        #ifdef DEBUG
-            Log::log("[ Cache ]: ");
+        #ifdef CACHE_DEBUG
+            Log::logSrc("Cache", COLOR_BLUE);
             Log::log("Reading data from set 2: ");
-            Log::logHex(memoryArraySet2[(index << 3) + block], 8);
-            Log::log("\n[ Cache ]: ");
+            Log::logHex(memoryArraySet2[(index << 3) + block], COLOR_MAGENTA, 8);
+            Log::log("\n");
+            Log::logSrc("Cache", COLOR_BLUE);
             Log::log("Setting block as last used\n");
         #endif
 

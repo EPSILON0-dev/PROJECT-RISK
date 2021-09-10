@@ -9,10 +9,10 @@ OBJDIR    = obj
 BINDIR    = bin
 DIRS      := $(OBJDIR) $(BINDIR)
 
-CFLAGS    		:=-O2 -Wall -Wextra
+CFLAGS    		:=-g -O2 -Wall -Wextra
 LFLAGS    		:=
 CACHE_TEST_OBJ	:= $(OBJDIR)/cache.o $(OBJDIR)/fsb.o $(OBJDIR)/log.o 
-CACHE_TEST_OBJ  += $(OBJDIR)/cache_test.o
+CACHE_TEST_OBJ  += $(OBJDIR)/cache_test.o $(OBJDIR)/ddr.o
 
 .PHONEY: all
 all: directories cache_test

@@ -14,13 +14,15 @@
  */
 
 #include <random>
+#include "ddr.h"
 #include "log.h"
 #include "cache.h"
 #include "fsb.h"
-
-#define DEBUG
+#include "config.h"
+#include "debug.h"
 
 extern ReadOnlyCache roCache;
+extern DDR ddr;
 
 /**
  * @brief This function initializes the Front Side Bus
@@ -52,8 +54,6 @@ FrontSideBus::FrontSideBus(void)
     }
 
     // Set initial idle state
-    state = cIdle;
-    burstByte = 0;
     currentRequest = cNone;
 }
 
@@ -91,50 +91,17 @@ void FrontSideBus::Update(void)
             }
         }
 
-        unsigned index = ((readRequestAddress[0] >> 2) & 0x7F8) + burstByte;
-        unsigned data = random();
+        if (currentRequest == cRead0 && ddr.status == ddr.cIdle) 
+            ddr.performRead(readRequestAddress[0]);
 
-        // Read FSM like thingi
-        if (currentRequest == cRead0) {
-            switch (state) {
-                default:
-                    state = cCas;
-                    burstByte = 0;
-                    break;
-                
-                case cCas:
-                    state = cRas;
-                    burstByte = 0;
-                    break;
-
-                case cRas:
-                    state = cDelay;
-                    burstByte = 0;
-                    break;
-
-                case cDelay:
-                    state = cRead;
-                    burstByte = 0;
-                    break;
-
-                case cRead:
-                    if (burstByte < 7) {
-                        roCache.fsbWriteCache(index, data, readRequestSet[0]);
-                        burstByte++;
-                    } else {
-                        roCache.fsbWriteCache(index, data, readRequestSet[0]);
-                        roCache.cacheStatus = roCache.cOk;
-                        readRequestStatus[0] = cComplete;
-                        readRequest[0] = 0;
-                        state = cIdle;
-                        #ifdef DEBUG
-                            Log::log("[  FSB  ]: ");
-                            Log::log("Read request ");
-                            Log::logDec(0);
-                            Log::log(" completed\n");
-                        #endif
-                    }
-                    break;
+        // If currently reading cache 0 (CPU I cache)
+        if (currentRequest == cRead0 && ddr.status == ddr.cRead && ddr.fsm == ddr.crReading) {
+            unsigned cacheAddress = ((readRequestAddress[0] >> 2) & 0x7F8) + ddr.burstByte;
+            roCache.fsbWriteCache(cacheAddress, ddr.readData, readRequestSet[0]);
+            if (ddr.burstByte == 7) {
+                readRequestStatus[0] = cComplete;
+                readRequest[0] = 0;
+                currentRequest = cNone;
             }
         }
     }
@@ -153,20 +120,20 @@ void FrontSideBus::callWrite(unsigned blockAddress)
     writeQueuePtr++;
 
     // Log the request
-    #ifdef DEBUG
-        Log::log("[  FSB  ]: ");
+    #ifdef FSB_DEBUG
+        Log::logSrc(" FSB ", COLOR_BLUE);
         Log::log("Added write request to the block ");
-        Log::logHex(blockAddress, 8);
+        Log::logHex(blockAddress, COLOR_MAGENTA, 8);
         Log::log(", position in queue: ");
-        Log::logDec(writeQueuePtr);
+        Log::logDec(writeQueuePtr, COLOR_MAGENTA);
         Log::log("\n");
     #endif
 
     // If queue full set "full" status
     // Also lower the read requests priority
     if (writeQueuePtr >= 32) {
-        #ifdef DEBUG
-            Log::log("[  FSB  ]: ");
+        #ifdef FSB_DEBUG
+            Log::logSrc(" FSB ", COLOR_BLUE);
             Log::log("Log queue full, raising the priority\n");
         #endif
         writeQueueStatus = cQueueFull;
@@ -195,12 +162,12 @@ void FrontSideBus::callRead(unsigned blockAddress, unsigned char callerId, bool 
     readRequestAddress[callerId] = blockAddress;
 
     // Log the request
-    #ifdef DEBUG
-        Log::log("[  FSB  ]: ");
+    #ifdef FSB_DEBUG
+        Log::logSrc(" FSB ", COLOR_BLUE);
         Log::log("Added read request from block ");
-        Log::logHex(blockAddress, 8);
+        Log::logHex(blockAddress, COLOR_MAGENTA, 8);
         Log::log(", priority: ");
-        Log::logDec(callerId);
+        Log::logDec(callerId, COLOR_MAGENTA);
         Log::log("\n");
     #endif
     
