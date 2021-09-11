@@ -20,6 +20,7 @@ private:
 public:
     FrontSideBus(void);
     ~FrontSideBus(void);
+    void init(void* instructionCache, void* dataCache, void* ddRam);
 
 public:
     enum eStatus { cComplete, cAwaiting, cQueueFull, cLowerPriority };

@@ -3,7 +3,7 @@
  * 
  */
 
-class ReadOnlyCache
+class InstructionCache
 {
 private:
     // Set 1
@@ -18,8 +18,8 @@ private:
     unsigned char* lastAccessedArraySet2;
 
 public:
-    ReadOnlyCache(void);
-    ~ReadOnlyCache(void);
+    InstructionCache(void);
+    ~InstructionCache(void);
 
 public:
     enum eCacheStatus { cOk, cWait };

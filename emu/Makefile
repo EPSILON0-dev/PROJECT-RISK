@@ -11,8 +11,8 @@ DIRS      := $(OBJDIR) $(BINDIR)
 
 CFLAGS    		:=-g -O2 -Wall -Wextra
 LFLAGS    		:=
-CACHE_TEST_OBJ	:= $(OBJDIR)/cache.o $(OBJDIR)/fsb.o $(OBJDIR)/log.o 
-CACHE_TEST_OBJ  += $(OBJDIR)/cache_test.o $(OBJDIR)/ddr.o
+CACHE_TEST_OBJ	:= $(OBJDIR)/icache.o $(OBJDIR)/fsb.o $(OBJDIR)/log.o 
+CACHE_TEST_OBJ  += $(OBJDIR)/dcache.o $(OBJDIR)/cache_test.o $(OBJDIR)/ddr.o
 
 .PHONEY: all
 all: directories cache_test

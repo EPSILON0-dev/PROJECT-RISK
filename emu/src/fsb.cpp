@@ -16,13 +16,15 @@
 #include <random>
 #include "ddr.h"
 #include "log.h"
-#include "cache.h"
+#include "icache.h"
+#include "dcache.h"
 #include "fsb.h"
 #include "config.h"
 #include "debug.h"
 
-extern ReadOnlyCache roCache;
-extern DDR ddr;
+static InstructionCache* iCache;
+static DataCache* dCache;
+static DDR* ddr;
 
 /**
  * @brief This function initializes the Front Side Bus
@@ -70,13 +72,22 @@ FrontSideBus::~FrontSideBus(void)
 }
 
 /**
+ * @brief This function supplies the class pointers for the FSB
+ * 
+ */
+void FrontSideBus::init(void* instructionCache, void* dataCache, void* ddRam)
+{
+    iCache = (InstructionCache*)instructionCache;
+    dCache = (DataCache*)dataCache;
+    ddr = (DDR*)ddRam;
+}
+
+/**
  * @brief This function performs one clock cycle of FSB operation
  * 
  */
 void FrontSideBus::Update(void)
 {
-    // TODO: Make this function right
-
     // If there is any request
     if (writeQueueStatus || readRequest[0] || readRequest[1] || readRequest[2]) {
         
@@ -91,16 +102,32 @@ void FrontSideBus::Update(void)
             }
         }
 
-        if (currentRequest == cRead0 && ddr.status == ddr.cIdle) 
-            ddr.performRead(readRequestAddress[0]);
+        if (currentRequest == cRead0 && ddr->status == ddr->cIdle) {
+            ddr->performRead(readRequestAddress[0]);
+        }
+
+        if (currentRequest == cRead1 && ddr->status == ddr->cIdle) {
+            ddr->performRead(readRequestAddress[1]);
+        }
 
         // If currently reading cache 0 (CPU I cache)
-        if (currentRequest == cRead0 && ddr.status == ddr.cRead && ddr.fsm == ddr.crReading) {
-            unsigned cacheAddress = ((readRequestAddress[0] >> 2) & 0x7F8) + ddr.burstByte;
-            roCache.fsbWriteCache(cacheAddress, ddr.readData, readRequestSet[0]);
-            if (ddr.burstByte == 7) {
+        if (currentRequest == cRead0 && ddr->status == ddr->cRead && ddr->fsm == ddr->crReading) {
+            unsigned cacheAddress = ((readRequestAddress[0] >> 2) & 0x7F8) + ddr->burstByte;
+            iCache->fsbWriteCache(cacheAddress, ddr->readData, readRequestSet[0]);
+            if (ddr->burstByte == 7) {
                 readRequestStatus[0] = cComplete;
                 readRequest[0] = 0;
+                currentRequest = cNone;
+            }
+        }
+
+        // If currently reading cache 1 (CPU D cache)
+        if (currentRequest == cRead1 && ddr->status == ddr->cRead && ddr->fsm == ddr->crReading) {
+            unsigned cacheAddress = ((readRequestAddress[1] >> 2) & 0x7F8) + ddr->burstByte;
+            dCache->fsbWriteCache(cacheAddress, ddr->readData, readRequestSet[1]);
+            if (ddr->burstByte == 7) {
+                readRequestStatus[1] = cComplete;
+                readRequest[1] = 0;
                 currentRequest = cNone;
             }
         }
@@ -121,7 +148,7 @@ void FrontSideBus::callWrite(unsigned blockAddress)
 
     // Log the request
     #ifdef FSB_DEBUG
-        Log::logSrc(" FSB ", COLOR_BLUE);
+        Log::logSrc("   FSB   ", COLOR_BLUE);
         Log::log("Added write request to the block ");
         Log::logHex(blockAddress, COLOR_MAGENTA, 8);
         Log::log(", position in queue: ");
@@ -133,7 +160,7 @@ void FrontSideBus::callWrite(unsigned blockAddress)
     // Also lower the read requests priority
     if (writeQueuePtr >= 32) {
         #ifdef FSB_DEBUG
-            Log::logSrc(" FSB ", COLOR_BLUE);
+            Log::logSrc("   FSB   ", COLOR_BLUE);
             Log::log("Log queue full, raising the priority\n");
         #endif
         writeQueueStatus = cQueueFull;
@@ -163,7 +190,7 @@ void FrontSideBus::callRead(unsigned blockAddress, unsigned char callerId, bool 
 
     // Log the request
     #ifdef FSB_DEBUG
-        Log::logSrc(" FSB ", COLOR_BLUE);
+        Log::logSrc("   FSB   ", COLOR_BLUE);
         Log::log("Added read request from block ");
         Log::logHex(blockAddress, COLOR_MAGENTA, 8);
         Log::log(", priority: ");

@@ -20,9 +20,9 @@ DDR::DDR(void)
     // Data has to be sent on address (and bank select) lines, configuration 
     //  value should be 0x0 for bank lines and 0x0024 for address lines.
     #ifdef DDR_DEBUG
-        Log::logSrc(" DDR ", COLOR_BLUE);
+        Log::logSrc("   DDR   ", COLOR_BLUE);
         Log::log("Sending the configuration to the DDR memory\n");
-        Log::logSrc(" DDR ", COLOR_BLUE);
+        Log::logSrc("   DDR   ", COLOR_BLUE);
         Log::log("Bank ");
         Log::log("0x0", COLOR_MAGENTA);
         Log::log(", address ");
@@ -75,13 +75,13 @@ void DDR::updateRead(void)
         default:
             if (activeRow == readRow) {
                 #ifdef DDR_FSM_DEBUG 
-                    Log::logSrc(" DDR ", COLOR_BLUE);
+                    Log::logSrc("   DDR   ", COLOR_BLUE);
                     Log::log("Entering read FSM, active row match\n");
                 #endif
                 fsm = crRequest;
             } else {
                 #ifdef DDR_FSM_DEBUG 
-                    Log::logSrc(" DDR ", COLOR_BLUE);
+                    Log::logSrc("   DDR   ", COLOR_BLUE);
                     Log::log("Entering read FSM, active row doesn't match\n");
                 #endif
                 fsm = crRowActivate;
@@ -90,7 +90,7 @@ void DDR::updateRead(void)
 
         case crRowActivate:
             #ifdef DDR_FSM_DEBUG 
-                Log::logSrc(" DDR ", COLOR_BLUE);
+                Log::logSrc("   DDR   ", COLOR_BLUE);
                 Log::log("Activating ");
                 Log::logHex(readRow, COLOR_MAGENTA, 4);
                 Log::log(" row\n");
@@ -101,7 +101,7 @@ void DDR::updateRead(void)
 
         case crActivateDelay:
             #ifdef DDR_FSM_DEBUG 
-                Log::logSrc(" DDR ", COLOR_BLUE);
+                Log::logSrc("   DDR   ", COLOR_BLUE);
                 Log::log("Row activated\n");
             #endif
             fsm = crRequest;
@@ -110,7 +110,7 @@ void DDR::updateRead(void)
         case crRequest:
             burstByte = 0;
             #ifdef DDR_FSM_DEBUG 
-                Log::logSrc(" DDR ", COLOR_BLUE);
+                Log::logSrc("   DDR   ", COLOR_BLUE);
                 Log::log("Requesting read from bank ");
                 Log::logDec(readBank);
                 Log::log(" column ");
@@ -122,7 +122,7 @@ void DDR::updateRead(void)
 
         case crCL1:
             #ifdef DDR_FSM_DEBUG 
-                Log::logSrc(" DDR ", COLOR_BLUE);
+                Log::logSrc("   DDR   ", COLOR_BLUE);
                 Log::log("Waiting for data...\n");
             #endif
             fsm = crCL2;
@@ -130,7 +130,7 @@ void DDR::updateRead(void)
 
         case crCL2:
             #ifdef DDR_FSM_DEBUG 
-                Log::logSrc(" DDR ", COLOR_BLUE);
+                Log::logSrc("   DDR   ", COLOR_BLUE);
                 Log::log("Waiting for data...\n");
             #endif
             fsm = crReading;
@@ -138,7 +138,7 @@ void DDR::updateRead(void)
 
         case crReading:
             #ifdef DDR_FSM_DEBUG 
-                Log::logSrc(" DDR ", COLOR_BLUE);
+                Log::logSrc("   DDR   ", COLOR_BLUE);
                 Log::log("Reading word ");
                 Log::logDec(burstByte);
                 Log::log(": ");
@@ -148,7 +148,7 @@ void DDR::updateRead(void)
             readData = memoryArray[(readAddress >> 2) + burstByte];
             if (burstByte == 7) {
                 #ifdef DDR_DEBUG
-                    Log::logSrc(" DDR ", COLOR_BLUE);
+                    Log::logSrc("   DDR   ", COLOR_BLUE);
                     Log::log("completed request address for block ");
                     Log::logHex(readAddress, COLOR_MAGENTA, 8);
                     Log::log("\n");
@@ -169,7 +169,7 @@ void DDR::updateRead(void)
 void DDR::performRead(unsigned address)
 {
     #ifdef DDR_DEBUG
-        Log::logSrc(" DDR ", COLOR_BLUE);
+        Log::logSrc("   DDR   ", COLOR_BLUE);
         Log::log("receiver read request for block ");
         Log::logHex(address, COLOR_MAGENTA, 8);
         Log::log("\n");

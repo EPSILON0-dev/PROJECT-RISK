@@ -17,7 +17,7 @@
 
 #include "log.h"
 #include "fsb.h"
-#include "cache.h"
+#include "dcache.h"
 #include "config.h"
 #include "debug.h"
 
@@ -27,7 +27,7 @@ extern FrontSideBus fsb;
  * @brief Constructor
  * 
  */
-ReadOnlyCache::ReadOnlyCache(void)
+DataCache::DataCache(void)
 {
     // Everything is divided by 2 because there are 2 sets
     memoryArraySet1 = new unsigned[16384 / sizeof(unsigned) / 2];
@@ -45,7 +45,7 @@ ReadOnlyCache::ReadOnlyCache(void)
  * @brief Destructor
  * 
  */
-ReadOnlyCache::~ReadOnlyCache(void)
+DataCache::~DataCache(void)
 {
     // Delete all arrays
     delete[] memoryArraySet1;
@@ -64,16 +64,16 @@ ReadOnlyCache::~ReadOnlyCache(void)
  * @return Data from memory
  * 
  */
-unsigned ReadOnlyCache::read(unsigned address)
+unsigned DataCache::read(unsigned address)
 {
     // If waiting for requested data, keep waiting
     if (cacheStatus)
-        if (fsb.readRequestStatus[0] != fsb.cComplete)
+        if (fsb.readRequestStatus[1] != fsb.cComplete)
             return 0;
 
     // Print CACHE_DEBUG message
     #ifdef CACHE_DEBUG
-        Log::logSrc("Cache", COLOR_BLUE);
+        Log::logSrc("  DCACHE ", COLOR_BLUE);
         Log::log("Reading from address ");
         Log::logHex(address, COLOR_MAGENTA, 8);
         Log::log("...\n");
@@ -91,7 +91,7 @@ unsigned ReadOnlyCache::read(unsigned address)
 
     // Print CACHE_DEBUG message
     #ifdef CACHE_DEBUG
-        Log::logSrc("Cache", COLOR_BLUE);
+        Log::logSrc("  DCACHE ", COLOR_BLUE);
         Log::log("Checking arrays for tag: [1: ");
         Log::log(((hit1)? "hit":"miss"), (hit1)? COLOR_GREEN : COLOR_NONE);
         Log::log("] [2: ");
@@ -102,13 +102,13 @@ unsigned ReadOnlyCache::read(unsigned address)
     // Request data when not found in cache
     if (!hit1 && !hit2) {
         #ifdef CACHE_DEBUG
-            Log::logSrc("Cache", COLOR_BLUE);
+            Log::logSrc("  DCACHE ", COLOR_BLUE);
             Log::log("Data not found in cache, requesting read from main RAM\n");
         #endif
 
         // Request read
         bool secondSet = (lastAccessedArraySet1[index]) ? 1 : 0;
-        fsb.callRead((tag << 14) | (index << 5), 0, secondSet);
+        fsb.callRead((tag << 14) | (index << 5), 1, secondSet);
         
         // Update tag
         if (secondSet) {
@@ -129,11 +129,11 @@ unsigned ReadOnlyCache::read(unsigned address)
     // Read data from cache
     if (hit1) {
         #ifdef CACHE_DEBUG
-            Log::logSrc("Cache", COLOR_BLUE);
+            Log::logSrc("  DCACHE ", COLOR_BLUE);
             Log::log("Reading data from set 1: ");
             Log::logHex(memoryArraySet1[(index << 3) + block], COLOR_MAGENTA, 8);
             Log::log("\n");
-            Log::logSrc("Cache", COLOR_BLUE);
+            Log::logSrc("  DCACHE ", COLOR_BLUE);
             Log::log("Setting block as last used\n");
         #endif
 
@@ -142,11 +142,11 @@ unsigned ReadOnlyCache::read(unsigned address)
         return memoryArraySet1[(index << 3) + block];
     } else {
         #ifdef CACHE_DEBUG
-            Log::logSrc("Cache", COLOR_BLUE);
+            Log::logSrc("  DCACHE ", COLOR_BLUE);
             Log::log("Reading data from set 2: ");
             Log::logHex(memoryArraySet2[(index << 3) + block], COLOR_MAGENTA, 8);
             Log::log("\n");
-            Log::logSrc("Cache", COLOR_BLUE);
+            Log::logSrc("  DCACHE ", COLOR_BLUE);
             Log::log("Setting block as last used\n");
         #endif
 
@@ -162,7 +162,7 @@ unsigned ReadOnlyCache::read(unsigned address)
  * @param data 32 bits of data
  * 
  */
-void ReadOnlyCache::fsbWriteCache(unsigned address, unsigned data, bool secondSet)
+void DataCache::fsbWriteCache(unsigned address, unsigned data, bool secondSet)
 {
     if (secondSet) 
         memoryArraySet2[address] = data;
