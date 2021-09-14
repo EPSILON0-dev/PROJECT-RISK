@@ -6,70 +6,202 @@
 #include "log.h"
 #include "ddr.h"
 #include "config.h"
-#include "debug.h"
+
+
 
 /**
  * @brief Constructor
  * 
  */
-DDR::DDR(void)
+MainRam::MainRam(void)
 {
-    // During initialization configuration sequence have to be sent 
-    // Here it's just a debug print but in the final VHDL code it will have to
-    //  be done as special states in FSM, only triggered on reset or boot.
-    // Data has to be sent on address (and bank select) lines, configuration 
-    //  value should be 0x0 for bank lines and 0x0024 for address lines.
-    #ifdef DDR_DEBUG
-        Log::logSrc("   DDR   ", COLOR_BLUE);
-        Log::log("Sending the configuration to the DDR memory\n");
-        Log::logSrc("   DDR   ", COLOR_BLUE);
-        Log::log("Bank ");
-        Log::log("0x0", COLOR_MAGENTA);
-        Log::log(", address ");
-        Log::log("0x0024", COLOR_MAGENTA);
-        Log::log(", all control lines low\n");
-    #endif
+    Log::logSrc("   DDR   ", COLOR_BLUE);
+    Log::log("Sending the configuration to the DDR memory\n");
+    Log::logSrc("   DDR   ", COLOR_BLUE);
+    Log::log("Bank ");
+    Log::log("0x0", COLOR_MAGENTA);
+    Log::log(", address ");
+    Log::log("0x0024", COLOR_MAGENTA);
+    Log::log(", all control lines low\n");
     
-    // Allocate 64 MB of memory, it's a big alloc
-    memoryArray = new unsigned[16 * 1024 * 1024];
+    ram = new unsigned[16 * 1024 * 1024];
+    for (unsigned i = 0; i < 16 * 1024 * 1024; i++) ram[i] = (i << 2) | 0x5A000000;
 
-    // Fill each word with it's address
-    for (unsigned i = 0; i < 16 * 1024 * 1024; i++)
-        memoryArray[i] = i | 0x5A000000;
-    
-    // Enter idle status
-    status = cIdle;
-    fsm = crFsmIdle;
-    burstByte = 0;
+    state = cIdle;
+    wordIndex = 0;
+
+    i_ReadAddress = 0;
+    i_ReadRequest = 0;
+    o_CacheWriteAddress = 0;
+    o_CacheWriteData = 0;
+    o_CacheWriteEnable = 0;
 }
+
+
 
 /**
  * @brief destructor
  * 
  */
-DDR::~DDR(void) 
+MainRam::~MainRam(void) 
 {
-    delete[] memoryArray;
+    delete[] ram;
 }
+
+
+
+unsigned MainRam::getBank(unsigned a)
+{
+    return (a >> 24) & 0x3;
+}
+
+unsigned MainRam::getRow(unsigned a)
+{
+    return (a >> 11) & 0x1FFF;
+}
+
+unsigned MainRam::getColumn(unsigned a)
+{
+    return (a >> 1) & 0x3FF;
+}
+
+
 
 /**
- * @brief This function performs one clock cycle of DDR operation
+ * @brief Update function for DDR controller
  * 
  */
-void DDR::Update(void) 
+void MainRam::Update(void) 
 {
-    // If in idle return
-    if (status == cIdle) return;
+    
+    if (state == cIdle) {
+        n_CacheWriteEnable = 0;
+        n_CacheLastWrite = 0;
+        readAddress = i_ReadAddress;
+        if (i_ReadRequest) {
+            state = (activeRow == getRow(readAddress)) ? cRead : cRow;
+            goto endUpdate;
+        }
+    }
 
-    // If status is reading act according to read FSM
-    if (status == cRead) updateRead();
+    if (state == cRow) {
+        activeRow = getRow(readAddress);
+        state = cRowDelay;
+        goto endUpdate;
+    }
+
+    if (state == cRowDelay) {
+        state = cRead;
+        goto endUpdate;
+    }
+
+    if (state == cRead) {
+        wordIndex = 0;
+        n_ReadAck = 1;
+        state = cCL1;
+        goto endUpdate;
+    }
+
+    if (state == cCL1) {
+        state = cCL2;
+        goto endUpdate;
+    }
+
+    if (state == cCL2) {
+        state = cReading;
+        goto endUpdate;
+    }
+
+    if (state == cReading) {
+        n_ReadAck = 0;
+        n_CacheWriteEnable = 1;
+        n_CacheWriteAddress = readAddress + (wordIndex << 2);
+        n_CacheWriteData = ram[(n_CacheWriteAddress >> 2)];
+        wordIndex++;
+        if (wordIndex == 8) {
+            state = cIdle;
+            n_CacheLastWrite = 1;
+        }
+        goto endUpdate;
+    }
+
+    endUpdate:
+    return;
+
 }
+
+
+
+/**
+ * @brief Output ports update function for data cache
+ * 
+ */
+void MainRam::UpdatePorts(void) 
+{
+    o_CacheWriteAddress = n_CacheWriteAddress;
+    o_CacheWriteData = n_CacheWriteData;
+    o_CacheLastWrite = n_CacheLastWrite;
+    o_CacheWriteEnable = n_CacheWriteEnable;
+    o_ReadAck = n_ReadAck;
+}
+
+
+
+/**
+ * @brief Logging function for front side bus
+ * 
+ */
+void MainRam::log(void)
+{
+    Log::logSrc("   DDR   ", COLOR_BLUE);
+    
+    switch (state) {
+
+        case cRow:
+        Log::log("Activate row ");
+        Log::logHex(getRow(readAddress), COLOR_MAGENTA, 4);
+        Log::log("\n");
+        break;
+
+        case cRowDelay:
+        Log::log("Waiting for activate\n");
+        break;
+
+        case cRead:
+        Log::log("Reading column ");
+        Log::logHex(getColumn(readAddress), COLOR_MAGENTA, 3);
+        Log::log("\n");
+        break;
+
+        case cCL1:
+        Log::log("Waiting for read\n");
+        break;
+
+        case cCL2:
+        Log::log("Waiting for read\n");
+        break;
+
+        case cReading:
+        Log::log("Reading word ");
+        Log::logDec(wordIndex);
+        Log::log("\n");
+        break;
+
+        default:
+        Log::log("Idle cycle\n");
+        break;
+
+    }
+
+}
+
+
 
 /**
  * @brief internal function for read FSM
  * 
  */
-void DDR::updateRead(void)
+/*void DDR::updateRead(void)
 {
     switch (fsm) {
         default:
@@ -159,28 +291,4 @@ void DDR::updateRead(void)
             burstByte++;
             break;
     }
-}
-
-/**
- * @brief This function performs a read from DDR memory
- * @param address Address of block read from memory
- * 
- */
-void DDR::performRead(unsigned address)
-{
-    #ifdef DDR_DEBUG
-        Log::logSrc("   DDR   ", COLOR_BLUE);
-        Log::log("receiver read request for block ");
-        Log::logHex(address, COLOR_MAGENTA, 8);
-        Log::log("\n");
-    #endif
-
-    // Decode the address
-    readAddress = address;
-    readBank = (address >> 24) & 0x3;
-    readRow = (address >> 11) & 0x1FFF;
-    readColumn = (address >> 1) & 0x3FF;
-
-    // Enter reading state
-    status = cRead;
-}
+}*/

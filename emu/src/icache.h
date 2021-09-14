@@ -1,33 +1,74 @@
 /**
- * This is a file for C++ emulator of the machine
+ * INSTRUCTION CACHE
  * 
  */
 
 class InstructionCache
 {
-private:
-    // Set 1
-    unsigned* memoryArraySet1;
-    unsigned short* tagArraySet1;
-    unsigned char* validArraySet1;
-    unsigned char* lastAccessedArraySet1;
-    // Set 2
-    unsigned* memoryArraySet2;
-    unsigned short* tagArraySet2;
-    unsigned char* validArraySet2;
-    unsigned char* lastAccessedArraySet2;
 
-public:
+private:  // Internal memories and registers
+    unsigned* caches1;
+    unsigned short* tags1;
+    unsigned char* valid1;
+    
+    unsigned* caches2;
+    unsigned short* tags2;
+    unsigned char* valid2;
+
+    unsigned char* lastSet;  // 1 - second set, 0 - first set
+    bool fetchSet;           // 1 - second set, 0 - first set
+
+
+public:  // Input ports
+    unsigned i_CacheAddress;
+    unsigned i_CacheWriteData;
+    bool i_CacheWriteEnable;
+    bool i_CacheReadEnable;
+
+    unsigned i_FsbAddress;
+    unsigned i_FsbWriteData;
+    bool i_FsbReadAck;
+    bool i_FsbWriteEnable;
+    bool i_FsbFetchFinished;
+
+
+private:  // Internal versions of output ports
+    unsigned n_CacheReadData;
+    bool n_CacheValidData;
+    bool n_CacheFetching;
+
+    unsigned n_FsbReadAddress;
+    unsigned n_FsbReadRequest;
+
+
+public:  // Output ports
+    unsigned o_CacheReadData;
+    bool o_CacheValidData;
+    bool o_CacheFetching;
+
+    unsigned o_FsbReadAddress;
+    unsigned o_FsbReadRequest;
+
+
+public:  // Constructor and destructor
     InstructionCache(void);
     ~InstructionCache(void);
 
-public:
-    enum eCacheStatus { cOk, cWait };
-    char cacheStatus;
 
-public:
-    unsigned read(unsigned address);
+private:  // Private functions for internal usage
+    unsigned getBlock(unsigned a);
+    unsigned getIndex(unsigned a);
+    unsigned getTag(unsigned a);
+    bool checkCache1(unsigned a);
+    bool checkCache2(unsigned a);
 
-public:
-    void fsbWriteCache(unsigned address, unsigned data, bool secondSet);
+
+public:  // Update function
+    void Update(void);
+    void UpdatePorts(void);
+
+
+public:  // Logging functions
+    void log(void);
+
 };

@@ -3,35 +3,58 @@
  * 
  */
 
-class DDR 
+class MainRam 
 {
-private:
-    unsigned short activeRow = 0xFFFF;
-    unsigned* memoryArray;
+
+private:  // Memories and registers
+    unsigned* ram;
+    
+    unsigned activeRow;
     unsigned readAddress;
-    unsigned readRow;
-    unsigned readColumn;
-    unsigned readBank;
 
-public:
-    DDR(void);
-    ~DDR(void);
+    enum eState { cIdle, cRow, cRowDelay, cRead, cCL1, cCL2, cReading };
+    unsigned state;
+    unsigned wordIndex;
 
-public:
-    enum eFSM { crFsmIdle, crRowActivate, crActivateDelay, crRequest, crCL1, crCL2, crReading };
-    char fsm;
-    char burstByte;
-    enum eStatus { cIdle, cRead, cWrite, cInitializing };
-    char status = cInitializing;
-    unsigned readData;
 
-private:
-    void updateRead(void);
+public:  // Constructor and destructor
+    MainRam(void);
+    ~MainRam(void);
 
-public:
+
+private:  // Private functions for internal usage
+    unsigned getBank(unsigned a);
+    unsigned getRow(unsigned a);
+    unsigned getColumn(unsigned a);
+
+
+public:  // Input ports
+    unsigned i_ReadAddress;
+    bool i_ReadRequest;
+
+
+private:  // Internal versions of output ports
+    unsigned n_CacheWriteAddress;
+    unsigned n_CacheWriteData;
+    bool n_CacheLastWrite;
+    bool n_CacheWriteEnable;
+    bool n_ReadAck;
+
+
+public:  // Output ports
+    unsigned o_CacheWriteAddress;
+    unsigned o_CacheWriteData;
+    bool o_CacheLastWrite;
+    bool o_CacheWriteEnable;
+    bool o_ReadAck;
+
+
+public:  // Update function
     void Update(void);
+    void UpdatePorts(void);
 
-public:
-    void performRead(unsigned address);
-    //void performWrite(unsigned address);
+
+public:  // Logging function
+    void log(void);
+
 };

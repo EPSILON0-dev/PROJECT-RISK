@@ -5,32 +5,27 @@
 
 class FrontSideBus
 {
-private:
-    unsigned* readRequestAddress;
-    bool* readRequestSet;
-    bool* readRequest;
 
-    unsigned* writeQueueAddress;
-    bool* writeQueue;
-    char writeQueuePtr;
+private:  // Internal memories and registers
+    unsigned requestAddress;
+    char request;
+    enum eRequest { cNone, cDCache, cICache };
 
-    char currentRequest;
-    enum eSource { cNone, cRead0, cRead1, cRead2, cWrite };
 
-public:
+public:  // Constructor and destructor 
     FrontSideBus(void);
     ~FrontSideBus(void);
-    void init(void* instructionCache, void* dataCache, void* ddRam);
 
-public:
-    enum eStatus { cComplete, cAwaiting, cQueueFull, cLowerPriority };
-    char writeQueueStatus;
-    char* readRequestStatus;
 
-public:
+public:  // Initialization function
+    void loadPointers(void* instructionCache, void* dataCache, void* mainRam);
+
+
+public:  // Update function for front side bus
     void Update(void);
 
-public:
-    void callWrite(unsigned blockAddress);
-    void callRead(unsigned blockAddress, unsigned char callerId, bool secondSet);
+
+public:  // Logging functions
+    void log(void);
+
 };

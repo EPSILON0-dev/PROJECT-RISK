@@ -20,216 +20,139 @@
 #include "dcache.h"
 #include "fsb.h"
 #include "config.h"
-#include "debug.h"
 
 static InstructionCache* iCache;
 static DataCache* dCache;
-static DDR* ddr;
+static MainRam* ddr;
+
+
 
 /**
- * @brief This function initializes the Front Side Bus
- * @param readSources specifies the number of unique read sources
+ * @brief Constructor
  * 
  */
 FrontSideBus::FrontSideBus(void)
 {
-    // Write queue is 32 
-    writeQueue = new bool[32];
-    writeQueueAddress = new unsigned[32];
-    writeQueueStatus = cComplete;
-    writeQueuePtr = 0;
-    for (unsigned i = 0; i < 32; i++) {
-        writeQueue[i] = 0;
-        writeQueueAddress[i] = 0;
-    }
-
-    // Each read source gets it's own request register
-    readRequest = new bool[3];
-    readRequestAddress = new unsigned[3];
-    readRequestStatus = new char[3];
-    readRequestSet = new bool[3];
-    for (unsigned i = 0; i < 3; i++) {
-        readRequest[i] = 0;
-        readRequestAddress[i] = 0;
-        readRequestStatus[i] = cComplete;
-        readRequestSet[i] = 0;
-    }
-
-    // Set initial idle state
-    currentRequest = cNone;
+    requestAddress = 0;
+    request = cNone;
 }
+
+
 
 /**
  * @brief Destructor
  * 
  */
-FrontSideBus::~FrontSideBus(void)
-{
-    delete[] writeQueue;
-    delete[] writeQueueAddress;
-    delete[] readRequest;
-    delete[] readRequestAddress;
-}
+FrontSideBus::~FrontSideBus(void) {}
+
+
 
 /**
  * @brief This function supplies the class pointers for the FSB
  * 
  */
-void FrontSideBus::init(void* instructionCache, void* dataCache, void* ddRam)
+void FrontSideBus::loadPointers(void* instructionCache, void* dataCache, void* mainRam)
 {
     iCache = (InstructionCache*)instructionCache;
     dCache = (DataCache*)dataCache;
-    ddr = (DDR*)ddRam;
+    ddr = (MainRam*)mainRam;
 }
 
+
+
 /**
- * @brief This function performs one clock cycle of FSB operation
+ * @brief Update function for front side bus
  * 
  */
 void FrontSideBus::Update(void)
 {
-    // If there is any request
-    if (writeQueueStatus || readRequest[0] || readRequest[1] || readRequest[2]) {
+
+    if (request) {  // Continue currently serviced request
         
-        // If it's write request
-        if (!currentRequest) {
-            if (writeQueueStatus) {
-                // Funny, there's no write requests yet
-            } else {
-                if (readRequest[0]) currentRequest = cRead0;
-                if (readRequest[1]) currentRequest = cRead1;
-                if (readRequest[2]) currentRequest = cRead2;
-            }
+        serviceRequest:
+
+        if (request == cDCache) {
+            dCache->i_FsbAddress = ddr->o_CacheWriteAddress;
+            dCache->i_FsbWriteData = ddr->o_CacheWriteData;
+            dCache->i_FsbWriteEnable = ddr->o_CacheWriteEnable;
+            dCache->i_FsbFetchFinished = ddr->o_CacheLastWrite;
+            dCache->i_FsbReadAck = ddr->o_ReadAck;
+            ddr->i_ReadRequest = dCache->o_FsbReadRequest;
+        } else {
+            dCache->i_FsbAddress = 0;
+            dCache->i_FsbWriteData = 0;
+            dCache->i_FsbWriteEnable = 0;
+            dCache->i_FsbFetchFinished = 0;
+            dCache->i_FsbReadAck = 0;
         }
 
-        if (currentRequest == cRead0 && ddr->status == ddr->cIdle) {
-            ddr->performRead(readRequestAddress[0]);
+        if (request == cICache) {
+            iCache->i_FsbAddress = ddr->o_CacheWriteAddress;
+            iCache->i_FsbWriteData = ddr->o_CacheWriteData;
+            iCache->i_FsbWriteEnable = ddr->o_CacheWriteEnable;
+            iCache->i_FsbFetchFinished = ddr->o_CacheLastWrite;
+            iCache->i_FsbReadAck = ddr->o_ReadAck;
+            ddr->i_ReadRequest = iCache->o_FsbReadRequest;
+        } else {
+            iCache->i_FsbAddress = 0;
+            iCache->i_FsbWriteData = 0;
+            iCache->i_FsbWriteEnable = 0;
+            iCache->i_FsbFetchFinished = 0;
+            iCache->i_FsbReadAck = 0;
         }
 
-        if (currentRequest == cRead1 && ddr->status == ddr->cIdle) {
-            ddr->performRead(readRequestAddress[1]);
+        if (ddr->o_CacheLastWrite) {
+            request = cNone;
         }
 
-        // If currently reading cache 0 (CPU I cache)
-        if (currentRequest == cRead0 && ddr->status == ddr->cRead && ddr->fsm == ddr->crReading) {
-            unsigned cacheAddress = ((readRequestAddress[0] >> 2) & 0x7F8) + ddr->burstByte;
-            iCache->fsbWriteCache(cacheAddress, ddr->readData, readRequestSet[0]);
-            if (ddr->burstByte == 7) {
-                readRequestStatus[0] = cComplete;
-                readRequest[0] = 0;
-                currentRequest = cNone;
-            }
-        }
-
-        // If currently reading cache 1 (CPU D cache)
-        if (currentRequest == cRead1 && ddr->status == ddr->cRead && ddr->fsm == ddr->crReading) {
-            unsigned cacheAddress = ((readRequestAddress[1] >> 2) & 0x7F8) + ddr->burstByte;
-            dCache->fsbWriteCache(cacheAddress, ddr->readData, readRequestSet[1]);
-            if (ddr->burstByte == 7) {
-                readRequestStatus[1] = cComplete;
-                readRequest[1] = 0;
-                currentRequest = cNone;
-            }
-        }
+        return;
     }
+
+    if (dCache->o_FsbReadRequest) {  // Handle new D cache request
+        requestAddress = dCache->o_FsbReadAddress;
+        ddr->i_ReadAddress = requestAddress;
+        request = cDCache;
+        goto serviceRequest;
+    }
+
+    if (iCache->o_FsbReadRequest) {  // Handle new I cache request
+        requestAddress = iCache->o_FsbReadAddress;
+        ddr->i_ReadAddress = requestAddress;
+        request = cICache;
+        goto serviceRequest;
+    }
+
 }
 
-/**
- * @brief This function handles write calls
- * @param blockAddress address of the block to be written
- * 
- */
-void FrontSideBus::callWrite(unsigned blockAddress)
-{
-    // Add request to the queue
-    writeQueue[(unsigned)writeQueuePtr] = 1;
-    writeQueueAddress[(unsigned)writeQueuePtr] = blockAddress;
-    writeQueuePtr++;
 
-    // Log the request
-    #ifdef FSB_DEBUG
-        Log::logSrc("   FSB   ", COLOR_BLUE);
-        Log::log("Added write request to the block ");
-        Log::logHex(blockAddress, COLOR_MAGENTA, 8);
-        Log::log(", position in queue: ");
-        Log::logDec(writeQueuePtr, COLOR_MAGENTA);
-        Log::log("\n");
-    #endif
-
-    // If queue full set "full" status
-    // Also lower the read requests priority
-    if (writeQueuePtr >= 32) {
-        #ifdef FSB_DEBUG
-            Log::logSrc("   FSB   ", COLOR_BLUE);
-            Log::log("Log queue full, raising the priority\n");
-        #endif
-        writeQueueStatus = cQueueFull;
-        for (unsigned i = 0; i < 3; i++) {
-            if (readRequestStatus[i]) readRequestStatus[i] = cLowerPriority;
-        }
-
-    // If not full set "awaiting" status
-    } else {
-        writeQueueStatus = cAwaiting;
-    }
-}
 
 /**
- * @brief This function handles read calls
- * @param blockAddress address of the block to be read
- * @param callerId priority (and ID) of the caller
- * @param secondSet write to second cache set
+ * @brief Logging function for front side bus
  * 
  */
-void FrontSideBus::callRead(unsigned blockAddress, unsigned char callerId, bool secondSet)
+void FrontSideBus::log(void)
 {
-    // Add request to the request "queue"
-    readRequest[callerId] = 1;
-    readRequestSet[callerId] = secondSet;
-    readRequestAddress[callerId] = blockAddress;
 
-    // Log the request
-    #ifdef FSB_DEBUG
-        Log::logSrc("   FSB   ", COLOR_BLUE);
-        Log::log("Added read request from block ");
-        Log::logHex(blockAddress, COLOR_MAGENTA, 8);
-        Log::log(", priority: ");
-        Log::logDec(callerId, COLOR_MAGENTA);
-        Log::log("\n");
-    #endif
+    Log::logSrc("   FSB   ", COLOR_BLUE);
     
-    // Set the status for the request
-    // If any of the higher priority requests are active set status to lower priority
-    // Set lower priority requests to "low priority" (if active)
-    switch (callerId) {
-        case 0: // CPU I cache
-            if (readRequest[1] || readRequest[2] || writeQueueStatus == cQueueFull) {
-                readRequestStatus[0] = cLowerPriority;
-            } else {
-                readRequestStatus[0] = cAwaiting;
-            }
-            break;
+    switch (request) {
+        
+        case cDCache:
+        Log::log("D cache read ");
+        Log::logHex(requestAddress, COLOR_MAGENTA, 8);
+        Log::log("\n");
+        break;
 
-        case 1: // CPU D cache
-            if (readRequest[2] || writeQueueStatus == cQueueFull) {
-                readRequestStatus[1] = cLowerPriority;
-                if (readRequestStatus[0]) readRequestStatus[0] = cLowerPriority;
-            } else {
-                readRequestStatus[1] = cAwaiting;
-                if (readRequestStatus[0]) readRequestStatus[0] = cLowerPriority;
-            }
-            break;
+        case cICache:
+        Log::log("I cache read ");
+        Log::logHex(requestAddress, COLOR_MAGENTA, 8);
+        Log::log("\n");
+        break;
 
-        default: // VGA cache
-            if (writeQueueStatus == cQueueFull) {
-                readRequestStatus[2] = cLowerPriority;
-                if (readRequestStatus[1]) readRequestStatus[1] = cLowerPriority;
-                if (readRequestStatus[0]) readRequestStatus[0] = cLowerPriority;
-            } else {
-                readRequestStatus[2] = cAwaiting;
-                if (readRequestStatus[1]) readRequestStatus[1] = cLowerPriority;
-                if (readRequestStatus[0]) readRequestStatus[0] = cLowerPriority;
-            }
-            break;
+        default:
+        Log::log("Idle cycle\n");
+        break;
+
     }
+
 }

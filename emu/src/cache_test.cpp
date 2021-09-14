@@ -3,64 +3,78 @@
  *
  */
 
+#include <iostream>
 #include "icache.h"
 #include "dcache.h"
 #include "ddr.h"
 #include "fsb.h"
 #include "log.h"
 
-DDR ddr;
+MainRam ddr;
 InstructionCache iCache;
 DataCache dCache;
 FrontSideBus fsb;
 
+void Update()
+{
+    iCache.log();
+    dCache.log();
+    ddr.log();
+    fsb.log();
+
+    iCache.Update();
+    dCache.Update();
+    ddr.Update();
+
+    iCache.UpdatePorts();
+    dCache.UpdatePorts();
+    ddr.UpdatePorts();
+
+    fsb.Update();
+
+    Log::log("\n");
+}
+
 int main()
 {
-    fsb.init(&iCache, &dCache, &ddr);
+    fsb.loadPointers(&iCache, &dCache, &ddr);
     Log::log("\n");
 
-    iCache.read(0x00000055);
-    for (int i = 0; i < 64; i++)
-        { fsb.Update(); ddr.Update(); }
-    Log::log("\n");
+    iCache.i_CacheReadEnable = 1;
+    iCache.i_CacheAddress = 0x20;
+    dCache.i_CacheReadEnable = 1;
+    dCache.i_CacheAddress = 0x40;
+    for (unsigned i = 0; i < 32; i++) {
+        Update();
+    }
 
-    iCache.read(0x00100055);
-    dCache.read(0x00100055);
-    for (int i = 0; i < 64; i++)
-        { fsb.Update(); ddr.Update(); }
-    Log::log("\n");
+    iCache.i_CacheReadEnable = 1;
+    iCache.i_CacheAddress = 0x4020;
+    dCache.i_CacheReadEnable = 1;
+    dCache.i_CacheAddress = 0x4040;
+    for (unsigned i = 0; i < 32; i++) {
+        Update();
+    }
 
-    iCache.read(0x00000055);
-    for (int i = 0; i < 64; i++)
-        { fsb.Update(); ddr.Update(); }
-    Log::log("\n");
+    iCache.i_CacheReadEnable = 1;
+    iCache.i_CacheAddress = 0x8020;
+    dCache.i_CacheReadEnable = 1;
+    dCache.i_CacheAddress = 0x8040;
+    for (unsigned i = 0; i < 32; i++) {
+        Update();
+    }
 
-    iCache.read(0x00100055);
-    for (int i = 0; i < 64; i++)
-        { fsb.Update(); ddr.Update(); }
-    Log::log("\n");
+    iCache.i_CacheReadEnable = 1;
+    iCache.i_CacheAddress = 0x4020;
+    dCache.i_CacheReadEnable = 1;
+    dCache.i_CacheAddress = 0x4040;
+    Update();
 
-    dCache.read(0x00100055);
-    for (int i = 0; i < 64; i++)
-        { fsb.Update(); ddr.Update(); }
-    Log::log("\n");
-
-    iCache.read(0x00200055);
-    for (int i = 0; i < 64; i++)
-        { fsb.Update(); ddr.Update(); }
-    Log::log("\n");
-
-    iCache.read(0x00200055);
-    for (int i = 0; i < 64; i++)
-        { fsb.Update(); ddr.Update(); }
-    Log::log("\n");
-
-    iCache.read(0x00300055);
-    for (int i = 0; i < 64; i++)
-        { fsb.Update(); ddr.Update(); }
-    Log::log("\n");
-
-    iCache.read(0x00300055); Log::log("\n");
+    iCache.i_CacheReadEnable = 0;
+    iCache.i_CacheAddress = 0;
+    dCache.i_CacheReadEnable = 0;
+    dCache.i_CacheAddress = 0;
+    Update();
 
     return 0;
 }
