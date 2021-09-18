@@ -21,8 +21,6 @@ private:  // Internal memories and registers
 
 public:  // Input ports
     unsigned i_CacheAddress;
-    unsigned i_CacheWriteData;
-    bool i_CacheWriteEnable;
     bool i_CacheReadEnable;
 
     unsigned i_FsbAddress;

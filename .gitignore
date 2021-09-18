@@ -3,3 +3,4 @@ emu/obj/
 emu/bin/
 *.o
 .vscode/
+*.bak

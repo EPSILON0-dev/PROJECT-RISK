@@ -34,12 +34,20 @@ DataCache::DataCache(void)
     for (unsigned i = 0; i < sizeof(tags1); i++) tags1[i] = 0;
     valid1 = new unsigned char[16384 / 32 / 2];
     for (unsigned i = 0; i < sizeof(valid1); i++) valid1[i] = 0;
+    updated1 = new unsigned char[16384 / 32 / 2];
+    for (unsigned i = 0; i < sizeof(valid1); i++) updated1[i] = 0;
+    queued1 = new unsigned char[16384 / 32 / 2];
+    for (unsigned i = 0; i < sizeof(valid1); i++) queued1[i] = 0;
     caches2 = new unsigned[16384 / sizeof(unsigned) / 2];
     for (unsigned i = 0; i < sizeof(caches2); i++) caches2[i] = 0;
     tags2 = new unsigned short[16384 / 32 / 2];
     for (unsigned i = 0; i < sizeof(tags2); i++) tags2[i] = 0;
     valid2 = new unsigned char[16384 / 32 / 2];
     for (unsigned i = 0; i < sizeof(valid2); i++) valid2[i] = 0;
+    updated2 = new unsigned char[16384 / 32 / 2];
+    for (unsigned i = 0; i < sizeof(valid1); i++) updated1[i] = 0;
+    queued2 = new unsigned char[16384 / 32 / 2];
+    for (unsigned i = 0; i < sizeof(valid1); i++) queued1[i] = 0;
     lastSet = new unsigned char[16384 / 32 / 2];
     for (unsigned i = 0; i < sizeof(lastSet); i++) lastSet[i] = 0;
     fetchSet = 0;
@@ -98,12 +106,12 @@ unsigned DataCache::getTag(unsigned a)
 
 bool DataCache::checkCache1(unsigned a)
 {
-    return (tags1[getIndex(a)] == getTag(a));
+    return (tags1[getIndex(a)] == getTag(a) && valid1[getIndex(a)]);
 }
 
 bool DataCache::checkCache2(unsigned a)
 {
-    return (tags2[getIndex(a)] == getTag(a));
+    return (tags2[getIndex(a)] == getTag(a) && valid2[getIndex(a)]);
 }
 
 
@@ -126,18 +134,22 @@ void DataCache::Update(void)
         
         if (fetchSet) {
             caches2[getBlock(i_FsbAddress)] = i_FsbWriteData;
-            tags2[getIndex(i_FsbAddress)] = getTag(i_FsbAddress);
-            valid2[getIndex(i_FsbAddress)] = 1;
-            lastSet[getIndex(i_FsbAddress)] = 1;
         } else {
             caches1[getBlock(i_FsbAddress)] = i_FsbWriteData;
-            tags1[getIndex(i_FsbAddress)] = getTag(i_FsbAddress);
-            valid1[getIndex(i_FsbAddress)] = 1;
-            lastSet[getIndex(i_FsbAddress)] = 0;
         }
     
         if (i_FsbFetchFinished) {
             n_CacheFetching = 0;
+            if (fetchSet) {
+                tags2[getIndex(i_FsbAddress)] = getTag(i_FsbAddress);
+                valid2[getIndex(i_FsbAddress)] = 1;
+                lastSet[getIndex(i_FsbAddress)] = 1;
+            } else {
+                tags1[getIndex(i_FsbAddress)] = getTag(i_FsbAddress);
+                valid1[getIndex(i_FsbAddress)] = 1;
+                lastSet[getIndex(i_FsbAddress)] = 0;
+            }
+
         }
 
         goto endUpdate;
@@ -150,14 +162,14 @@ void DataCache::Update(void)
             goto fetchFromRam;
         }
 
-        if (checkCache1(i_CacheAddress) && valid1[index]) {
+        if (checkCache1(i_CacheAddress)) {
             n_CacheReadData = caches1[block];
             n_CacheValidData = 1;
             lastSet[index] = 0;
             goto endUpdate;
         }
 
-        if (checkCache2(i_CacheAddress) && valid2[index]) {
+        if (checkCache2(i_CacheAddress)) {
             n_CacheReadData = caches2[block];
             n_CacheValidData = 1;
             lastSet[index] = 1;
@@ -170,6 +182,30 @@ void DataCache::Update(void)
         n_FsbReadRequest = 1;
         n_CacheValidData = 0;
         n_CacheFetching = 1;
+        goto endUpdate;
+
+    }
+
+    if (i_CacheWriteEnable && !n_CacheFetching) {  // Handle writes
+
+
+        if (!(checkCache1(i_CacheAddress) || checkCache2(i_CacheAddress))) {
+            goto fetchFromRam;
+        }
+
+        if (checkCache1(i_CacheAddress)) {
+            lastSet[index] = 0;
+            updated1[index] = 1;
+            caches1[block] = i_CacheWriteData;
+            goto endUpdate;
+        }
+
+        if (checkCache2(i_CacheAddress)) {
+            lastSet[index] = 1;
+            updated2[index] = 1;
+            caches2[block] = i_CacheWriteData;
+            goto endUpdate;
+        }
 
     }
 
@@ -201,35 +237,52 @@ void DataCache::UpdatePorts(void)
  */
 void DataCache::log(void)
 {
+
+    Log::logSrc(" DCACHE  ", COLOR_BLUE);
+
     if (!n_CacheFetching) {
 
         if (i_CacheReadEnable) {
 
-            Log::logSrc(" DCACHE  ", COLOR_BLUE);
             Log::log("Read ");
             Log::logHex(i_CacheAddress, COLOR_MAGENTA, 8);
             Log::log(", ");
-            if (checkCache1(i_CacheAddress) && valid1[getIndex(i_CacheAddress)]) {
+            if (checkCache1(i_CacheAddress)) {
                 Log::log("[1: HIT]: ", COLOR_GREEN);
-                Log::logHex(caches1[getBlock(i_CacheAddress)]);
+                Log::logHex(caches1[getBlock(i_CacheAddress)], COLOR_MAGENTA, 8);
             }
-            if (checkCache2(i_CacheAddress) && valid2[getIndex(i_CacheAddress)]) {
+            if (checkCache2(i_CacheAddress)) {
                 Log::log("[2: HIT]: ", COLOR_GREEN);
-                Log::logHex(caches2[getBlock(i_CacheAddress)]);
+                Log::logHex(caches2[getBlock(i_CacheAddress)], COLOR_MAGENTA, 8);
+            }
+            Log::log("\n");
+
+        } else if (i_CacheWriteEnable) {
+
+            Log::log("Write to ");
+            Log::logHex(i_CacheAddress, COLOR_MAGENTA, 8);
+            if (checkCache1(i_CacheAddress)) {
+                Log::log(" cache ");
+                Log::log("[1]: ", COLOR_GREEN);
+                Log::logHex(i_CacheWriteData, COLOR_MAGENTA, 8);
+            }
+            if (checkCache2(i_CacheAddress)) {
+                Log::log(" cache ");
+                Log::log("[2]: ", COLOR_GREEN);
+                Log::logHex(i_CacheWriteData, COLOR_MAGENTA, 8);
             }
             Log::log("\n");
 
         } else {
 
-            Log::logSrc(" DCACHE  ", COLOR_BLUE);
             Log::log("Idle cycle\n");
 
         }
 
     } else {
 
-        Log::logSrc(" DCACHE  ", COLOR_BLUE);
         Log::log("Fetching\n");
 
     }
+    
 }

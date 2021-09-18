@@ -76,5 +76,20 @@ int main()
     dCache.i_CacheAddress = 0;
     Update();
 
+    dCache.i_CacheWriteEnable = 1;
+    dCache.i_CacheWriteData = 0x55AA55AA;
+    dCache.i_CacheAddress = 0x20;
+    for (unsigned i = 0; i < 32; i++) {
+        Update();
+    }
+
+    dCache.i_CacheWriteEnable = 1;
+    dCache.i_CacheWriteData = 0x55AA55AA;
+    dCache.i_CacheAddress = 0x4020;
+    for (unsigned i = 0; i < 32; i++) {
+        Update();
+    }
+
+
     return 0;
 }

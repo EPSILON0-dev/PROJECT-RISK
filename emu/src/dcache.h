@@ -10,10 +10,14 @@ private:  // Internal memories and registers
     unsigned* caches1;
     unsigned short* tags1;
     unsigned char* valid1;
+    unsigned char* updated1;
+    unsigned char* queued1;
     
     unsigned* caches2;
     unsigned short* tags2;
     unsigned char* valid2;
+    unsigned char* updated2;
+    unsigned char* queued2;
 
     unsigned char* lastSet;  // 1 - second set, 0 - first set
     bool fetchSet;           // 1 - second set, 0 - first set

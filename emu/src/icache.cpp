@@ -45,8 +45,6 @@ InstructionCache::InstructionCache(void)
     fetchSet = 0;
 
     i_CacheAddress = 0;
-    i_CacheWriteData = 0;
-    i_CacheWriteEnable = 0;
     i_CacheReadEnable = 0;
     i_FsbAddress = 0;
     i_FsbWriteData = 0;
@@ -201,34 +199,32 @@ void InstructionCache::UpdatePorts(void)
  */
 void InstructionCache::log(void)
 {
+    Log::logSrc(" ICACHE  ", COLOR_BLUE);
     if (!n_CacheFetching) {
 
         if (i_CacheReadEnable) {
 
-            Log::logSrc(" ICACHE  ", COLOR_BLUE);
             Log::log("Read ");
             Log::logHex(i_CacheAddress, COLOR_MAGENTA, 8);
             Log::log(", ");
-            if (checkCache1(i_CacheAddress) && valid1[getIndex(i_CacheAddress)]) {
+            if (checkCache1(i_CacheAddress)) {
                 Log::log("[1: HIT]: ", COLOR_GREEN);
-                Log::logHex(caches1[getBlock(i_CacheAddress)]);
+                Log::logHex(caches1[getBlock(i_CacheAddress)], COLOR_MAGENTA, 8);
             }
-            if (checkCache2(i_CacheAddress) && valid2[getIndex(i_CacheAddress)]) {
+            if (checkCache2(i_CacheAddress)) {
                 Log::log("[2: HIT]: ", COLOR_GREEN);
-                Log::logHex(caches2[getBlock(i_CacheAddress)]);
+                Log::logHex(caches2[getBlock(i_CacheAddress)], COLOR_MAGENTA, 8);
             }
             Log::log("\n");
 
         } else {
 
-            Log::logSrc(" ICACHE  ", COLOR_BLUE);
             Log::log("Idle cycle\n");
 
         }
 
     } else {
 
-        Log::logSrc(" ICACHE  ", COLOR_BLUE);
         Log::log("Fetching\n");
 
     }
