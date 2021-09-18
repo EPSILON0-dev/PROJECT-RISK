@@ -34,8 +34,6 @@ DataCache::DataCache(void)
     for (unsigned i = 0; i < sizeof(tags1); i++) tags1[i] = 0;
     valid1 = new unsigned char[16384 / 32 / 2];
     for (unsigned i = 0; i < sizeof(valid1); i++) valid1[i] = 0;
-    updated1 = new unsigned char[16384 / 32 / 2];
-    for (unsigned i = 0; i < sizeof(valid1); i++) updated1[i] = 0;
     queued1 = new unsigned char[16384 / 32 / 2];
     for (unsigned i = 0; i < sizeof(valid1); i++) queued1[i] = 0;
     caches2 = new unsigned[16384 / sizeof(unsigned) / 2];
@@ -44,12 +42,13 @@ DataCache::DataCache(void)
     for (unsigned i = 0; i < sizeof(tags2); i++) tags2[i] = 0;
     valid2 = new unsigned char[16384 / 32 / 2];
     for (unsigned i = 0; i < sizeof(valid2); i++) valid2[i] = 0;
-    updated2 = new unsigned char[16384 / 32 / 2];
-    for (unsigned i = 0; i < sizeof(valid1); i++) updated1[i] = 0;
     queued2 = new unsigned char[16384 / 32 / 2];
     for (unsigned i = 0; i < sizeof(valid1); i++) queued1[i] = 0;
     lastSet = new unsigned char[16384 / 32 / 2];
     for (unsigned i = 0; i < sizeof(lastSet); i++) lastSet[i] = 0;
+    writeAddressQueue = new unsigned[32];
+    for (unsigned i = 0; i < sizeof(writeAddressQueue); i++) writeAddressQueue[i] = 0;
+    queuePointer = 0;
     fetchSet = 0;
 
     i_CacheAddress = 0;
@@ -195,15 +194,21 @@ void DataCache::Update(void)
 
         if (checkCache1(i_CacheAddress)) {
             lastSet[index] = 0;
-            updated1[index] = 1;
             caches1[block] = i_CacheWriteData;
+            if (!queued1[index]) {
+                queued1[index] = 1;
+                writeAddressQueue[queuePointer++] = i_CacheAddress;
+            }
             goto endUpdate;
         }
 
         if (checkCache2(i_CacheAddress)) {
             lastSet[index] = 1;
-            updated2[index] = 1;
             caches2[block] = i_CacheWriteData;
+            if (!queued2[index]) {
+                queued2[index] = 1;
+                writeAddressQueue[queuePointer++] = i_CacheAddress;
+            }
             goto endUpdate;
         }
 
@@ -255,7 +260,6 @@ void DataCache::log(void)
                 Log::log("[2: HIT]: ", COLOR_GREEN);
                 Log::logHex(caches2[getBlock(i_CacheAddress)], COLOR_MAGENTA, 8);
             }
-            Log::log("\n");
 
         } else if (i_CacheWriteEnable) {
 
@@ -271,18 +275,25 @@ void DataCache::log(void)
                 Log::log("[2]: ", COLOR_GREEN);
                 Log::logHex(i_CacheWriteData, COLOR_MAGENTA, 8);
             }
-            Log::log("\n");
 
         } else {
 
-            Log::log("Idle cycle\n");
+            Log::log("Idle cycle");
 
         }
 
     } else {
 
-        Log::log("Fetching\n");
+        Log::log("Fetching");
 
     }
+
+    if (queuePointer) {
+      Log::log(" [Q:", COLOR_CYAN);
+      Log::logDec(queuePointer, COLOR_CYAN);
+      Log::log("]", COLOR_CYAN);
+    }
+
+    Log::log("\n");
     
 }
