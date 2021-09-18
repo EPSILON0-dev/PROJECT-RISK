@@ -13,6 +13,7 @@ CFLAGS    		:=-g -O2 -Wall -Wextra
 LFLAGS    		:=
 CACHE_TEST_OBJ	:= $(OBJDIR)/icache.o $(OBJDIR)/fsb.o $(OBJDIR)/log.o 
 CACHE_TEST_OBJ  += $(OBJDIR)/dcache.o $(OBJDIR)/cache_test.o $(OBJDIR)/ddr.o
+DDR_TEST_OBJ	:= $(OBJDIR)/ddr.o $(OBJDIR)/log.o $(OBJDIR)/ddr_test.o 
 
 .PHONEY: all
 all: directories cache_test
@@ -20,7 +21,7 @@ all: directories cache_test
 .PHONEY: directories
 directories: $(DIRS)
 
-cache_test: directories bin/cache_test
+cache_test: directories bin/cache_test bin/ddr_test
 
 $(OBJDIR):
 	@$(MKDIR) $(OBJDIR)
@@ -32,6 +33,9 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 bin/cache_test: $(CACHE_TEST_OBJ)
+	$(LINKER) $@ $^ $(CFLAGS) $(LFLAGS)
+
+bin/ddr_test: $(DDR_TEST_OBJ)
 	$(LINKER) $@ $^ $(CFLAGS) $(LFLAGS)
 
 .PHONEY: clean
