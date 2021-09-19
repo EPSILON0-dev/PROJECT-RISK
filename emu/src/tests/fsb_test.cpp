@@ -4,11 +4,11 @@
  */
 
 #include <iostream>
-#include "icache.h"
-#include "dcache.h"
-#include "ddr.h"
-#include "fsb.h"
-#include "log.h"
+#include "../common/log.h"
+#include "../memory/icache.h"
+#include "../memory/dcache.h"
+#include "../memory/ddr.h"
+#include "../memory/fsb.h"
 
 MainRam ddr;
 InstructionCache iCache;

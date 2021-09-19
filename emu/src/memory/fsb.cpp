@@ -14,12 +14,12 @@
  */
 
 #include <random>
-#include "ddr.h"
-#include "log.h"
+#include "../common/config.h"
+#include "../common/log.h"
 #include "icache.h"
 #include "dcache.h"
+#include "ddr.h"
 #include "fsb.h"
-#include "config.h"
 
 static InstructionCache* iCache;
 static DataCache* dCache;

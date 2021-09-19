@@ -1,13 +1,13 @@
 /**
- * This is a test for basic cache functionality
+ * This is a test for basic instruction cache functionality
  *
  */
 
 #include <iostream>
-#include "icache.h"
-#include "ddr.h"
-#include "fsb.h"
-#include "log.h"
+#include "../common/log.h"
+#include "../memory/icache.h"
+#include "../memory/ddr.h"
+#include "../memory/fsb.h"
 
 MainRam ddr;
 InstructionCache iCache;

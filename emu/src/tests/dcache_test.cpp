@@ -4,10 +4,10 @@
  */
 
 #include <iostream>
-#include "dcache.h"
-#include "ddr.h"
-#include "fsb.h"
-#include "log.h"
+#include "../common/log.h"
+#include "../memory/dcache.h"
+#include "../memory/ddr.h"
+#include "../memory/fsb.h"
 
 MainRam ddr;
 DataCache dCache;

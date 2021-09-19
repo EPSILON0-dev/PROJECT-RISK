@@ -3,9 +3,9 @@
  * 
  */
 
-#include "log.h"
+#include "../common/config.h"
+#include "../common/log.h"
 #include "ddr.h"
-#include "config.h"
 
 
 

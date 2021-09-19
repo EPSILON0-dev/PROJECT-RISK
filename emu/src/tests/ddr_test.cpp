@@ -3,9 +3,9 @@
  *
  */
 
-#include "ddr.h"
-#include "log.h"
-#include "config.h"
+#include "../common/config.h"
+#include "../common/log.h"
+#include "../memory/ddr.h"
 
 MainRam ddr;
 

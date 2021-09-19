@@ -2,63 +2,63 @@ CC         = g++
 LINKER     = g++ -o
 RM         = rm -f
 MKDIR      = mkdir -p
-RMDIR      = rmdir
+RMDIR      = rm -rf
 
 SRCDIR    = src
-OBJDIR    = obj
 BINDIR    = bin
-DIRS      := $(OBJDIR) $(BINDIR)
+OBJDIR    = obj
+OBJSUBDIR = obj/common obj/memory obj/tests
 
 CFLAGS    		:=-g -O0 -Wall -Wextra
 LFLAGS    		:=
 
+ALL_OBJ			:= $(OBJDIR)/common/log.o $(OBJDIR)/memory/dcache.o $(OBJDIR)/memory/ddr.o
+ALL_OBJ		 	+= $(OBJDIR)/memory/fsb.o $(OBJDIR)/memory/icache.o
 
-DDR_TEST_OBJ 	:= $(OBJDIR)/ddr.o $(OBJDIR)/log.o $(OBJDIR)/ddr_test.o 
+DDR_TEST_OBJ 	:= $(OBJDIR)/common/log.o $(OBJDIR)/memory/ddr.o $(OBJDIR)/tests/ddr_test.o 
 
-ICACHE_TEST_OBJ	:= $(OBJDIR)/icache.o $(OBJDIR)/fsb.o $(OBJDIR)/log.o 
-ICACHE_TEST_OBJ += $(OBJDIR)/ddr.o $(OBJDIR)/icache_test.o
+ICACHE_TEST_OBJ	:= $(OBJDIR)/common/log.o $(OBJDIR)/memory/ddr.o $(OBJDIR)/memory/fsb.o 
+ICACHE_TEST_OBJ += $(OBJDIR)/memory/icache.o $(OBJDIR)/tests/icache_test.o
 
-DCACHE_TEST_OBJ	:= $(OBJDIR)/dcache.o $(OBJDIR)/fsb.o $(OBJDIR)/log.o 
-DCACHE_TEST_OBJ += $(OBJDIR)/ddr.o $(OBJDIR)/dcache_test.o
+DCACHE_TEST_OBJ	:= $(OBJDIR)/common/log.o $(OBJDIR)/memory/dcache.o $(OBJDIR)/memory/ddr.o 
+DCACHE_TEST_OBJ += $(OBJDIR)/memory/fsb.o $(OBJDIR)/tests/dcache_test.o
 
-FSB_TEST_OBJ 	:= $(OBJDIR)/dcache.o $(OBJDIR)/fsb.o $(OBJDIR)/log.o 
-FSB_TEST_OBJ 	+= $(OBJDIR)/icache.o $(OBJDIR)/ddr.o $(OBJDIR)/fsb_test.o
+FSB_TEST_OBJ 	:= $(OBJDIR)/common/log.o $(OBJDIR)/memory/dcache.o $(OBJDIR)/memory/ddr.o
+FSB_TEST_OBJ 	+= $(OBJDIR)/memory/fsb.o $(OBJDIR)/memory/icache.o  $(OBJDIR)/tests/fsb_test.o
 
 
 .PHONEY: all
-all: directories tests
+all: directories obj tests
 
 .PHONEY: directories
-directories: $(DIRS)
-
-tests: directories bin/icache_test bin/dcache_test bin/ddr_test bin/fsb_test
-
-
-$(OBJDIR):
+directories:
 	@$(MKDIR) $(OBJDIR)
-
-$(BINDIR):
+	@$(MKDIR) $(OBJSUBDIR)
 	@$(MKDIR) $(BINDIR)
+
+obj: $(ALL_OBJ)
+
+tests: directories bin/test-ddr bin/test-icache bin/test-dcache bin/test-fsb
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-bin/ddr_test: $(DDR_TEST_OBJ)
+bin/test-ddr: $(DDR_TEST_OBJ)
 	$(LINKER) $@ $^ $(CFLAGS) $(LFLAGS)
 
-bin/icache_test: $(ICACHE_TEST_OBJ)
+bin/test-icache: $(ICACHE_TEST_OBJ)
 	$(LINKER) $@ $^ $(CFLAGS) $(LFLAGS)
 
-bin/dcache_test: $(DCACHE_TEST_OBJ)
+bin/test-dcache: $(DCACHE_TEST_OBJ)
 	$(LINKER) $@ $^ $(CFLAGS) $(LFLAGS)
 
-bin/fsb_test: $(FSB_TEST_OBJ)
+bin/test-fsb: $(FSB_TEST_OBJ)
 	$(LINKER) $@ $^ $(CFLAGS) $(LFLAGS)
 
 
 .PHONEY: clean
 clean:
-	@$(RM) $(OBJDIR)/*.o
+	@$(RM) $(OBJDIR)/*/*.o
 
 .PHONEY: realclean
 realclean: clean
