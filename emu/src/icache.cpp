@@ -28,20 +28,20 @@
  */
 InstructionCache::InstructionCache(void)
 {
-    caches1 = new unsigned[16384 / sizeof(unsigned) / 2];
-    for (unsigned i = 0; i < sizeof(caches1); i++) caches1[i] = 0;
-    tags1 = new unsigned short[16384 / 32 / 2];
-    for (unsigned i = 0; i < sizeof(tags1); i++) tags1[i] = 0;
-    valid1 = new unsigned char[16384 / 32 / 2];
-    for (unsigned i = 0; i < sizeof(valid1); i++) valid1[i] = 0;
-    caches2 = new unsigned[16384 / sizeof(unsigned) / 2];
-    for (unsigned i = 0; i < sizeof(caches2); i++) caches2[i] = 0;
-    tags2 = new unsigned short[16384 / 32 / 2];
-    for (unsigned i = 0; i < sizeof(tags2); i++) tags2[i] = 0;
-    valid2 = new unsigned char[16384 / 32 / 2];
-    for (unsigned i = 0; i < sizeof(valid2); i++) valid2[i] = 0;
-    lastSet = new unsigned char[16384 / 32 / 2];
-    for (unsigned i = 0; i < sizeof(lastSet); i++) lastSet[i] = 0;
+    caches1 = new unsigned[2048];
+    for (unsigned i = 0; i < 2048; i++) caches1[i] = 0;
+    tags1 = new unsigned short[256];
+    for (unsigned i = 0; i < 256; i++) tags1[i] = 0;
+    valid1 = new unsigned char[256];
+    for (unsigned i = 0; i < 256; i++) valid1[i] = 0;
+    caches2 = new unsigned[2048];
+    for (unsigned i = 0; i < 2048; i++) caches2[i] = 0;
+    tags2 = new unsigned short[256];
+    for (unsigned i = 0; i < 256; i++) tags2[i] = 0;
+    valid2 = new unsigned char[256];
+    for (unsigned i = 0; i < 256; i++) valid2[i] = 0;
+    lastSet = new unsigned char[256];
+    for (unsigned i = 0; i < 256; i++) lastSet[i] = 0;
     fetchSet = 0;
 
     i_CacheAddress = 0;
@@ -49,7 +49,7 @@ InstructionCache::InstructionCache(void)
     i_FsbAddress = 0;
     i_FsbWriteData = 0;
     i_FsbWriteEnable = 0;
-    i_FsbFetchFinished = 0;
+    i_FsbLastAccess = 0;
 
     n_CacheReadData = 0;
     n_CacheValidData = 0;
@@ -134,7 +134,7 @@ void InstructionCache::Update(void)
             lastSet[getIndex(i_FsbAddress)] = 0;
         }
     
-        if (i_FsbFetchFinished) {
+        if (i_FsbLastAccess) {
             n_CacheFetching = 0;
         }
 

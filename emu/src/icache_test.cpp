@@ -1,5 +1,5 @@
 /**
- * This is a test for basic cache functionality
+ * This is a test for basic instruction cache functionality
  *
  */
 

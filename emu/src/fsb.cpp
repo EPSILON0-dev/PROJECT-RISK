@@ -71,54 +71,89 @@ void FrontSideBus::Update(void)
         
         serviceRequest:
 
-        if (request == cDCache) {
-            dCache->i_FsbAddress = ddr->o_CacheWriteAddress;
-            dCache->i_FsbWriteData = ddr->o_CacheWriteData;
-            dCache->i_FsbWriteEnable = ddr->o_CacheWriteEnable;
-            dCache->i_FsbFetchFinished = ddr->o_CacheLastWrite;
-            dCache->i_FsbReadAck = ddr->o_ReadAck;
-            ddr->i_ReadRequest = dCache->o_FsbReadRequest;
-        } else {
-            dCache->i_FsbAddress = 0;
-            dCache->i_FsbWriteData = 0;
-            dCache->i_FsbWriteEnable = 0;
-            dCache->i_FsbFetchFinished = 0;
-            dCache->i_FsbReadAck = 0;
+        if (dCache) {
+            if (request == cDCache) {
+                dCache->i_FsbAddress = ddr->o_CacheAddress;
+                dCache->i_FsbWriteData = ddr->o_CacheWriteData;
+                dCache->i_FsbWriteEnable = ddr->o_CacheWriteEnable;
+                dCache->i_FsbReadEnable = 0;
+                dCache->i_FsbLastAccess = ddr->o_CacheLastAccess;
+                dCache->i_FsbReadAck = ddr->o_ReadAck;
+                dCache->i_FsbWriteAck = 0;
+                ddr->i_ReadRequest = dCache->o_FsbReadRequest;
+            } else if (request == cDWrite) {
+                dCache->i_FsbAddress = ddr->o_CacheAddress;
+                dCache->i_FsbWriteData = 0;
+                dCache->i_FsbWriteEnable = 0;
+                dCache->i_FsbReadEnable = ddr->o_CacheReadEnable;
+                dCache->i_FsbLastAccess = ddr->o_CacheLastAccess;
+                dCache->i_FsbReadAck = 0;
+                dCache->i_FsbWriteAck = ddr->o_WriteAck;
+                ddr->i_WriteRequest = dCache->o_FsbWriteRequest;
+                ddr->i_CacheReadData = dCache->o_FsbWriteData;
+            } else {
+                dCache->i_FsbAddress = 0;
+                dCache->i_FsbWriteData = 0;
+                dCache->i_FsbWriteEnable = 0;
+                dCache->i_FsbReadEnable = 0;
+                dCache->i_FsbLastAccess = 0;
+                dCache->i_FsbReadAck = 0;
+                dCache->i_FsbWriteAck = 0;
+            }
+
+            
         }
 
-        if (request == cICache) {
-            iCache->i_FsbAddress = ddr->o_CacheWriteAddress;
-            iCache->i_FsbWriteData = ddr->o_CacheWriteData;
-            iCache->i_FsbWriteEnable = ddr->o_CacheWriteEnable;
-            iCache->i_FsbFetchFinished = ddr->o_CacheLastWrite;
-            iCache->i_FsbReadAck = ddr->o_ReadAck;
-            ddr->i_ReadRequest = iCache->o_FsbReadRequest;
-        } else {
-            iCache->i_FsbAddress = 0;
-            iCache->i_FsbWriteData = 0;
-            iCache->i_FsbWriteEnable = 0;
-            iCache->i_FsbFetchFinished = 0;
-            iCache->i_FsbReadAck = 0;
+        if (iCache) {
+            if (request == cICache) {
+                iCache->i_FsbAddress = ddr->o_CacheAddress;
+                iCache->i_FsbWriteData = ddr->o_CacheWriteData;
+                iCache->i_FsbWriteEnable = ddr->o_CacheWriteEnable;
+                iCache->i_FsbLastAccess = ddr->o_CacheLastAccess;
+                iCache->i_FsbReadAck = ddr->o_ReadAck;
+                ddr->i_ReadRequest = iCache->o_FsbReadRequest;
+            } else {
+                iCache->i_FsbAddress = 0;
+                iCache->i_FsbWriteData = 0;
+                iCache->i_FsbWriteEnable = 0;
+                iCache->i_FsbLastAccess = 0;
+                iCache->i_FsbReadAck = 0;
+            }
         }
 
-        if (ddr->o_CacheLastWrite) {
+        if (ddr->o_CacheLastAccess) {
             request = cNone;
         }
 
         return;
     }
 
-    if (dCache->o_FsbReadRequest) {  // Handle new D cache request
+    // Handle new D cache write request (on full queue)
+    if (dCache && dCache->o_FsbWriteRequest && dCache->o_FsbQueueFull) {  
+        requestAddress = dCache->o_FsbWriteAddress;
+        ddr->i_Address = requestAddress;
+        request = cDWrite;
+        goto serviceRequest;
+    }
+
+    if (dCache && dCache->o_FsbReadRequest) {  // Handle new D cache request
         requestAddress = dCache->o_FsbReadAddress;
-        ddr->i_ReadAddress = requestAddress;
+        ddr->i_Address = requestAddress;
         request = cDCache;
         goto serviceRequest;
     }
 
-    if (iCache->o_FsbReadRequest) {  // Handle new I cache request
+    if (iCache && iCache->o_FsbReadRequest) {  // Handle new I cache request
         requestAddress = iCache->o_FsbReadAddress;
-        ddr->i_ReadAddress = requestAddress;
+        ddr->i_Address = requestAddress;
         request = cICache;
+        goto serviceRequest;
+    }
+
+    if (dCache && dCache->o_FsbWriteRequest) {  // Handle new D cache write request
+        requestAddress = dCache->o_FsbWriteAddress;
+        ddr->i_Address = requestAddress;
+        request = cDWrite;
         goto serviceRequest;
     }
 
@@ -145,6 +180,12 @@ void FrontSideBus::log(void)
 
         case cICache:
         Log::log("I cache read ");
+        Log::logHex(requestAddress, COLOR_MAGENTA, 8);
+        Log::log("\n");
+        break;
+
+        case cDWrite:
+        Log::log("D cache write ");
         Log::logHex(requestAddress, COLOR_MAGENTA, 8);
         Log::log("\n");
         break;

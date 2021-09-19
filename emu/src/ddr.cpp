@@ -29,12 +29,21 @@ MainRam::MainRam(void)
 
     state = cIdle;
     wordIndex = 0;
+    currentOperation = read;
 
-    i_ReadAddress = 0;
+    i_Address = 0;
     i_ReadRequest = 0;
-    o_CacheWriteAddress = 0;
+    i_WriteRequest = 0;
+    i_CacheReadData = 0;
+
+    o_CacheAddress = 0;
     o_CacheWriteData = 0;
     o_CacheWriteEnable = 0;
+    o_CacheReadEnable = 0;
+    o_CacheLastAccess = 0;
+
+    o_ReadAck = 0;
+    o_WriteAck = 0;
 }
 
 
@@ -76,22 +85,33 @@ void MainRam::Update(void)
     
     if (state == cIdle) {
         n_CacheWriteEnable = 0;
-        n_CacheLastWrite = 0;
-        readAddress = i_ReadAddress;
-        if (i_ReadRequest) {
-            state = (activeRow == getRow(readAddress)) ? cRead : cRow;
+        n_CacheReadEnable = 0;
+        n_CacheLastAccess = 0;
+        address = i_Address;
+        if (i_ReadRequest || i_WriteRequest) {
+            if (i_ReadRequest) {
+                currentOperation = read;
+                state = (activeRow == getRow(address)) ? cRead : cRow;
+            } else {
+                currentOperation = write;
+                state = (activeRow == getRow(address)) ? cWrite : cRow;
+            }
             goto endUpdate;
         }
     }
 
     if (state == cRow) {
-        activeRow = getRow(readAddress);
+        activeRow = getRow(address);
         state = cRowDelay;
         goto endUpdate;
     }
 
     if (state == cRowDelay) {
-        state = cRead;
+        if (currentOperation == read) {
+            state = cRead;
+        } else {
+            state = cWrite;
+        }
         goto endUpdate;
     }
 
@@ -99,6 +119,15 @@ void MainRam::Update(void)
         wordIndex = 0;
         n_ReadAck = 1;
         state = cCL1;
+        goto endUpdate;
+    }
+
+    if (state == cWrite) {
+        wordIndex = 0;
+        n_WriteAck = 1;
+        n_CacheReadEnable = 1;
+        n_CacheAddress = address;
+        state = cWriting;
         goto endUpdate;
     }
 
@@ -115,12 +144,27 @@ void MainRam::Update(void)
     if (state == cReading) {
         n_ReadAck = 0;
         n_CacheWriteEnable = 1;
-        n_CacheWriteAddress = readAddress + (wordIndex << 2);
-        n_CacheWriteData = ram[(n_CacheWriteAddress >> 2)];
+        n_CacheAddress = address + (wordIndex << 2);
+        n_CacheWriteData = ram[(n_CacheAddress >> 2)];
         wordIndex++;
         if (wordIndex == 8) {
             state = cIdle;
-            n_CacheLastWrite = 1;
+            n_CacheLastAccess = 1;
+        }
+        goto endUpdate;
+    }
+
+    if (state == cWriting) {
+        n_WriteAck = 0;
+        n_CacheAddress = address + (wordIndex << 2);
+        ram[(n_CacheAddress >> 2)] = i_CacheReadData;
+        wordIndex++;
+        if (wordIndex == 7) {
+            n_CacheLastAccess = 1;
+        }
+        if (wordIndex == 8) {
+            state = cIdle;
+            n_CacheLastAccess = 0;
         }
         goto endUpdate;
     }
@@ -138,11 +182,13 @@ void MainRam::Update(void)
  */
 void MainRam::UpdatePorts(void) 
 {
-    o_CacheWriteAddress = n_CacheWriteAddress;
+    o_CacheAddress = n_CacheAddress;
     o_CacheWriteData = n_CacheWriteData;
-    o_CacheLastWrite = n_CacheLastWrite;
+    o_CacheLastAccess = n_CacheLastAccess;
     o_CacheWriteEnable = n_CacheWriteEnable;
+    o_CacheReadEnable = n_CacheReadEnable;
     o_ReadAck = n_ReadAck;
+    o_WriteAck = n_WriteAck;
 }
 
 
@@ -159,7 +205,7 @@ void MainRam::log(void)
 
         case cRow:
         Log::log("Activate row ");
-        Log::logHex(getRow(readAddress), COLOR_MAGENTA, 4);
+        Log::logHex(getRow(address), COLOR_MAGENTA, 4);
         Log::log("\n");
         break;
 
@@ -169,7 +215,13 @@ void MainRam::log(void)
 
         case cRead:
         Log::log("Reading column ");
-        Log::logHex(getColumn(readAddress), COLOR_MAGENTA, 3);
+        Log::logHex(getColumn(address), COLOR_MAGENTA, 3);
+        Log::log("\n");
+        break;
+
+        case cWrite:
+        Log::log("Writing column ");
+        Log::logHex(getColumn(address), COLOR_MAGENTA, 3);
         Log::log("\n");
         break;
 
@@ -187,6 +239,12 @@ void MainRam::log(void)
         Log::log("\n");
         break;
 
+        case cWriting:
+        Log::log("Writing word ");
+        Log::logDec(wordIndex);
+        Log::log("\n");
+        break;
+
         default:
         Log::log("Idle cycle\n");
         break;
@@ -194,101 +252,3 @@ void MainRam::log(void)
     }
 
 }
-
-
-
-/**
- * @brief internal function for read FSM
- * 
- */
-/*void DDR::updateRead(void)
-{
-    switch (fsm) {
-        default:
-            if (activeRow == readRow) {
-                #ifdef DDR_FSM_DEBUG 
-                    Log::logSrc("   DDR   ", COLOR_BLUE);
-                    Log::log("Entering read FSM, active row match\n");
-                #endif
-                fsm = crRequest;
-            } else {
-                #ifdef DDR_FSM_DEBUG 
-                    Log::logSrc("   DDR   ", COLOR_BLUE);
-                    Log::log("Entering read FSM, active row doesn't match\n");
-                #endif
-                fsm = crRowActivate;
-            }
-            break;
-
-        case crRowActivate:
-            #ifdef DDR_FSM_DEBUG 
-                Log::logSrc("   DDR   ", COLOR_BLUE);
-                Log::log("Activating ");
-                Log::logHex(readRow, COLOR_MAGENTA, 4);
-                Log::log(" row\n");
-            #endif
-            activeRow = readRow;
-            fsm = crActivateDelay;
-            break;
-
-        case crActivateDelay:
-            #ifdef DDR_FSM_DEBUG 
-                Log::logSrc("   DDR   ", COLOR_BLUE);
-                Log::log("Row activated\n");
-            #endif
-            fsm = crRequest;
-            break;
-
-        case crRequest:
-            burstByte = 0;
-            #ifdef DDR_FSM_DEBUG 
-                Log::logSrc("   DDR   ", COLOR_BLUE);
-                Log::log("Requesting read from bank ");
-                Log::logDec(readBank);
-                Log::log(" column ");
-                Log::logHex(readColumn, COLOR_MAGENTA, 3);
-                Log::log("\n");
-            #endif
-            fsm = crCL1;
-            break;
-
-        case crCL1:
-            #ifdef DDR_FSM_DEBUG 
-                Log::logSrc("   DDR   ", COLOR_BLUE);
-                Log::log("Waiting for data...\n");
-            #endif
-            fsm = crCL2;
-            break;
-
-        case crCL2:
-            #ifdef DDR_FSM_DEBUG 
-                Log::logSrc("   DDR   ", COLOR_BLUE);
-                Log::log("Waiting for data...\n");
-            #endif
-            fsm = crReading;
-            break;
-
-        case crReading:
-            #ifdef DDR_FSM_DEBUG 
-                Log::logSrc("   DDR   ", COLOR_BLUE);
-                Log::log("Reading word ");
-                Log::logDec(burstByte);
-                Log::log(": ");
-                Log::logHex(memoryArray[readAddress + (burstByte << 2)], COLOR_MAGENTA, 8);
-                Log::log("\n");
-            #endif
-            readData = memoryArray[(readAddress >> 2) + burstByte];
-            if (burstByte == 7) {
-                #ifdef DDR_DEBUG
-                    Log::logSrc("   DDR   ", COLOR_BLUE);
-                    Log::log("completed request address for block ");
-                    Log::logHex(readAddress, COLOR_MAGENTA, 8);
-                    Log::log("\n");
-                #endif
-                fsm = crFsmIdle;
-                status = cIdle;
-            }
-            burstByte++;
-            break;
-    }
-}*/

@@ -28,26 +28,26 @@
  */
 DataCache::DataCache(void)
 {
-    caches1 = new unsigned[16384 / sizeof(unsigned) / 2];
-    for (unsigned i = 0; i < sizeof(caches1); i++) caches1[i] = 0;
-    tags1 = new unsigned short[16384 / 32 / 2];
-    for (unsigned i = 0; i < sizeof(tags1); i++) tags1[i] = 0;
-    valid1 = new unsigned char[16384 / 32 / 2];
-    for (unsigned i = 0; i < sizeof(valid1); i++) valid1[i] = 0;
-    queued1 = new unsigned char[16384 / 32 / 2];
-    for (unsigned i = 0; i < sizeof(valid1); i++) queued1[i] = 0;
-    caches2 = new unsigned[16384 / sizeof(unsigned) / 2];
-    for (unsigned i = 0; i < sizeof(caches2); i++) caches2[i] = 0;
-    tags2 = new unsigned short[16384 / 32 / 2];
-    for (unsigned i = 0; i < sizeof(tags2); i++) tags2[i] = 0;
-    valid2 = new unsigned char[16384 / 32 / 2];
-    for (unsigned i = 0; i < sizeof(valid2); i++) valid2[i] = 0;
-    queued2 = new unsigned char[16384 / 32 / 2];
-    for (unsigned i = 0; i < sizeof(valid1); i++) queued1[i] = 0;
-    lastSet = new unsigned char[16384 / 32 / 2];
-    for (unsigned i = 0; i < sizeof(lastSet); i++) lastSet[i] = 0;
+    caches1 = new unsigned[2048];
+    for (unsigned i = 0; i < 2048; i++) caches1[i] = 0;
+    tags1 = new unsigned short[256];
+    for (unsigned i = 0; i < 256; i++) tags1[i] = 0;
+    valid1 = new unsigned char[256];
+    for (unsigned i = 0; i < 256; i++) valid1[i] = 0;
+    queued1 = new unsigned char[256];
+    for (unsigned i = 0; i < 256; i++) queued1[i] = 0;
+    caches2 = new unsigned[2048];
+    for (unsigned i = 0; i < 2048; i++) caches2[i] = 0;
+    tags2 = new unsigned short[256];
+    for (unsigned i = 0; i < 256; i++) tags2[i] = 0;
+    valid2 = new unsigned char[256];
+    for (unsigned i = 0; i < 256; i++) valid2[i] = 0;
+    queued2 = new unsigned char[256];
+    for (unsigned i = 0; i < 256; i++) queued1[i] = 0;
+    lastSet = new unsigned char[256];
+    for (unsigned i = 0; i < 256; i++) lastSet[i] = 0;
     writeAddressQueue = new unsigned[32];
-    for (unsigned i = 0; i < sizeof(writeAddressQueue); i++) writeAddressQueue[i] = 0;
+    for (unsigned i = 0; i < 32; i++) writeAddressQueue[i] = 0;
     queuePointer = 0;
     fetchSet = 0;
 
@@ -58,15 +58,26 @@ DataCache::DataCache(void)
     i_FsbAddress = 0;
     i_FsbWriteData = 0;
     i_FsbWriteEnable = 0;
-    i_FsbFetchFinished = 0;
+    i_FsbReadEnable = 0;
+    i_FsbLastAccess = 0;
+    i_FsbReadAck = 0;
+    i_FsbWriteAck = 0;
 
     n_CacheReadData = 0;
     n_CacheValidData = 0;
     n_CacheFetching = 0;
+    n_FsbReadAddress = 0;
+    n_FsbReadRequest = 0;
+    n_FsbWriteRequest = 0;
+    n_FsbQueueFull = 0;
 
     o_CacheReadData = 0;
     o_CacheValidData = 0;
     o_CacheFetching = 0;
+    o_FsbReadAddress = 0;
+    o_FsbReadRequest = 0;
+    o_FsbWriteRequest = 0;
+    o_FsbQueueFull = 0;
 }
 
 
@@ -84,6 +95,7 @@ DataCache::~DataCache(void)
     delete[] valid1;
     delete[] valid2;
     delete[] lastSet;
+    delete[] writeAddressQueue;
 }
 
 
@@ -113,6 +125,22 @@ bool DataCache::checkCache2(unsigned a)
     return (tags2[getIndex(a)] == getTag(a) && valid2[getIndex(a)]);
 }
 
+void DataCache::pushWrite(unsigned a)
+{
+    writeAddressQueue[queuePointer++] = a & 0xFFFFFE0;
+}
+
+unsigned DataCache::pullWrite(void)
+{
+    unsigned a = writeAddressQueue[0];
+    for (unsigned i = 0; i < 31; i++)
+        writeAddressQueue[i] = writeAddressQueue[i+1];
+    writeAddressQueue[31] = 0;
+    if (queuePointer > 0)
+        queuePointer--;
+    return a;
+}
+
 
 
 /**
@@ -125,8 +153,33 @@ void DataCache::Update(void)
     unsigned block = getBlock(i_CacheAddress);
     unsigned index = getIndex(i_CacheAddress);
 
-    if (i_FsbReadAck) {
+    if (i_FsbReadAck) {  // Turn off read request on ACK
         n_FsbReadRequest = 0;
+    }
+
+    if (i_FsbWriteAck) {  // Turn off write request on 
+        n_FsbWriteRequest = 0;
+    }
+
+    if (queuePointer) {  // Turn on or off write request based on queue state
+        n_FsbWriteAddress = writeAddressQueue[0];
+        n_FsbQueueFull = (queuePointer == 32);
+        if (queuePointer > 1)
+            n_FsbWriteRequest = 1;
+    }
+
+    if (i_FsbReadEnable) {  // Handle writing to RAM
+
+        if (checkCache1(i_FsbAddress)) {
+            n_FsbWriteData = caches1[getBlock(i_FsbAddress)];
+        } else {
+            n_FsbWriteData = caches2[getBlock(i_FsbAddress)];
+        }
+
+        if (i_FsbLastAccess) {
+            pullWrite();
+        }
+
     }
 
     if (n_CacheFetching && i_FsbWriteEnable) {  // Handle fetching from RAM
@@ -137,7 +190,7 @@ void DataCache::Update(void)
             caches1[getBlock(i_FsbAddress)] = i_FsbWriteData;
         }
     
-        if (i_FsbFetchFinished) {
+        if (i_FsbLastAccess) {
             n_CacheFetching = 0;
             if (fetchSet) {
                 tags2[getIndex(i_FsbAddress)] = getTag(i_FsbAddress);
@@ -196,8 +249,14 @@ void DataCache::Update(void)
             lastSet[index] = 0;
             caches1[block] = i_CacheWriteData;
             if (!queued1[index]) {
-                queued1[index] = 1;
-                writeAddressQueue[queuePointer++] = i_CacheAddress;
+                n_FsbWriteRequest = 1;
+                if (!n_FsbQueueFull) {
+                    pushWrite(i_CacheAddress);
+                    queued1[index] = 1;
+                    n_CacheWriteDone = 1;
+                } else {
+                    n_CacheWriteDone = 0;
+                }
             }
             goto endUpdate;
         }
@@ -206,8 +265,14 @@ void DataCache::Update(void)
             lastSet[index] = 1;
             caches2[block] = i_CacheWriteData;
             if (!queued2[index]) {
-                queued2[index] = 1;
-                writeAddressQueue[queuePointer++] = i_CacheAddress;
+                n_FsbWriteRequest = 1;
+                if (!n_FsbQueueFull) {
+                    pushWrite(i_CacheAddress);
+                    queued2[index] = 1;
+                    n_CacheWriteDone = 1;
+                } else {
+                    n_CacheWriteDone = 0;
+                }
             }
             goto endUpdate;
         }
@@ -227,11 +292,16 @@ void DataCache::Update(void)
  */
 void DataCache::UpdatePorts(void)
 {
-    o_CacheReadData  = n_CacheReadData;
-    o_CacheValidData = n_CacheValidData;
-    o_CacheFetching  = n_CacheFetching;
-    o_FsbReadAddress = n_FsbReadAddress;
-    o_FsbReadRequest = n_FsbReadRequest;
+    o_CacheReadData   = n_CacheReadData;
+    o_CacheValidData  = n_CacheValidData;
+    o_CacheFetching   = n_CacheFetching;
+    o_CacheWriteDone  = n_CacheWriteDone;
+    o_FsbReadAddress  = n_FsbReadAddress;
+    o_FsbWriteAddress = n_FsbWriteAddress;
+    o_FsbWriteData    = n_FsbWriteData;
+    o_FsbReadRequest  = n_FsbReadRequest;
+    o_FsbWriteRequest = n_FsbWriteRequest;
+    o_FsbQueueFull    = n_FsbQueueFull;
 }
 
 

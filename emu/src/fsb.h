@@ -9,7 +9,7 @@ class FrontSideBus
 private:  // Internal memories and registers
     unsigned requestAddress;
     char request;
-    enum eRequest { cNone, cDCache, cICache };
+    enum eRequest { cNone, cDCache, cICache, cDWrite };
 
 
 public:  // Constructor and destructor 

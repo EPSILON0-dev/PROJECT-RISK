@@ -27,7 +27,7 @@ public:  // Input ports
     unsigned i_FsbWriteData;
     bool i_FsbReadAck;
     bool i_FsbWriteEnable;
-    bool i_FsbFetchFinished;
+    bool i_FsbLastAccess;
 
 
 private:  // Internal versions of output ports
