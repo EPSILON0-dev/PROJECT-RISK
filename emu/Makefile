@@ -7,13 +7,13 @@ RMDIR      = rm -rf
 SRCDIR    = src
 BINDIR    = bin
 OBJDIR    = obj
-OBJSUBDIR = obj/common obj/memory obj/tests
+OBJSUBDIR = obj/common obj/cpu obj/memory obj/tests
 
 CFLAGS    		:=-g -O0 -Wall -Wextra
 LFLAGS    		:=
 
 ALL_OBJ			:= $(OBJDIR)/common/log.o $(OBJDIR)/memory/dcache.o $(OBJDIR)/memory/ddr.o
-ALL_OBJ		 	+= $(OBJDIR)/memory/fsb.o $(OBJDIR)/memory/icache.o
+ALL_OBJ		 	+= $(OBJDIR)/memory/fsb.o $(OBJDIR)/memory/icache.o $(OBJDIR)/cpu/alu.o
 
 DDR_TEST_OBJ 	:= $(OBJDIR)/common/log.o $(OBJDIR)/memory/ddr.o $(OBJDIR)/tests/ddr_test.o 
 
@@ -26,6 +26,7 @@ DCACHE_TEST_OBJ += $(OBJDIR)/memory/fsb.o $(OBJDIR)/tests/dcache_test.o
 FSB_TEST_OBJ 	:= $(OBJDIR)/common/log.o $(OBJDIR)/memory/dcache.o $(OBJDIR)/memory/ddr.o
 FSB_TEST_OBJ 	+= $(OBJDIR)/memory/fsb.o $(OBJDIR)/memory/icache.o  $(OBJDIR)/tests/fsb_test.o
 
+ALU_TEST_OBJ	:= $(OBJDIR)/common/log.o $(OBJDIR)/cpu/alu.o $(OBJDIR)/tests/alu_test.o
 
 .PHONEY: all
 all: directories obj tests
@@ -38,7 +39,9 @@ directories:
 
 obj: $(ALL_OBJ)
 
-tests: directories bin/test-ddr bin/test-icache bin/test-dcache bin/test-fsb
+tests: directories memory_tests cpu_tests
+memory_tests: bin/test-ddr bin/test-icache bin/test-dcache bin/test-fsb
+cpu_tests: bin/test-alu
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 	$(CC) -c -o $@ $< $(CFLAGS)
@@ -53,6 +56,9 @@ bin/test-dcache: $(DCACHE_TEST_OBJ)
 	$(LINKER) $@ $^ $(CFLAGS) $(LFLAGS)
 
 bin/test-fsb: $(FSB_TEST_OBJ)
+	$(LINKER) $@ $^ $(CFLAGS) $(LFLAGS)
+
+bin/test-alu: $(ALU_TEST_OBJ)
 	$(LINKER) $@ $^ $(CFLAGS) $(LFLAGS)
 
 

@@ -3,7 +3,6 @@
  *
  */
 
-#include <iostream>
 #include "../common/log.h"
 #include "../memory/dcache.h"
 #include "../memory/ddr.h"
