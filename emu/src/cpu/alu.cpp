@@ -13,55 +13,56 @@
 
 
 /**
+ * @brief This function performs an ALU operation
+ * 
+ */
+unsigned ArythmeticLogicUnit::execute(void)
+{
+    switch (i_OpCode3) 
+    {
+        default:  // Add
+        if (!i_Immediate && i_OpCode7 == 0x20) {
+            return i_InputA - i_InputB;
+        } else {
+            return i_InputA + i_InputB;
+        }
+
+        case cSLL:  // Shift Left Logical
+        return i_InputA << i_InputB;
+
+        case cSLT:  // Set Lower Than
+        return ((int)i_InputA < (int)i_InputB) ? 1 : 0;
+
+        case cSLTU:  // Set Lower Than (Unsigned)
+        return ((unsigned)i_InputA < (unsigned)i_InputB) ? 1 : 0;
+
+        case cXOR:  // Logical Exclusiwe Or
+        return i_InputA ^ i_InputB;
+
+        case cSRL:  // Shift Right Logical
+        if (i_OpCode7 == 0x20) {
+            return (unsigned)((int)i_InputA >> i_InputB);
+        } else {
+            return (unsigned)i_InputA >> i_InputB;
+        }
+
+        case cOR:  // Logical Or
+        return i_InputA | i_InputB;
+
+        case cAND:  // Logical And
+        return i_InputA & i_InputB;
+    }
+}
+
+
+
+/**
  * @brief Update function for ALU
  * 
  */
 void ArythmeticLogicUnit::Update(void)
 {
-
-    switch (i_OpCode3) 
-    {
-        default:  // Add
-        if (!i_Immediate && i_OpCode7 == 0x20) {
-            n_Output = i_InputA - i_InputB;
-        } else {
-            n_Output = i_InputA + i_InputB;
-        }
-        break;
-
-        case cSLL:  // Shift Left Logical
-        n_Output = i_InputA << i_InputB;
-        break;
-
-        case cSLT:  // Set Lower Than
-        n_Output = ((int)i_InputA < (int)i_InputB) ? 1 : 0;
-        break;
-
-        case cSLTU:  // Set Lower Than (Unsigned)
-        n_Output = ((unsigned)i_InputA < (unsigned)i_InputB) ? 1 : 0;
-        break;
-
-        case cXOR:  // Logical Exclusiwe Or
-        n_Output = i_InputA ^ i_InputB;
-        break;
-
-        case cSRL:  // Shift Right Logical
-        if (i_OpCode7 == 0x20) {
-            n_Output = (unsigned)((int)i_InputA >> i_InputB);
-        } else {
-            n_Output = (unsigned)i_InputA >> i_InputB;
-        }
-        break;
-
-        case cOR:  // Logical Or
-        n_Output = i_InputA | i_InputB;
-        break;
-
-        case cAND:  // Logical And
-        n_Output = i_InputA & i_InputB;
-        break;
-    }
-
+    n_Output = execute();
 }
 
 
@@ -119,8 +120,8 @@ void ArythmeticLogicUnit::log(void)
     }
     
     Log::logHex(i_InputB, COLOR_MAGENTA, 8);
-    Log::log(" = ");
-    Log::logHex(n_Output, COLOR_MAGENTA, 8);
+    Log::log(" --> ");
+    Log::logHex(execute(), COLOR_MAGENTA, 8);
     Log::log("\n");
 
 }

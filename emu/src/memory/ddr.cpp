@@ -25,7 +25,7 @@ MainRam::MainRam(void)
     Log::log(", all control lines low\n");
     
     ram = new unsigned[16 * 1024 * 1024];
-    for (unsigned i = 0; i < 16 * 1024 * 1024; i++) ram[i] = (i << 2) | 0x5A000000;
+    for (unsigned i = 0; i < 16 * 1024 * 1024; i++) ram[i] = (i << 2);
 
     state = cIdle;
     wordIndex = 0;
@@ -123,7 +123,7 @@ void MainRam::Update(void)
     }
 
     if (state == cWrite) {
-        wordIndex = 0;
+        wordIndex = 1;
         n_WriteAck = 1;
         n_CacheReadEnable = 1;
         n_CacheAddress = address;
@@ -157,14 +157,16 @@ void MainRam::Update(void)
     if (state == cWriting) {
         n_WriteAck = 0;
         n_CacheAddress = address + (wordIndex << 2);
-        ram[(n_CacheAddress >> 2)] = i_CacheReadData;
+        if (wordIndex >= 2) {
+            ram[(n_CacheAddress >> 2) - 2] = i_CacheReadData;
+        }
         wordIndex++;
-        if (wordIndex == 7) {
+        if (wordIndex == 8) {
             n_CacheLastAccess = 1;
         }
-        if (wordIndex == 8) {
-            state = cIdle;
+        if (wordIndex == 9) {
             n_CacheLastAccess = 0;
+            state = cIdle;
         }
         goto endUpdate;
     }
@@ -241,7 +243,7 @@ void MainRam::log(void)
 
         case cWriting:
         Log::log("Writing word ");
-        Log::logDec(wordIndex);
+        Log::logDec(wordIndex - 1);
         Log::log("\n");
         break;
 

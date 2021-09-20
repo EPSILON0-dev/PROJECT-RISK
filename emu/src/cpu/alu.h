@@ -15,6 +15,10 @@ public:  // Constructor and Destructor
     ~ArythmeticLogicUnit(void) {}
 
 
+private:  // Internal functions
+    unsigned execute(void);
+
+
 public:  // Input ports
     unsigned i_InputA;
     unsigned i_InputB;

@@ -161,23 +161,23 @@ void DataCache::Update(void)
         n_FsbWriteRequest = 0;
     }
 
-    if (queuePointer) {  // Turn on or off write request based on queue state
-        n_FsbWriteAddress = writeAddressQueue[0];
-        n_FsbQueueFull = (queuePointer == 32);
-        if (queuePointer > 1)
-            n_FsbWriteRequest = 1;
-    }
-
     if (i_FsbReadEnable) {  // Handle writing to RAM
 
         if (checkCache1(i_FsbAddress)) {
             n_FsbWriteData = caches1[getBlock(i_FsbAddress)];
-        } else {
+        } else if (checkCache2(i_FsbAddress)) {
             n_FsbWriteData = caches2[getBlock(i_FsbAddress)];
+        } else {
+            n_FsbWriteData = 0x55AA55AA;
         }
 
         if (i_FsbLastAccess) {
             pullWrite();
+            if (checkCache1(i_FsbAddress)) {
+                queued1[getIndex(i_FsbAddress)] = 0;
+            } else {
+                queued2[getIndex(i_FsbAddress)] = 0;
+            }
         }
 
     }
@@ -240,7 +240,6 @@ void DataCache::Update(void)
 
     if (i_CacheWriteEnable && !n_CacheFetching) {  // Handle writes
 
-
         if (!(checkCache1(i_CacheAddress) || checkCache2(i_CacheAddress))) {
             goto fetchFromRam;
         }
@@ -280,6 +279,12 @@ void DataCache::Update(void)
     }
 
     endUpdate:
+    if (queuePointer) {  // Turn on or off write request based on queue state
+        n_FsbWriteAddress = writeAddressQueue[0];
+        n_FsbQueueFull = (queuePointer == 32);
+        if (queuePointer > 1)
+            n_FsbWriteRequest = 1;
+    }
     return;
 
 }

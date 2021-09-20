@@ -12,63 +12,63 @@ MainRam ddr;
 DataCache dCache;
 FrontSideBus fsb;
 
-void Update()
+void Update(unsigned n = 1)
 {
-    dCache.Update();
-    ddr.Update();
+    for (unsigned i = 0; i < n; i++) {
+        dCache.log();
+        ddr.log();
+        fsb.log();
+        
+        dCache.Update();
+        ddr.Update();
 
-    dCache.UpdatePorts();
-    ddr.UpdatePorts();
+        dCache.UpdatePorts();
+        ddr.UpdatePorts();
 
-    fsb.Update();
-}
-
-void UpdateLog()
-{
-    dCache.log();
-    ddr.log();
-    fsb.log();
-
-    Update();
-    
-    Log::log("\n");
+        fsb.Update();
+    }
 }
 
 int main()
 {
     fsb.loadPointers((void*)0, &dCache, &ddr);
-    Log::log("\n");
 
-    dCache.i_CacheReadEnable = 1;
+    Log::log("\n[>>>>>>>>>] Write cache 0x20\n\n");
     dCache.i_CacheAddress = 0x20;
-    for (unsigned i = 0; i < 20; i++)
-        Update();
-
     dCache.i_CacheReadEnable = 1;
-    dCache.i_CacheAddress = 0x40;
-    for (unsigned i = 0; i < 20; i++)
-        Update();
-
-    dCache.i_CacheReadEnable = 1;
-    dCache.i_CacheAddress = 0x60;
-    for (unsigned i = 0; i < 20; i++)
-        Update();
-
-    dCache.i_CacheAddress = 0x20;
+    Update(16);
     dCache.i_CacheReadEnable = 0;
+    dCache.i_CacheWriteData = 0x2020;
     dCache.i_CacheWriteEnable = 1;
-    UpdateLog();
-    dCache.i_CacheAddress = 0x40;
-    UpdateLog();
-    dCache.i_CacheAddress = 0x44;
-    UpdateLog();
-    dCache.i_CacheAddress = 0x48;
-    UpdateLog();
-    dCache.i_CacheAddress = 0x60;
-    UpdateLog();
+    Update();
     dCache.i_CacheWriteEnable = 0;
-    for (unsigned i = 0; i < 32; i++)
-        UpdateLog();
+    Update(11);
+
+    Log::log("\n[>>>>>>>>>] Read modified cache 0x20\n\n");
+    dCache.i_CacheReadEnable = 1;
+    for (unsigned i = 0 ; i < 8; i++) {
+        dCache.i_CacheAddress = 0x20 + i * 4;
+        Update();
+    }
+
+    Log::log("\n[>>>>>>>>>] Changing cached blocks (0x4020 and 0x8020)\n\n");
+    dCache.i_CacheAddress = 0x4020;
+    dCache.i_CacheReadEnable = 1;
+    Update(16);
+    dCache.i_CacheAddress = 0x8020;
+    dCache.i_CacheReadEnable = 1;
+    Update(16);
+    dCache.i_CacheAddress = 0x20;
+    dCache.i_CacheReadEnable = 1;
+    Update(16);
+
+    Log::log("\n[>>>>>>>>>] Read modified cache 0x20\n\n");
+    dCache.i_CacheReadEnable = 1;
+    for (unsigned i = 0 ; i < 8; i++) {
+        dCache.i_CacheAddress = 0x20 + i * 4;
+        Update();
+    }
+    
 
     return 0;
 }

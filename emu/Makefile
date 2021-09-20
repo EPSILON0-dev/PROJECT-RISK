@@ -9,11 +9,12 @@ BINDIR    = bin
 OBJDIR    = obj
 OBJSUBDIR = obj/common obj/cpu obj/memory obj/tests
 
-CFLAGS    		:=-g -O0 -Wall -Wextra
+CFLAGS    		:=-g -O2 -Wall -Wextra
 LFLAGS    		:=
 
 ALL_OBJ			:= $(OBJDIR)/common/log.o $(OBJDIR)/memory/dcache.o $(OBJDIR)/memory/ddr.o
 ALL_OBJ		 	+= $(OBJDIR)/memory/fsb.o $(OBJDIR)/memory/icache.o $(OBJDIR)/cpu/alu.o
+ALL_OBJ			+= $(OBJDIR)/cpu/pc.o
 
 DDR_TEST_OBJ 	:= $(OBJDIR)/common/log.o $(OBJDIR)/memory/ddr.o $(OBJDIR)/tests/ddr_test.o 
 
@@ -28,6 +29,8 @@ FSB_TEST_OBJ 	+= $(OBJDIR)/memory/fsb.o $(OBJDIR)/memory/icache.o  $(OBJDIR)/tes
 
 ALU_TEST_OBJ	:= $(OBJDIR)/common/log.o $(OBJDIR)/cpu/alu.o $(OBJDIR)/tests/alu_test.o
 
+PC_TEST_OBJ		:= $(OBJDIR)/common/log.o $(OBJDIR)/cpu/pc.o $(OBJDIR)/tests/pc_test.o
+
 .PHONEY: all
 all: directories obj tests
 
@@ -41,7 +44,7 @@ obj: $(ALL_OBJ)
 
 tests: directories memory_tests cpu_tests
 memory_tests: bin/test-ddr bin/test-icache bin/test-dcache bin/test-fsb
-cpu_tests: bin/test-alu
+cpu_tests: bin/test-alu bin/test-pc
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 	$(CC) -c -o $@ $< $(CFLAGS)
@@ -59,6 +62,9 @@ bin/test-fsb: $(FSB_TEST_OBJ)
 	$(LINKER) $@ $^ $(CFLAGS) $(LFLAGS)
 
 bin/test-alu: $(ALU_TEST_OBJ)
+	$(LINKER) $@ $^ $(CFLAGS) $(LFLAGS)
+
+bin/test-pc: $(PC_TEST_OBJ)
 	$(LINKER) $@ $^ $(CFLAGS) $(LFLAGS)
 
 

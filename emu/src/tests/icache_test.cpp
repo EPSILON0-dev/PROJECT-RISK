@@ -12,42 +12,41 @@ MainRam ddr;
 InstructionCache iCache;
 FrontSideBus fsb;
 
-void Update()
+void Update(unsigned n = 1)
 {
-    iCache.log();
-    ddr.log();
-    fsb.log();
+    for (unsigned i = 0; i < n; i++) {
+        iCache.log();
+        ddr.log();
+        fsb.log();
 
-    iCache.Update();
-    ddr.Update();
+        iCache.Update();
+        ddr.Update();
 
-    iCache.UpdatePorts();
-    ddr.UpdatePorts();
+        iCache.UpdatePorts();
+        ddr.UpdatePorts();
 
-    fsb.Update();
-
-    Log::log("\n");
+        fsb.Update();
+    }
 }
 
 int main()
 {
     fsb.loadPointers(&iCache, (void*)0, &ddr);
-    Log::log("\n");
 
+    Log::log("\n[>>>>>>>>>] Read cache set 2\n\n");
     iCache.i_CacheReadEnable = 1;
     iCache.i_CacheAddress = 0x20;
-    for (unsigned i = 0; i < 20; i++)
-        Update();
+    Update(20);
 
+    Log::log("\n[>>>>>>>>>] Read cache set 1\n\n");
     iCache.i_CacheReadEnable = 1;
     iCache.i_CacheAddress = 0x4020;
-    for (unsigned i = 0; i < 20; i++)
-        Update();
+    Update(20);
 
+    Log::log("\n[>>>>>>>>>] Read cache set 2\n\n");
     iCache.i_CacheReadEnable = 1;
     iCache.i_CacheAddress = 0x8020;
-    for (unsigned i = 0; i < 20; i++)
-        Update();
+    Update(20);
 
     return 0;
 }

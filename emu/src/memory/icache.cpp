@@ -17,7 +17,6 @@
 
 #include "../common/config.h"
 #include "../common/log.h"
-#include "fsb.h"
 #include "icache.h"
 
 

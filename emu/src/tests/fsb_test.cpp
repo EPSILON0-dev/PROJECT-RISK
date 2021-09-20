@@ -15,29 +15,33 @@ InstructionCache iCache;
 DataCache dCache;
 FrontSideBus fsb;
 
-void Update()
+void Update(unsigned n = 1)
 {
-    iCache.Update();
-    dCache.Update();
-    ddr.Update();
+    for (unsigned i = 0; i < n; i++) {
+        iCache.Update();
+        dCache.Update();
+        ddr.Update();
 
-    iCache.UpdatePorts();
-    dCache.UpdatePorts();
-    ddr.UpdatePorts();
+        iCache.UpdatePorts();
+        dCache.UpdatePorts();
+        ddr.UpdatePorts();
 
-    fsb.Update();
+        fsb.Update();
+    }
 }
 
-void UpdateLog()
+void UpdateLog(unsigned n = 1)
 {
-    iCache.log();
-    dCache.log();
-    ddr.log();
-    fsb.log();
+    for (unsigned i = 0; i < n; i++) {
+        iCache.log();
+        dCache.log();
+        ddr.log();
+        fsb.log();
 
-    Update();
-    
-    Log::log("\n");
+        Update();
+
+        Log::log("\n");
+    }
 }
 
 int main()
@@ -48,8 +52,7 @@ int main()
     dCache.i_CacheReadEnable = 1;
     for (unsigned i = 0; i < 64; i++) {
         dCache.i_CacheAddress = i * 0x20;
-        for (unsigned j = 0; j < 20; j++)
-            Update();
+        Update(20);
     }
 
     dCache.i_CacheAddress = 0x20;
@@ -66,8 +69,7 @@ int main()
     iCache.i_CacheReadEnable = 1;
     UpdateLog();
     dCache.i_CacheWriteEnable = 0;
-    for (unsigned i = 0; i < 320; i++)
-        UpdateLog();
+    UpdateLog(320);
 
     return 0;
 }

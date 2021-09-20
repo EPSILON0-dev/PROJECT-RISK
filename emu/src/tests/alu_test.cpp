@@ -10,14 +10,15 @@ ArythmeticLogicUnit alu;
 
 void Update()
 {
+    alu.log();
     alu.Update();
     alu.UpdatePorts();
-    alu.log();
 }
 
 int main()
 {
     // ADD operations
+    Log::log("\n[>>>>>>>>>] ADD operations\n\n");
     alu.i_Immediate = 0;
     alu.i_OpCode3 = 0x0;
     alu.i_OpCode7 = 0x00;
@@ -30,6 +31,7 @@ int main()
     Update();
     
     // SUB operations
+    Log::log("\n[>>>>>>>>>] SUB operations\n\n");
     alu.i_OpCode3 = 0x0;
     alu.i_OpCode7 = 0x20;
 
@@ -41,6 +43,7 @@ int main()
     Update();
 
     // SLL operations
+    Log::log("\n[>>>>>>>>>] SLL operations\n\n");
     alu.i_OpCode3 = 0x1;
     alu.i_OpCode7 = 0x00;
 
@@ -52,6 +55,7 @@ int main()
     Update();
 
     // SLT operations
+    Log::log("\n[>>>>>>>>>] SLT operations\n\n");
     alu.i_OpCode3 = 0x2;
     alu.i_OpCode7 = 0x00;
 
@@ -69,6 +73,7 @@ int main()
     Update();
 
     // SLTU operations
+    Log::log("\n[>>>>>>>>>] SLTU operations\n\n");
     alu.i_OpCode3 = 0x3;
     alu.i_OpCode7 = 0x00;
 
@@ -80,6 +85,7 @@ int main()
     Update();
 
     // XOR operations
+    Log::log("\n[>>>>>>>>>] XOR operations\n\n");
     alu.i_OpCode3 = 0x4;
     alu.i_OpCode7 = 0x00;
 
@@ -91,6 +97,7 @@ int main()
     Update();
 
     // SRL operations
+    Log::log("\n[>>>>>>>>>] SRL operations\n\n");
     alu.i_OpCode3 = 0x5;
     alu.i_OpCode7 = 0x00;
 
@@ -102,6 +109,7 @@ int main()
     Update();
 
     // SRA operations
+    Log::log("\n[>>>>>>>>>] SRA operations\n\n");
     alu.i_OpCode3 = 0x5;
     alu.i_OpCode7 = 0x20;
 
@@ -113,6 +121,7 @@ int main()
     Update();
 
     // OR operations
+    Log::log("\n[>>>>>>>>>] OR operations\n\n");
     alu.i_OpCode3 = 0x6;
     alu.i_OpCode7 = 0x00;
 
@@ -124,6 +133,7 @@ int main()
     Update();
 
     // AND operations
+    Log::log("\n[>>>>>>>>>] AND operations\n\n");
     alu.i_OpCode3 = 0x7;
     alu.i_OpCode7 = 0x00;
 
