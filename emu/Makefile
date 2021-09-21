@@ -1,8 +1,6 @@
 CC         = g++
-LINKER     = g++ -o
-RM         = rm -f
-MKDIR      = mkdir -p
-RMDIR      = rm -rf
+RM         = rm -rf
+MK	       = mkdir -p
 
 SRCDIR    = src
 BINDIR    = bin
@@ -10,11 +8,14 @@ OBJDIR    = obj
 OBJSUBDIR = obj/common obj/cpu obj/memory obj/tests
 
 CFLAGS    		:=-g -O2 -Wall -Wextra
-LFLAGS    		:=
 
 ALL_OBJ			:= $(OBJDIR)/common/log.o $(OBJDIR)/memory/dcache.o $(OBJDIR)/memory/ddr.o
 ALL_OBJ		 	+= $(OBJDIR)/memory/fsb.o $(OBJDIR)/memory/icache.o $(OBJDIR)/cpu/alu.o
-ALL_OBJ			+= $(OBJDIR)/cpu/pc.o
+ALL_OBJ			+= $(OBJDIR)/cpu/pc.o $(OBJDIR)/cpu/regs.o
+
+ALL_TEST_OBJ	:= $(OBJDIR)/tests/ddr_test.o $(OBJDIR)/tests/icache_test.o $(OBJDIR)/tests/dcache_test.o
+ALL_TEST_OBJ	+= $(OBJDIR)/tests/fsb_test.o $(OBJDIR)/tests/alu_test.o $(OBJDIR)/tests/pc_test.o
+ALL_TEST_OBJ	+= $(OBJDIR)/tests/regs_test.o
 
 DDR_TEST_OBJ 	:= $(OBJDIR)/common/log.o $(OBJDIR)/memory/ddr.o $(OBJDIR)/tests/ddr_test.o 
 
@@ -31,41 +32,47 @@ ALU_TEST_OBJ	:= $(OBJDIR)/common/log.o $(OBJDIR)/cpu/alu.o $(OBJDIR)/tests/alu_t
 
 PC_TEST_OBJ		:= $(OBJDIR)/common/log.o $(OBJDIR)/cpu/pc.o $(OBJDIR)/tests/pc_test.o
 
+REGS_TEST_OBJ		:= $(OBJDIR)/common/log.o $(OBJDIR)/cpu/regs.o $(OBJDIR)/tests/regs_test.o
+
 .PHONEY: all
-all: directories obj tests
+all: directories obj test_obj tests
 
 .PHONEY: directories
 directories:
-	@$(MKDIR) $(OBJDIR)
-	@$(MKDIR) $(OBJSUBDIR)
-	@$(MKDIR) $(BINDIR)
+	@$(MK) $(OBJDIR)
+	@$(MK) $(OBJSUBDIR)
+	@$(MK) $(BINDIR)
 
 obj: $(ALL_OBJ)
+test_obj: $(ALL_TEST_OBJ)
 
 tests: directories memory_tests cpu_tests
 memory_tests: bin/test-ddr bin/test-icache bin/test-dcache bin/test-fsb
-cpu_tests: bin/test-alu bin/test-pc
+cpu_tests: bin/test-alu bin/test-pc bin/test-regs
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
-	$(CC) -c -o $@ $< $(CFLAGS)
+	$(CC) -c $(CFLAGS) -o $@ $< 
 
 bin/test-ddr: $(DDR_TEST_OBJ)
-	$(LINKER) $@ $^ $(CFLAGS) $(LFLAGS)
+	$(CC) $(CFLAGS) -o $@ $^
 
 bin/test-icache: $(ICACHE_TEST_OBJ)
-	$(LINKER) $@ $^ $(CFLAGS) $(LFLAGS)
+	$(CC) $(CFLAGS) -o $@ $^
 
 bin/test-dcache: $(DCACHE_TEST_OBJ)
-	$(LINKER) $@ $^ $(CFLAGS) $(LFLAGS)
+	$(CC) $(CFLAGS) -o $@ $^
 
 bin/test-fsb: $(FSB_TEST_OBJ)
-	$(LINKER) $@ $^ $(CFLAGS) $(LFLAGS)
+	$(CC) $(CFLAGS) -o $@ $^
 
 bin/test-alu: $(ALU_TEST_OBJ)
-	$(LINKER) $@ $^ $(CFLAGS) $(LFLAGS)
+	$(CC) $(CFLAGS) -o $@ $^
 
 bin/test-pc: $(PC_TEST_OBJ)
-	$(LINKER) $@ $^ $(CFLAGS) $(LFLAGS)
+	$(CC) $(CFLAGS) -o $@ $^
+
+bin/test-regs: $(REGS_TEST_OBJ)
+	$(CC) $(CFLAGS) -o $@ $^
 
 
 .PHONEY: clean
@@ -75,5 +82,5 @@ clean:
 .PHONEY: realclean
 realclean: clean
 	@$(RM) $(BINDIR)/*
-	@$(RMDIR) $(OBJDIR)
-	@$(RMDIR) $(BINDIR)
+	@$(RM) $(OBJDIR)
+	@$(RM) $(BINDIR)
