@@ -5,6 +5,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <string>
 #include "log.h"
 
 /**
@@ -24,6 +25,27 @@ void Log::log(const char* str)
  * 
  */
 void Log::log(const char* str, const char* color)
+{
+    std::cout << color << str << "\x1b[0m";
+}
+
+/**
+ * @brief This function logs the given string to stdout (just a fancy std::cout)
+ * @param str string
+ * 
+ */
+void Log::log(std::string str)
+{
+    std::cout << str;
+}
+
+/**
+ * @brief This function logs the given string to stdout (just a fancy std::cout)
+ * @param str string
+ * @param color color escape sequence
+ * 
+ */
+void Log::log(std::string str, const char* color)
 {
     std::cout << color << str << "\x1b[0m";
 }
