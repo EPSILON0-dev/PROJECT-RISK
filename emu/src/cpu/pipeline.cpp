@@ -223,6 +223,8 @@ void InstructionPipeline::Update(void)
     }
 }
 
+
+
 /**
  * @brief Update ports function for pipeline
  * 
