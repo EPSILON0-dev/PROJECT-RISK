@@ -13,6 +13,23 @@
 
 
 /**
+ * @brief Constructor for ALU
+ * 
+ */
+ArythmeticLogicUnit::ArythmeticLogicUnit(void)
+{
+    i_InputA = 0;
+    i_InputB = 0;
+    i_OpCode3 = 0;
+    i_OpCode7 = 0;
+    i_Immediate = 0;
+    n_Output = 0;
+    o_Output = 0;
+}
+
+
+
+/**
  * @brief This function performs an ALU operation
  * 
  */

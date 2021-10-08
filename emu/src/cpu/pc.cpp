@@ -9,6 +9,23 @@
 
 
 /**
+ * @brief Constructor for program counter
+ * 
+ */
+ProgramCounter::ProgramCounter(void)
+{
+    programCounter = 0;
+    i_ClockEnable = 0;
+    i_Reset = 0;
+    i_BranchAddress = 0;
+    i_Branch = 0;
+    n_Address = 0;
+    o_Address = 0;
+}
+
+
+
+/**
  * @brief Update function for program counter
  * 
  */
@@ -48,15 +65,5 @@ void ProgramCounter::log(void)
 {
     Log::logSrc("   PC    ", COLOR_GREEN);
     Log::logHex(n_Address, COLOR_MAGENTA, 8);
-    Log::log(" --> ");
-    if (i_ClockEnable) {
-        if (i_Branch) {
-            Log::logHex(i_BranchAddress, COLOR_MAGENTA, 8);
-        } else {
-            Log::logHex(n_Address + 4, COLOR_MAGENTA, 8);
-        }
-    } else {
-        Log::logHex(n_Address, COLOR_MAGENTA, 8);
-    }
     Log::log("\n");
 }

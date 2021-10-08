@@ -6,9 +6,11 @@
 class MainRam 
 {
 
-private:  // Memories and registers
+public:  // Exposed ram array (for external code loading)
     unsigned* ram;
     
+
+private:  // Memories and registers
     unsigned activeRow;
     unsigned address;
     char currentOperation;

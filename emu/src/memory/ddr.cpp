@@ -25,7 +25,7 @@ MainRam::MainRam(void)
     Log::log(", all control lines low\n");
     
     ram = new unsigned[16 * 1024 * 1024];
-    for (unsigned i = 0; i < 16 * 1024 * 1024; i++) ram[i] = (i << 2);
+    for (unsigned i = 0; i < 16 * 1024 * 1024; i++) ram[i] = (i << 2) | 0x55000000;
 
     state = cIdle;
     wordIndex = 0;
@@ -145,7 +145,7 @@ void MainRam::Update(void)
         n_ReadAck = 0;
         n_CacheWriteEnable = 1;
         n_CacheAddress = address + (wordIndex << 2);
-        n_CacheWriteData = ram[(n_CacheAddress >> 2)];
+        n_CacheWriteData = ram[((n_CacheAddress & 0x3FFFFFF) >> 2)];
         wordIndex++;
         if (wordIndex == 8) {
             state = cIdle;
@@ -158,7 +158,7 @@ void MainRam::Update(void)
         n_WriteAck = 0;
         n_CacheAddress = address + (wordIndex << 2);
         if (wordIndex >= 2) {
-            ram[(n_CacheAddress >> 2) - 2] = i_CacheReadData;
+            ram[((n_CacheAddress & 0x3FFFFFF) >> 2) - 2] = i_CacheReadData;
         }
         wordIndex++;
         if (wordIndex == 8) {

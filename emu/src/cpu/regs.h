@@ -23,6 +23,7 @@ public:  // Input ports
     unsigned char i_AddressWrite;
     unsigned i_WriteData;
     bool i_WriteEnable;
+    bool i_ClockEnable;
 
 
 private:  // Internal versions of output ports
@@ -42,5 +43,6 @@ public:  // Update functions
 
 public:  // Log function
     void log(void);
+    void logContent(void);
 
 };

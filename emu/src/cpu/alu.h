@@ -11,7 +11,7 @@ private:  // Memories and registers
 
 
 public:  // Constructor and Destructor
-    ArythmeticLogicUnit(void) {}
+    ArythmeticLogicUnit(void);
     ~ArythmeticLogicUnit(void) {}
 
 

@@ -12,7 +12,7 @@ CFLAGS    		:=-g -O2 -Wall -Wextra
 ALL_OBJ			:= $(OBJDIR)/common/log.o $(OBJDIR)/memory/dcache.o $(OBJDIR)/memory/ddr.o
 ALL_OBJ		 	+= $(OBJDIR)/memory/fsb.o $(OBJDIR)/memory/icache.o $(OBJDIR)/cpu/alu.o
 ALL_OBJ			+= $(OBJDIR)/cpu/pc.o $(OBJDIR)/cpu/regs.o $(OBJDIR)/cpu/pipeline.o
-ALL_OBJ			+= $(OBJDIR)/cpu/branch.o
+ALL_OBJ			+= $(OBJDIR)/cpu/branch.o $(OBJDIR)/cpu/cpu.o $(OBJDIR)/top.o
 
 ALL_TEST_OBJ	:= $(OBJDIR)/tests/ddr_test.o $(OBJDIR)/tests/icache_test.o $(OBJDIR)/tests/dcache_test.o
 ALL_TEST_OBJ	+= $(OBJDIR)/tests/fsb_test.o $(OBJDIR)/tests/alu_test.o $(OBJDIR)/tests/pc_test.o
@@ -39,8 +39,13 @@ PIPE_TEST_OBJ	:= $(OBJDIR)/common/log.o $(OBJDIR)/cpu/pipeline.o $(OBJDIR)/tests
 
 BR_TEST_OBJ		:= $(OBJDIR)/common/log.o $(OBJDIR)/cpu/branch.o $(OBJDIR)/tests/branch_test.o
 
+TOP_OBJ			:= $(OBJDIR)/common/log.o $(OBJDIR)/memory/dcache.o $(OBJDIR)/memory/ddr.o
+TOP_OBJ		 	+= $(OBJDIR)/memory/fsb.o $(OBJDIR)/memory/icache.o $(OBJDIR)/cpu/alu.o
+TOP_OBJ			+= $(OBJDIR)/cpu/pc.o $(OBJDIR)/cpu/regs.o $(OBJDIR)/cpu/pipeline.o
+TOP_OBJ			+= $(OBJDIR)/cpu/branch.o $(OBJDIR)/cpu/cpu.o $(OBJDIR)/top.o
+
 .PHONEY: all
-all: directories obj test_obj tests
+all: directories obj test_obj tests top
 
 .PHONEY: directories
 directories:
@@ -54,6 +59,7 @@ test_obj: $(ALL_TEST_OBJ)
 tests: directories memory_tests cpu_tests
 memory_tests: bin/test-ddr bin/test-icache bin/test-dcache bin/test-fsb
 cpu_tests: bin/test-alu bin/test-pc bin/test-regs bin/test-pipeline bin/test-branch
+top: bin/top
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 	$(CC) -c $(CFLAGS) -o $@ $< 
@@ -83,6 +89,9 @@ bin/test-pipeline: $(PIPE_TEST_OBJ)
 	$(CC) $(CFLAGS) -o $@ $^
 
 bin/test-branch: $(BR_TEST_OBJ)
+	$(CC) $(CFLAGS) -o $@ $^
+
+bin/top: $(TOP_OBJ)
 	$(CC) $(CFLAGS) -o $@ $^
 
 .PHONEY: clean

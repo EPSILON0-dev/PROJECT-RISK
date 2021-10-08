@@ -13,7 +13,7 @@ private:  // Memories and registers
 
 
 public:  // Constructor and destructor
-    ProgramCounter(void) {}
+    ProgramCounter(void);
     ~ProgramCounter(void) {}
 
 

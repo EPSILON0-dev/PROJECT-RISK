@@ -27,6 +27,61 @@ std::string mnemonic[] = {
 
 
 /**
+ * @brief Constructor for instruction pipeline
+ * 
+ */
+InstructionPipeline::InstructionPipeline(void)
+{
+    i_ClockEnable = 0;
+    i_Reset = 0;
+    i_Branch = 0;
+    i_InstructionInput = 0;
+    i_InstructionAddress = 0;
+    n_DecodeOpcode = 0;
+    n_DecodeAddress = 0;
+    n_DecodeImmediate = 0;
+    n_DecodeFormat = 0;
+    n_DecodeValid = 0;
+    n_ExecuteOpcode = 0;
+    n_ExecuteAddress = 0;
+    n_ExecuteImmediate = 0;
+    n_ExecuteFormat = 0;
+    n_ExecuteValid = 0;
+    n_MemoryAccessOpcode = 0;
+    n_MemoryAccessAddress = 0;
+    n_MemoryAccessImmediate = 0;
+    n_MemoryAccessFormat = 0;
+    n_MemoryAccessValid = 0;
+    n_WriteBackOpcode = 0;
+    n_WriteBackAddress = 0;
+    n_WriteBackImmediate = 0;
+    n_WriteBackFormat = 0;
+    n_WriteBackValid = 0;
+    o_DecodeOpcode = 0;
+    o_DecodeAddress = 0;
+    o_DecodeImmediate = 0;
+    o_DecodeFormat = 0;
+    o_DecodeValid = 0;
+    o_ExecuteOpcode = 0;
+    o_ExecuteAddress = 0;
+    o_ExecuteImmediate = 0;
+    o_ExecuteFormat = 0;
+    o_ExecuteValid = 0;
+    o_MemoryAccessOpcode = 0;
+    o_MemoryAccessAddress = 0;
+    o_MemoryAccessImmediate = 0;
+    o_MemoryAccessFormat = 0;
+    o_MemoryAccessValid = 0;
+    o_WriteBackOpcode = 0;
+    o_WriteBackAddress = 0;
+    o_WriteBackImmediate = 0;
+    o_WriteBackFormat = 0;
+    o_WriteBackValid = 0;
+}
+
+
+
+/**
  * @brief Get format of a given opcode
  * 
  */
@@ -81,19 +136,19 @@ unsigned InstructionPipeline::getImmediate(unsigned op)
         return 0;
 
         case FormatI:
-        return op >> 20;
+        return ((op >> 31)? 0xFFFFF000 : 0) | op >> 20;
 
         case FormatS:
-        return ((op >> 20) & 0xFE0) | (op & 0x1E);
+        return ((op >> 31)? 0xFFFFF000 : 0) | ((op >> 20) & 0xFE0) | (op & 0x1E);
 
         case FormatB:
-        return ((op >> 19) & 0x1000) | ((op << 4) & 0x800) | ((op >> 20) & 0x7E0) | (op & 0x1F);
+        return (((op >> 31) ? 0xFFFFF000 : 0x0) | ((op << 4) & 0x800) | ((op >> 20) & 0x7E0) | ((op >> 7) & 0x1E));
 
         case FormatU: 
         return (op & 0xFFFFF000);
 
         case FormatJ:
-        return ((op >> 12) & 1) | ((op >> 20) & 0x7FE) | ((op >> 9) & 0xF00) | (op & 0xFF000); 
+        return ((op >> 31)? 0xFFF00000 : 0) | ((op >> 20) & 0x7FE) | ((op >> 9) & 0xF00) | (op & 0xFF000); 
 
     }
 }
@@ -179,6 +234,13 @@ void InstructionPipeline::Update(void)
         n_ExecuteValid = 0;
         n_DecodeValid = 0;
         n_FetchValid = 0;
+
+        // Clear opcode values
+        n_WriteBackOpcode = 0;
+        n_MemoryAccessOpcode = 0;
+        n_ExecuteOpcode = 0;
+        n_DecodeOpcode = 0;
+        n_FetchOpcode = 0;
        
        return;
     }
@@ -189,38 +251,48 @@ void InstructionPipeline::Update(void)
         n_WriteBackOpcode = n_MemoryAccessOpcode;
         n_MemoryAccessOpcode = n_ExecuteOpcode;
         n_ExecuteOpcode = n_DecodeOpcode;
-        n_DecodeOpcode = n_FetchOpcode;
-        n_FetchOpcode = i_InstructionInput;
+        n_DecodeOpcode = i_InstructionInput;
 
         // Advance addresses in pipeline
         n_WriteBackAddress = n_MemoryAccessAddress;
         n_MemoryAccessAddress = n_ExecuteAddress;
         n_ExecuteAddress = n_DecodeAddress;
-        n_DecodeAddress = n_FetchAddress;
-        n_FetchAddress = i_InstructionAddress;
+        n_DecodeAddress = i_InstructionAddress;
 
         // Advance validation signals
         n_WriteBackValid = n_MemoryAccessValid;
         n_MemoryAccessValid = n_ExecuteValid;
         n_ExecuteValid = n_DecodeValid;
-        n_DecodeValid = n_FetchValid;
-        n_FetchValid = 1;
+        n_DecodeValid = 1;
 
         // Update formats
         n_WriteBackFormat = getFormat(n_WriteBackOpcode);
         n_MemoryAccessFormat = getFormat(n_MemoryAccessOpcode);
         n_ExecuteFormat = getFormat(n_ExecuteOpcode);
         n_DecodeFormat = getFormat(n_DecodeOpcode);
-        n_FetchFormat = getFormat(n_FetchOpcode);
 
         // Update immediates
         n_WriteBackImmediate = getImmediate(n_WriteBackOpcode);
         n_MemoryAccessImmediate = getImmediate(n_MemoryAccessOpcode);
         n_ExecuteImmediate = getImmediate(n_ExecuteOpcode);
         n_DecodeImmediate = getImmediate(n_DecodeOpcode);
-        n_FetchImmediate = getImmediate(n_FetchOpcode);
+
+        if (i_Branch) {  // If branch occured
+
+            // Clear validation signals
+            n_ExecuteValid = 0;
+            n_DecodeValid = 0;
+            n_FetchValid = 0;
+
+            // Clear opcode values
+            n_ExecuteOpcode = 0;
+            n_DecodeOpcode = 0;
+            n_FetchOpcode = 0;
+
+        }
 
     }
+
 }
 
 
@@ -231,12 +303,6 @@ void InstructionPipeline::Update(void)
  */
 void InstructionPipeline::UpdatePorts(void)
 {
-    o_FetchOpcode           = n_FetchOpcode;
-    o_FetchAddress          = n_FetchAddress;
-    o_FetchImmediate        = n_FetchImmediate;
-    o_FetchFormat           = n_FetchFormat;
-    o_FetchValid            = n_FetchValid;
-
     o_DecodeOpcode          = n_DecodeOpcode;
     o_DecodeAddress         = n_DecodeAddress;
     o_DecodeImmediate       = n_DecodeImmediate;
@@ -272,17 +338,15 @@ void InstructionPipeline::log(void)
 {
 
     Log::logSrc("  PIPE   ", COLOR_GREEN);
-    Log::log("IF    ID    EX    MEM   WB  \n");
+    Log::log("ID    EX    MEM   WB\n");
     Log::logSrc("  PIPE   ", COLOR_GREEN);
-    Log::log(mnemonic[getMnemonic(n_FetchOpcode)], COLOR_YELLOW);
+    Log::log(mnemonic[getMnemonic(n_DecodeOpcode)], (n_DecodeValid)? COLOR_YELLOW : COLOR_NONE);
     Log::log(" ");
-    Log::log(mnemonic[getMnemonic(n_DecodeOpcode)], COLOR_YELLOW);
+    Log::log(mnemonic[getMnemonic(n_ExecuteOpcode)], (n_ExecuteValid)? COLOR_YELLOW : COLOR_NONE);
     Log::log(" ");
-    Log::log(mnemonic[getMnemonic(n_ExecuteOpcode)], COLOR_YELLOW);
+    Log::log(mnemonic[getMnemonic(n_MemoryAccessOpcode)], (n_MemoryAccessValid)? COLOR_YELLOW : COLOR_NONE);
     Log::log(" ");
-    Log::log(mnemonic[getMnemonic(n_MemoryAccessOpcode)], COLOR_YELLOW);
-    Log::log(" ");
-    Log::log(mnemonic[getMnemonic(n_WriteBackOpcode)], COLOR_YELLOW);
+    Log::log(mnemonic[getMnemonic(n_WriteBackOpcode)], (n_WriteBackValid)? COLOR_YELLOW : COLOR_NONE);
     Log::log("\n");
 
 }

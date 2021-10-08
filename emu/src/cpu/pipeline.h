@@ -12,7 +12,7 @@ private:  // Memories and registers
 
 
 public:  // Constructor and destructor
-    InstructionPipeline(void) {}
+    InstructionPipeline(void);
     ~InstructionPipeline(void) {}
 
 
@@ -23,6 +23,7 @@ public:  // Public enums
 public:  // Input ports
     bool i_ClockEnable;
     bool i_Reset;
+    bool i_Branch;
 
     unsigned i_InstructionInput;
     unsigned i_InstructionAddress;

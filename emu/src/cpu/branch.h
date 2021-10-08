@@ -9,18 +9,14 @@ class BranchConditioner
 {
 
 public:  // Constructor and destructor
-    BranchConditioner(void) {}
+    BranchConditioner(void);
     ~BranchConditioner(void) {}
 
 
 public:  // Input ports
     unsigned i_OpCode;
-    unsigned i_RegData1;
-    unsigned i_RegData2;
-
-
-public:  // Internal versions of output ports
-    bool n_BranchEnable;
+    unsigned i_RegDataA;
+    unsigned i_RegDataB;
 
 
 public:  // Output ports
@@ -29,7 +25,6 @@ public:  // Output ports
 
 public:  // Update functions
     void Update(void);
-    void UpdatePorts(void);
     
 
 public:  // Log functions
