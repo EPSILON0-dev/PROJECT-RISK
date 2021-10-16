@@ -23,11 +23,13 @@ private:  // Internal memories and registers
     unsigned char* lastSet;  // 1 - second set, 0 - first set
     bool fetchSet;           // 1 - second set, 0 - first set
 
+    unsigned readAddress;
+
 
 public:  // Input ports
     unsigned i_CacheAddress;
     unsigned i_CacheWriteData;
-    bool i_CacheWriteEnable;
+    unsigned i_CacheWriteEnable;
     bool i_CacheReadEnable;
 
     unsigned i_FsbAddress;

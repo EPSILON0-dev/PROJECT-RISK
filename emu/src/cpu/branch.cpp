@@ -2,101 +2,44 @@
  * BRANCH CONDITIONER
  * 
  */
-#include "../common/config.h"
-#include "../common/log.h"
+
 #include "branch.h"
 
+bool branchCalculate(unsigned a, unsigned b, unsigned o) {
 
-
-/**
- * @brief Constructor for branch conditioner
- * 
- */
-BranchConditioner::BranchConditioner(void)
-{
-    i_OpCode = 0;
-    i_RegDataA = 0;
-    i_RegDataB = 0;
-    o_BranchEnable = 0;
-}
-
-
-
-/**
- * @brief Update function for branch conditioner
- * 
- */
-void BranchConditioner::Update(void)
-{
-
-    o_BranchEnable = 0;
-    
-    if ((i_OpCode & 0x77) == 0x67) {  // JAL and JALR
-        o_BranchEnable = 1;
-        return;
+    if ((o & 0x1d) == 0x19) {  // JAL and JALR
+        return 1;
     }
 
-    if ((i_OpCode & 0x7F) == 0x63) {  // Branches
+    if ((o & 0x1F) == 0x18) {  // Branches
 
-        switch ((i_OpCode >> 12) & 0x7) {
+        switch ((o >> 5) & 0x7) {
             
             case 0b000:
-            if (i_RegDataA == i_RegDataB)
-            o_BranchEnable = 1;
-            return;
+            if (a == b) return 1; else return 0;
 
             case 0b001:
-            if (i_RegDataA != i_RegDataB)
-            o_BranchEnable = 1;
-            return;
+            if (a != b) return 1; else return 0;
 
             case 0b100:
-            if (((int)i_RegDataA) < ((int)i_RegDataB))
-            o_BranchEnable = 1;
-            return;
+            if ((int)a < (int)b) return 1; else return 0;
 
             case 0b101:
-            if (((int)i_RegDataA) >= ((int)i_RegDataB))
-            o_BranchEnable = 1;
-            return;
+            if ((int)a >= (int)b) return 1; else return 0;
 
             case 0b110:
-            if (i_RegDataA < i_RegDataB)
-            o_BranchEnable = 1;
-            return;
+            if (a < b) return 1; else return 0;
 
             case 0b111:
-            if (i_RegDataA >= i_RegDataB)
-            o_BranchEnable = 1;
-            return;
+            if (a >= b) return 1; else return 0;
 
             default:
-            o_BranchEnable = 0;
-            return;
+            return 0;
 
         }
 
     }
 
-}
-
-
-
-/**
- * @brief Logging function for branch conditioner
- * 
- */
-void BranchConditioner::log(void)
-{
-    
-    Log::logSrc(" BRANCH  ", COLOR_GREEN);
-    if ((i_OpCode & 0x77) == 0x67) {
-        Log::log("Unconditional branch\n");
-    } else if ((i_OpCode & 0x7F) == 0x63) {
-        Log::log("Conditional branch: ");
-        Log::log((o_BranchEnable) ? "Taken\n" : "Skipped\n");
-    } else {
-        Log::log("Irrelevant\n");
-    }
+    return 0;
 
 }

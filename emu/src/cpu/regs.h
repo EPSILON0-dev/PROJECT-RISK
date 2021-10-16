@@ -3,46 +3,37 @@
  * 
  */
 
-
-
 class RegisterSet
 {
 
-private:  // Memories and registers
+private:
     unsigned* registerArray;
 
-
-public:  // Constructor and destructor
+public:
     RegisterSet(void);
     ~RegisterSet(void);
+    
+    /**
+     * @brief Read from register set
+     * 
+     * @param a Read address
+     * 
+     * @return Data from register set
+     */
+    unsigned regRead(unsigned a);
 
+    /**
+     * @brief Write to register set
+     * 
+     * @param a Write address
+     * @param d Write data
+     */
+    void regWrite(unsigned a, unsigned d);
 
-public:  // Input ports
-    unsigned char i_AddressReadA;
-    unsigned char i_AddressReadB;
-    unsigned char i_AddressWrite;
-    unsigned i_WriteData;
-    bool i_WriteEnable;
-    bool i_ClockEnable;
-
-
-private:  // Internal versions of output ports
-    unsigned n_ReadDataA;
-    unsigned n_ReadDataB;
-
-
-public:  // Output ports
-    unsigned o_ReadDataA;
-    unsigned o_ReadDataB;
-
-
-public:  // Update functions
-    void Update(void);
-    void UpdatePorts(void);
-
-
-public:  // Log function
+    /**
+     * @brief Print out the contents of the registers 
+     * 
+     */
     void log(void);
-    void logContent(void);
 
 };

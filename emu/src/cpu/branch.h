@@ -3,31 +3,13 @@
  * 
  */
 
-
-
-class BranchConditioner 
-{
-
-public:  // Constructor and destructor
-    BranchConditioner(void);
-    ~BranchConditioner(void) {}
-
-
-public:  // Input ports
-    unsigned i_OpCode;
-    unsigned i_RegDataA;
-    unsigned i_RegDataB;
-
-
-public:  // Output ports
-    bool o_BranchEnable;
-
-
-public:  // Update functions
-    void Update(void);
-    
-
-public:  // Log functions
-    void log(void);
-    
-};
+/**
+ * @brief Calculate if branch should be taken
+ * 
+ * @param a Compare register A
+ * @param b Compare register B
+ * @param o Opcode [7:5]: funct3 [4:0]: opcode[6:2]
+ * 
+ * @return Branch enable
+ */
+bool branchCalculate(unsigned a, unsigned b, unsigned o);

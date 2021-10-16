@@ -1,5 +1,22 @@
 # Timings for each instruction group
 
+### Decode Signals
+
+```
+wb_enable
+wb_src_alu
+wb_src_dcache
+wb_src_imm
+wb_src_ret
+
+mem_load_en
+mem_store_en
+
+ex_alu_a_pc
+ex_alu_b_reg
+ex_br
+```
+
 ### 00-000: LOAD
 
 ```
@@ -89,5 +106,3 @@ EX: Calculate the result
 MEM: Do nothing
 WB: Store the value to RS
 ```
-
-### 

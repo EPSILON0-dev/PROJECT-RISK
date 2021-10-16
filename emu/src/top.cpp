@@ -38,10 +38,12 @@ int main(int argc, char** argv)
     ramImage.close();
 
     for (unsigned i = 0; i < 1024; i++) {
-        cpu.Update();
+        Log::log("[  CYCLE  ]: ");
+        Log::logDec(i + 1);
+        Log::log("\n\n");
 
-        Log::log("\n");
-        
+        cpu.UpdateCombinational();
+
         iCache.log();
         dCache.log();
         ddr.log();
@@ -56,7 +58,10 @@ int main(int argc, char** argv)
         ddr.UpdatePorts();
 
         fsb.Update();
-        
+
+        cpu.UpdateSequential(); 
+        Log::log("\n");
+        cpu.log();       
         Log::log("\n");
     }
 

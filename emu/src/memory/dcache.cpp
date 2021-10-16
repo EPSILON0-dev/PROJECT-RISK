@@ -64,7 +64,7 @@ DataCache::DataCache(void)
     i_FsbWriteAck = 0;
 
     n_CacheReadData = 0;
-    n_CacheValidData = 0;
+    n_CacheValidData = 1;
     n_CacheFetching = 0;
     n_FsbReadAddress = 0;
     n_FsbReadRequest = 0;
@@ -72,12 +72,14 @@ DataCache::DataCache(void)
     n_FsbQueueFull = 0;
 
     o_CacheReadData = 0;
-    o_CacheValidData = 0;
+    o_CacheValidData = 1;
     o_CacheFetching = 0;
     o_FsbReadAddress = 0;
     o_FsbReadRequest = 0;
     o_FsbWriteRequest = 0;
     o_FsbQueueFull = 0;
+
+    readAddress = 0;
 }
 
 
@@ -208,29 +210,33 @@ void DataCache::Update(void)
 
     }
 
-    if (i_CacheReadEnable && !n_CacheFetching) {  // Handle reads
+    if (i_CacheReadEnable) {
+        readAddress = i_CacheAddress;
+    }
 
-        if (!(checkCache1(i_CacheAddress) || checkCache2(i_CacheAddress))) {
+    if (!n_CacheFetching) {  // Handle reads
+
+        if (!(checkCache1(readAddress) || checkCache2(readAddress))) {
             goto fetchFromRam;
         }
 
-        if (checkCache1(i_CacheAddress)) {
-            n_CacheReadData = caches1[block];
+        if (checkCache1(readAddress)) {
+            n_CacheReadData = caches1[getBlock(readAddress)];
             n_CacheValidData = 1;
             lastSet[index] = 0;
             goto endUpdate;
         }
 
-        if (checkCache2(i_CacheAddress)) {
-            n_CacheReadData = caches2[block];
+        if (checkCache2(readAddress)) {
+            n_CacheReadData = caches2[getBlock(readAddress)];
             n_CacheValidData = 1;
             lastSet[index] = 1;
             goto endUpdate;
         }
 
         fetchFromRam:
-        fetchSet = !lastSet[index];
-        n_FsbReadAddress = i_CacheAddress & 0xFFFFFE0;
+        fetchSet = !lastSet[getIndex(readAddress)];
+        n_FsbReadAddress = readAddress & 0xFFFFFE0;
         n_FsbReadRequest = 1;
         n_CacheValidData = 0;
         n_CacheFetching = 1;
@@ -247,6 +253,7 @@ void DataCache::Update(void)
         if (checkCache1(i_CacheAddress)) {
             lastSet[index] = 0;
             caches1[block] = i_CacheWriteData;
+            
             if (!queued1[index]) {
                 n_FsbWriteRequest = 1;
                 if (!n_FsbQueueFull) {

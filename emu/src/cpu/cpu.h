@@ -8,24 +8,13 @@
 class CentralProcessingUnit
 {
 
-public:  // Constructor and destructor
+public:
     CentralProcessingUnit(void);
     ~CentralProcessingUnit(void) {}
-
-
-public:  // Load pointers function
-    void loadPointers(void* icache, void* dcache);
-
-
-public:  // Input signals
     bool i_Reset;
-
-
-public:  // Update function
-    void Update(void);
-
-
-public:  // Log functions
+    void loadPointers(void* icache, void* dcache);
+    void UpdateCombinational(void);
+    void UpdateSequential(void);
     void log(void);
 
 };

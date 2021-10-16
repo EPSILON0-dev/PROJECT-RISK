@@ -3,44 +3,15 @@
  * 
  */
 
-class ArythmeticLogicUnit
-{
-
-private:  // Memories and registers
-    enum eOpCode3 { cADD, cSLL, cSLT, cSLTU, cXOR, cSRL, cOR, cAND };
-
-
-public:  // Constructor and Destructor
-    ArythmeticLogicUnit(void);
-    ~ArythmeticLogicUnit(void) {}
-
-
-private:  // Internal functions
-    unsigned execute(void);
-
-
-public:  // Input ports
-    unsigned i_InputA;
-    unsigned i_InputB;
-    unsigned i_OpCode3;
-    unsigned i_OpCode7;
-    bool i_Immediate;
-
-
-public:  // Internal versions of output ports
-    unsigned n_Output;
-
-
-public:  // Output ports
-    unsigned o_Output;
-
-
-public:  // Update functions 
-    void Update(void);
-    void UpdatePorts(void);
-
-
-public:  // Log function
-    void log(void);
-
-};
+/**
+ * @brief Do a single operation on ALU, 
+ *  if ALU is not enabled (o[5]) simple ADD is performed,
+ *  Imm (o[4]) determines if funct7 (o[3]) should change the operation 
+ * 
+ * @param a Input A
+ * @param b Input B
+ * @param o Command input [5]: Enable [4]: Imm [3]: funct7 [2:0]: funct3
+ * 
+ * @return Result of the operation
+ */
+unsigned aluCalculate(unsigned a, unsigned b, unsigned o);

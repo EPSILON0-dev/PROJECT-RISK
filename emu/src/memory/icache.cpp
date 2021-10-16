@@ -171,6 +171,7 @@ void InstructionCache::Update(void)
     }
 
     endUpdate:
+    n_CacheValidData |= !i_CacheReadEnable && !n_CacheFetching;
     return;
 
 }
