@@ -37,17 +37,21 @@ int main(int argc, char** argv)
     // Close a file
     ramImage.close();
 
-    for (unsigned i = 0; i < 1024; i++) {
-        Log::log("[  CYCLE  ]: ");
-        Log::logDec(i + 1);
-        Log::log("\n\n");
+    for (unsigned i = 0; i < 256; i++) {
+        if (i > 24) {
+            Log::log("[  CYCLE  ]: ");
+            Log::logDec(i + 1);
+            Log::log("\n\n");
+        }
 
         cpu.UpdateCombinational();
 
-        iCache.log();
-        dCache.log();
-        ddr.log();
-        fsb.log();
+        if (i > 24) {
+            iCache.log();
+            dCache.log();
+            ddr.log();
+            fsb.log();
+        }
 
         iCache.Update();
         dCache.Update();
@@ -60,9 +64,11 @@ int main(int argc, char** argv)
         fsb.Update();
 
         cpu.UpdateSequential(); 
-        Log::log("\n");
-        cpu.log();       
-        Log::log("\n");
+        if (i > 24) {
+            Log::log("\n");
+            cpu.log();       
+            Log::log("\n");
+        }
     }
 
     Log::log("\n\nEXIT STATUS:\n");

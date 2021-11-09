@@ -11,8 +11,8 @@ CFLAGS    		:=-g -O2 -Wall -Wextra
 
 TOP_OBJ			:= $(OBJDIR)/common/log.o $(OBJDIR)/memory/dcache.o $(OBJDIR)/memory/ddr.o
 TOP_OBJ		 	+= $(OBJDIR)/memory/fsb.o $(OBJDIR)/memory/icache.o $(OBJDIR)/cpu/alu.o
-TOP_OBJ			+= $(OBJDIR)/cpu/pc.o $(OBJDIR)/cpu/regs.o $(OBJDIR)/cpu/decode.o
-TOP_OBJ			+= $(OBJDIR)/cpu/branch.o $(OBJDIR)/cpu/cpu.o $(OBJDIR)/top.o
+TOP_OBJ			+= $(OBJDIR)/cpu/regs.o $(OBJDIR)/cpu/decode.o $(OBJDIR)/cpu/branch.o
+TOP_OBJ			+= $(OBJDIR)/cpu/cpu.o $(OBJDIR)/top.o
 
 .PHONEY: all
 all: directories obj top
