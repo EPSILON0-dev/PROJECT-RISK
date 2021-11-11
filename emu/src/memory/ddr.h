@@ -1,73 +1,46 @@
 /**
- * This is a file for C++ emulator of the machine
+ * MAIN LPDDR RAM
  * 
  */
 
 class MainRam 
 {
 
-public:  // Exposed ram array (for external code loading)
+public:
     unsigned* ram;
-    
-
-private:  // Memories and registers
-    unsigned activeRow;
-    unsigned address;
-    char currentOperation;
-    enum eOperation { read, write };
-
-    enum eState { cIdle, cRow, cRowDelay, cRead, cWrite, cCL1, cCL2, cReading, cWriting };
-    unsigned state;
-    unsigned wordIndex;
-
-
-public:  // Constructor and destructor
+private:
+    unsigned row = 0;
+    unsigned adr = 0;
+    char curOp = 0;
+    unsigned st = 0;
+    unsigned wInx = 0;
+public:
     MainRam(void);
-    ~MainRam(void);
-
-
-private:  // Private functions for internal usage
-    unsigned getBank(unsigned a);
-    unsigned getRow(unsigned a);
-    unsigned getColumn(unsigned a);
-
-
-public:  // Input ports
-    unsigned i_CacheReadData;
-    
-    unsigned i_Address;
-    bool i_ReadRequest;
-    bool i_WriteRequest;
-
-
-private:  // Internal versions of output ports
-    unsigned n_CacheAddress;
-    unsigned n_CacheWriteData;
-    bool n_CacheWriteEnable;
-    bool n_CacheReadEnable;
-    bool n_CacheLastAccess;
-
-    bool n_ReadAck;
-    bool n_WriteAck;
-
-
-public:  // Output ports
-    unsigned o_CacheAddress;
-    unsigned o_CacheWriteData;
-    bool o_CacheWriteEnable;
-    bool o_CacheReadEnable;
-    bool o_CacheLastAccess;
-
-    bool o_ReadAck;
-    bool o_WriteAck;
-
-
-public:  // Update function
+public:
+    unsigned i_CRDat = 0;
+    unsigned i_Adr = 0;
+    bool i_RRq = 0;
+    bool i_WRq = 0;
+private:
+    unsigned n_CAdr = 0;
+    unsigned n_CWDat = 0;
+    bool n_CWE = 0;
+    bool n_CRE = 0;
+    bool n_CLA = 0;
+    bool n_RAck = 0;
+    bool n_WAck = 0;
+public:
+    unsigned o_CAdr = 0;
+    unsigned o_CWDat = 0;
+    bool o_CWE = 0;
+    bool o_CRE = 0;
+    bool o_CLA = 0;
+    bool o_RAck = 0;
+    bool o_WAck = 0;
+public:
     void Update(void);
     void UpdatePorts(void);
-
-
-public:  // Logging function
+public:
     void log(void);
 
 };

@@ -8,6 +8,7 @@
 #include "cpu.h"
 #include "decode.h"
 #include "regs.h"
+#include "mem.h"
 #include "../common/config.h"
 #include "../common/log.h"
 #include "../memory/icache.h"
@@ -88,7 +89,14 @@ unsigned ex_c_br_en = 0;
 bool hz_ex = 0;
 bool hz_mem = 0;
 bool hz_wb = 0;
+bool hz_br = 0;
 bool hz_hazard = 0;
+
+bool ce_if  = 0;
+bool ce_id  = 0;
+bool ce_ex  = 0;
+bool ce_mem = 0;
+bool ce_wb  = 0;
 
 CentralProcessingUnit::CentralProcessingUnit(void)
 {
@@ -111,22 +119,22 @@ void CentralProcessingUnit::UpdateCombinational(void)
 
     /* DECODE */
     id_c_imm = getImmediate(id_ir);
-    id_c_rd1 = rs.regRead(getRs1(id_ir));
-    id_c_rd2 = rs.regRead(getRs2(id_ir));
+    id_c_rd1 = rs.read(getRs1(id_ir));
+    id_c_rd2 = rs.read(getRs2(id_ir));
 
     if (wb_c9) {
-        rs.regWrite(wb_c8, wb_wb);
+        rs.write(wb_c8, wb_wb);
     }
 
-    id_c_load = (getOpcode(id_ir) == 0b00000);
-    id_c_store = (getOpcode(id_ir) == 0b01000);
-    id_c_jalr = (getOpcode(id_ir) == 0b11001);
-    id_c_jal = (getOpcode(id_ir) == 0b11011);
-    id_c_op_imm = (getOpcode(id_ir) == 0b00100);
-    id_c_op = (getOpcode(id_ir) == 0b01100);
-    id_c_auipc = (getOpcode(id_ir) == 0b00101);
-    id_c_lui = (getOpcode(id_ir) == 0b01101);
-    id_c_branch = (getOpcode(id_ir) == 0b11000);
+    id_c_load   = (getOpcode(id_ir) == 0b00000) && ((id_ir & 0b11) == 3);
+    id_c_store  = (getOpcode(id_ir) == 0b01000) && ((id_ir & 0b11) == 3);
+    id_c_jalr   = (getOpcode(id_ir) == 0b11001) && ((id_ir & 0b11) == 3);
+    id_c_jal    = (getOpcode(id_ir) == 0b11011) && ((id_ir & 0b11) == 3);
+    id_c_op_imm = (getOpcode(id_ir) == 0b00100) && ((id_ir & 0b11) == 3);
+    id_c_op     = (getOpcode(id_ir) == 0b01100) && ((id_ir & 0b11) == 3);
+    id_c_auipc  = (getOpcode(id_ir) == 0b00101) && ((id_ir & 0b11) == 3);
+    id_c_lui    = (getOpcode(id_ir) == 0b01101) && ((id_ir & 0b11) == 3);
+    id_c_branch = (getOpcode(id_ir) == 0b11000) && ((id_ir & 0b11) == 3);
 
     id_c_h_rs1 = !id_c_lui && !id_c_auipc && !id_c_jal;
     id_c_h_rs2 = id_c_branch || id_c_store || id_c_op;
@@ -139,21 +147,16 @@ void CentralProcessingUnit::UpdateCombinational(void)
         (((id_ir >> 30) & 1) << 3) | getFunct3(id_ir);
     id_c_c5 = id_c_store && id_c_op_ok;
     id_c_c6 = id_c_load && id_c_op_ok;
-    id_c_c7 = 0; // TODO
+    id_c_c7 = id_c_load;
+    if (id_c_jal || id_c_jalr) id_c_c7 = 2;
     id_c_c8 = getRd(id_ir);
     id_c_c9 = !(id_c_store | id_c_branch) && id_c_op_ok;
 
     /* EXECUTE */
     ex_c_alu_a = (ex_c3) ? ex_pc  : ex_rd1;
     ex_c_alu_b = (ex_c2) ? ex_imm : ex_rd2;
-    ex_c_alu = aluCalculate(ex_c_alu_a, ex_c_alu_b, ex_c4);
-    ex_c_br_en = branchCalculate(ex_rd1, ex_rd2, ex_c1);
-
-    /* MEMORY ACCESS */
-    dc->i_CacheWriteEnable = mem_c5;
-    dc->i_CacheReadEnable = mem_c6;
-    dc->i_CacheAddress = mem_alu;
-    dc->i_CacheWriteData = mem_rd2;
+    ex_c_alu = alu(ex_c_alu_a, ex_c_alu_b, ex_c4);
+    ex_c_br_en = branch(ex_rd1, ex_rd2, ex_c1);
 
     /* HAZARD DETECTION */
     bool h1 = (getRs1(id_ir) != 0) && (getRs1(id_ir) == ex_c8) && id_c_h_rs1;
@@ -172,16 +175,16 @@ void CentralProcessingUnit::UpdateCombinational(void)
 void CentralProcessingUnit::UpdateSequential(void)
 {
 
-    bool ce_if  = ic->o_CacheValidData && dc->o_CacheValidData && !hz_hazard;
-    bool ce_id  = ic->o_CacheValidData && dc->o_CacheValidData && !hz_hazard;
-    bool ce_ex  = ic->o_CacheValidData && dc->o_CacheValidData;
-    bool ce_mem = ic->o_CacheValidData && dc->o_CacheValidData;
-    bool ce_wb  = ic->o_CacheValidData && dc->o_CacheValidData;
+    ce_if  = ic->o_CacheValidData && dc->o_CacheValidData && !hz_hazard;
+    ce_id  = ic->o_CacheValidData && dc->o_CacheValidData && !hz_hazard;
+    ce_ex  = ic->o_CacheValidData && dc->o_CacheValidData;
+    ce_mem = ic->o_CacheValidData && dc->o_CacheValidData;
+    ce_wb  = ic->o_CacheValidData && dc->o_CacheValidData;
 
     /* WRITE BACK */
     if (ce_wb) { 
-        wb_wb = ((mem_c7 >> 1) & 1) ? (mem_c7 & 1) ? 
-            mem_ret : dc->o_CacheReadData : mem_alu;
+        wb_wb = (mem_c7 >> 1) ? mem_ret : 
+            (mem_c7 & 1) ? dc->o_CacheReadData : mem_alu;
 
         wb_c8 = mem_c8;
         wb_c9 = mem_c9;
@@ -192,16 +195,22 @@ void CentralProcessingUnit::UpdateSequential(void)
         mem_rd2 = ex_rd2;
         mem_alu = ex_c_alu;
         mem_ret = ex_ret;
+
         mem_c5 = ex_c5;
         mem_c6 = ex_c6;
         mem_c7 = ex_c7;
         mem_c8 = ex_c8;
         mem_c9 = ex_c9;
+
+        dc->i_CacheWriteEnable = mem_c5;
+        dc->i_CacheReadEnable = mem_c6;
+        if (mem_c5 || mem_c6) dc->i_CacheAddress = mem_alu;
+        if (mem_c5) dc->i_CacheWriteData = mem_rd2;
     }
 
     /* EXECUTE */
     if (ce_ex) {
-        if (!hz_hazard) {
+        if (!hz_hazard && !hz_br) {
             ex_rd1 = id_c_rd1;
             ex_rd2 = id_c_rd2;
             ex_imm = id_c_imm;
@@ -244,6 +253,7 @@ void CentralProcessingUnit::UpdateSequential(void)
     }
 
     /* FETCH */
+    if (hz_br) hz_br = 0;
     if (ce_if) {
         if (ex_c_br_en) {
             ex_c1 = 0;
@@ -251,6 +261,7 @@ void CentralProcessingUnit::UpdateSequential(void)
             ex_c6 = 0;
             ex_c9 = 0;
             if_pc = ex_c_alu;
+            hz_br = 1;
         } else {
             if_pc = if_c_pc_inc;
         }
@@ -260,12 +271,12 @@ void CentralProcessingUnit::UpdateSequential(void)
 
 void CentralProcessingUnit::log(void)
 {
-    Log::logSrc("  IF    ", COLOR_GREEN);
+    Log::logSrc("  IF    ", (ce_if) ? COLOR_GREEN : COLOR_RED);
     Log::log("if_pc: ");
     Log::logHex(if_pc, COLOR_MAGENTA, 8);
     Log::log("\n");
 
-    Log::logSrc("  ID    ", COLOR_GREEN);
+    Log::logSrc("  ID    ", (ce_id) ? COLOR_GREEN : COLOR_RED);
     Log::log("id_ret: ");
     Log::logHex(id_ret, COLOR_MAGENTA, 8);
     Log::log(", id_pc: ");
@@ -274,7 +285,7 @@ void CentralProcessingUnit::log(void)
     Log::logHex(id_ir, COLOR_MAGENTA, 8);
     Log::log("\n");
 
-    Log::logSrc("  EX    ", COLOR_GREEN);
+    Log::logSrc("  EX    ", (ce_ex) ? COLOR_GREEN : COLOR_RED);
     Log::log("ex_rd1: ");
     Log::logHex(ex_rd1, COLOR_MAGENTA, 8);
     Log::log(", ex_rd2: ");
@@ -282,13 +293,13 @@ void CentralProcessingUnit::log(void)
     Log::log(", ex_imm: ");
     Log::logHex(ex_imm, COLOR_MAGENTA, 8);
     Log::log("\n");
-    Log::logSrc("  EX    ", COLOR_GREEN);
+    Log::logSrc("  EX    ", (ce_ex) ? COLOR_GREEN : COLOR_RED);
     Log::log("ex_pc: ");
     Log::logHex(ex_pc, COLOR_MAGENTA, 8);
     Log::log(", ex_ret: ");
     Log::logHex(ex_ret, COLOR_MAGENTA, 8);
     Log::log("\n");
-    Log::logSrc("  EX    ", COLOR_GREEN);
+    Log::logSrc("  EX    ", (ce_ex) ? COLOR_GREEN : COLOR_RED);
     Log::log("ex_c1: ");
     Log::logHex(ex_c1, COLOR_MAGENTA, 2);
     Log::log(", ex_c2: ");
@@ -300,7 +311,7 @@ void CentralProcessingUnit::log(void)
     Log::log(", ex_c5: ");
     Log::logDec(ex_c5, COLOR_MAGENTA);
     Log::log("\n");
-    Log::logSrc("  EX    ", COLOR_GREEN);
+    Log::logSrc("  EX    ", (ce_ex) ? COLOR_GREEN : COLOR_RED);
     Log::log("ex_c6: ");
     Log::logDec(ex_c6, COLOR_MAGENTA);
     Log::log(", ex_c7: ");
@@ -311,7 +322,7 @@ void CentralProcessingUnit::log(void)
     Log::logDec(ex_c9, COLOR_MAGENTA);
     Log::log("\n");
 
-    Log::logSrc("  MEM   ", COLOR_GREEN);
+    Log::logSrc("  MEM   ", (ce_mem) ? COLOR_GREEN : COLOR_RED);
     Log::log("mem_rd2: ");
     Log::logHex(mem_rd2, COLOR_MAGENTA, 8);
     Log::log(", mem_alu: ");
@@ -319,7 +330,7 @@ void CentralProcessingUnit::log(void)
     Log::log(", mem_ret: ");
     Log::logHex(mem_ret, COLOR_MAGENTA, 8);
     Log::log("\n");
-    Log::logSrc("  MEM   ", COLOR_GREEN);
+    Log::logSrc("  MEM   ", (ce_mem) ? COLOR_GREEN : COLOR_RED);
     Log::log("mem_c5: ");
     Log::logDec(mem_c5, COLOR_MAGENTA);
     Log::log(", mem_c6: ");
@@ -332,7 +343,7 @@ void CentralProcessingUnit::log(void)
     Log::logDec(mem_c9, COLOR_MAGENTA);
     Log::log("\n");
 
-    Log::logSrc("  WB    ", COLOR_GREEN);
+    Log::logSrc("  WB    ", (ce_wb) ? COLOR_GREEN : COLOR_RED);
     Log::log("wb_wb: ");
     Log::logHex(wb_wb, COLOR_MAGENTA, 8);
     Log::log(", wb_c8: ");

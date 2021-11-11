@@ -3,8 +3,6 @@
  * 
  */
 
-enum eFormat { FormatR, FormatI, FormatS, FormatB, FormatU, FormatJ };
-
 unsigned getFormat(unsigned op);
 unsigned getImmediate(unsigned op);
 unsigned getRs1(unsigned op);

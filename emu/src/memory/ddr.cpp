@@ -1,18 +1,19 @@
 /**
- * This is a file for C++ emulator of the machine
+ * MAIN LPDDR RAM
  * 
  */
-
 #include "../common/config.h"
 #include "../common/log.h"
 #include "ddr.h"
 
 
+enum eOperation { read, write };
+enum eState { cIdle, cRow, cRowDel, cRd, cWr, cCL1, cCL2, cRdng, cWrng };
+unsigned getBank(unsigned a) { return (a >> 24) & 0x3; }
+unsigned getRow(unsigned a) { return (a >> 11) & 0x1FFF; }
+unsigned getCol(unsigned a) { return (a >> 1) & 0x3FF; }
 
-/**
- * @brief Constructor
- * 
- */
+
 MainRam::MainRam(void)
 {
     Log::logSrc("   DDR   ", COLOR_BLUE);
@@ -26,228 +27,136 @@ MainRam::MainRam(void)
     
     ram = new unsigned[16 * 1024 * 1024];
     for (unsigned i = 0; i < 16 * 1024 * 1024; i++) ram[i] = (i << 2) | 0x55000000;
-
-    state = cIdle;
-    wordIndex = 0;
-    currentOperation = read;
-
-    i_Address = 0;
-    i_ReadRequest = 0;
-    i_WriteRequest = 0;
-    i_CacheReadData = 0;
-
-    o_CacheAddress = 0;
-    o_CacheWriteData = 0;
-    o_CacheWriteEnable = 0;
-    o_CacheReadEnable = 0;
-    o_CacheLastAccess = 0;
-
-    o_ReadAck = 0;
-    o_WriteAck = 0;
 }
 
 
-
-/**
- * @brief destructor
- * 
- */
-MainRam::~MainRam(void) 
-{
-    delete[] ram;
-}
-
-
-
-unsigned MainRam::getBank(unsigned a)
-{
-    return (a >> 24) & 0x3;
-}
-
-unsigned MainRam::getRow(unsigned a)
-{
-    return (a >> 11) & 0x1FFF;
-}
-
-unsigned MainRam::getColumn(unsigned a)
-{
-    return (a >> 1) & 0x3FF;
-}
-
-
-
-/**
- * @brief Update function for DDR controller
- * 
- */
 void MainRam::Update(void) 
 {
     
-    if (state == cIdle) {
-        n_CacheWriteEnable = 0;
-        n_CacheReadEnable = 0;
-        n_CacheLastAccess = 0;
-        address = i_Address;
-        if (i_ReadRequest || i_WriteRequest) {
-            if (i_ReadRequest) {
-                currentOperation = read;
-                state = (activeRow == getRow(address)) ? cRead : cRow;
-            } else {
-                currentOperation = write;
-                state = (activeRow == getRow(address)) ? cWrite : cRow;
-            }
-            goto endUpdate;
+    switch (st) {
+        case cIdle:
+        n_CWE = 0;
+        n_CRE = 0;
+        n_CLA = 0;
+        adr = i_Adr;
+        if (i_RRq || i_WRq) {
+            st = (row == getRow(adr)) ? (i_RRq)? cRd : cWr : cRow;
+            curOp = (i_RRq)? read : write;
         }
-    }
+        break;
 
-    if (state == cRow) {
-        activeRow = getRow(address);
-        state = cRowDelay;
-        goto endUpdate;
-    }
+        case cRow:
+        row = getRow(adr);
+        st = cRowDel;
+        break;
 
-    if (state == cRowDelay) {
-        if (currentOperation == read) {
-            state = cRead;
-        } else {
-            state = cWrite;
-        }
-        goto endUpdate;
-    }
+    case cRowDel:
+        st = (curOp) ? cWr : cRd;
+        break;
 
-    if (state == cRead) {
-        wordIndex = 0;
-        n_ReadAck = 1;
-        state = cCL1;
-        goto endUpdate;
-    }
+    case cRd:
+        wInx = 0;
+        n_RAck = 1;
+        st = cCL1;
+        break;
 
-    if (state == cWrite) {
-        wordIndex = 1;
-        n_WriteAck = 1;
-        n_CacheReadEnable = 1;
-        n_CacheAddress = address;
-        state = cWriting;
-        goto endUpdate;
-    }
+    case cWr:
+        wInx = 1;
+        n_WAck = 1;
+        n_CRE = 1;
+        n_CAdr = adr;
+        st = cWrng;
+        break;
 
-    if (state == cCL1) {
-        state = cCL2;
-        goto endUpdate;
-    }
+    case cCL1:
+        st = cCL2;
+        break;
 
-    if (state == cCL2) {
-        state = cReading;
-        goto endUpdate;
-    }
+    case cCL2:
+        st = cRdng;
+        break;
 
-    if (state == cReading) {
-        n_ReadAck = 0;
-        n_CacheWriteEnable = 1;
-        n_CacheAddress = address + (wordIndex << 2);
-        n_CacheWriteData = ram[((n_CacheAddress & 0x3FFFFFF) >> 2)];
-        wordIndex++;
-        if (wordIndex == 8) {
-            state = cIdle;
-            n_CacheLastAccess = 1;
-        }
-        goto endUpdate;
-    }
+    case cRdng:
+        n_RAck = 0;
+        n_CWE = 1;
+        n_CAdr = adr + (wInx << 2);
+        n_CWDat = ram[((n_CAdr & 0x3FFFFFF) >> 2)];
+        if (++wInx == 8) { st = cIdle; n_CLA = 1; }
+        break;
 
-    if (state == cWriting) {
-        n_WriteAck = 0;
-        n_CacheAddress = address + (wordIndex << 2);
-        if (wordIndex >= 2) {
-            ram[((n_CacheAddress & 0x3FFFFFF) >> 2) - 2] = i_CacheReadData;
-        }
-        wordIndex++;
-        if (wordIndex == 8) {
-            n_CacheLastAccess = 1;
-        }
-        if (wordIndex == 9) {
-            n_CacheLastAccess = 0;
-            state = cIdle;
-        }
-        goto endUpdate;
+    case cWrng:
+        n_WAck = 0;
+        n_CAdr = adr + (wInx << 2);
+        if (wInx >= 2) { ram[((n_CAdr & 0x3FFFFFF) >> 2) - 2] = i_CRDat; }
+        if (++wInx == 8) { n_CLA = 1; }
+        if (wInx == 9) { n_CLA = 0; st = cIdle; }
+        break;
     }
-
-    endUpdate:
-    return;
 
 }
 
 
-
-/**
- * @brief Output ports update function for data cache
- * 
- */
 void MainRam::UpdatePorts(void) 
 {
-    o_CacheAddress = n_CacheAddress;
-    o_CacheWriteData = n_CacheWriteData;
-    o_CacheLastAccess = n_CacheLastAccess;
-    o_CacheWriteEnable = n_CacheWriteEnable;
-    o_CacheReadEnable = n_CacheReadEnable;
-    o_ReadAck = n_ReadAck;
-    o_WriteAck = n_WriteAck;
+    o_CAdr  = n_CAdr;
+    o_CWDat = n_CWDat;
+    o_CWE   = n_CWE;
+    o_CRE   = n_CRE;
+    o_CLA   = n_CLA;
+    o_RAck  = n_RAck;
+    o_WAck  = n_WAck;
 }
 
 
-
-/**
- * @brief Logging function for front side bus
- * 
- */
 void MainRam::log(void)
 {
     Log::logSrc("   DDR   ", COLOR_BLUE);
     
-    switch (state) {
+    switch (st) {
 
-        case cRow:
+    case cRow:
         Log::log("Activate row ");
-        Log::logHex(getRow(address), COLOR_MAGENTA, 4);
+        Log::logHex(getRow(adr), COLOR_MAGENTA, 4);
         Log::log("\n");
         break;
 
-        case cRowDelay:
+    case cRowDel:
         Log::log("Waiting for activate\n");
         break;
 
-        case cRead:
+    case cRd:
         Log::log("Reading column ");
-        Log::logHex(getColumn(address), COLOR_MAGENTA, 3);
+        Log::logHex(getCol(adr), COLOR_MAGENTA, 3);
         Log::log("\n");
         break;
 
-        case cWrite:
+    case cWr:
         Log::log("Writing column ");
-        Log::logHex(getColumn(address), COLOR_MAGENTA, 3);
+        Log::logHex(getCol(adr), COLOR_MAGENTA, 3);
         Log::log("\n");
         break;
 
-        case cCL1:
+    case cCL1:
         Log::log("Waiting for read\n");
         break;
 
-        case cCL2:
+    case cCL2:
         Log::log("Waiting for read\n");
         break;
 
-        case cReading:
+    case cRdng:
         Log::log("Reading word ");
-        Log::logDec(wordIndex);
+        Log::logDec(wInx);
         Log::log("\n");
         break;
 
-        case cWriting:
+    case cWrng:
         Log::log("Writing word ");
-        Log::logDec(wordIndex - 1);
+        Log::logDec(wInx - 1);
         Log::log("\n");
         break;
 
-        default:
+    default:
         Log::log("Idle cycle\n");
         break;
 

@@ -13,6 +13,11 @@
  * 
  * Main array: ____----____----____
  * Tag array:  __----____----____--
+ * 
+ * IMPORTANT TODO:
+ *  improve the system of queueing, when both sets are queued and request to fetch
+ *  another block (with the same index) data can be lost
+ * 
  */
 
 #include "../common/config.h"
@@ -214,6 +219,47 @@ void DataCache::Update(void)
         readAddress = i_CacheAddress;
     }
 
+    if (!n_CacheFetching && i_CacheWriteEnable) {  // Handle writes
+
+        if (!(checkCache1(readAddress) || checkCache2(readAddress))) {
+            goto fetchFromRam;
+        }
+
+        if (checkCache1(readAddress)) {
+            lastSet[index] = 0;
+            caches1[block] = i_CacheWriteData;
+            
+            if (!queued1[index]) {
+                n_FsbWriteRequest = 1;
+                if (!n_FsbQueueFull) {
+                    pushWrite(readAddress);
+                    queued1[index] = 1;
+                    n_CacheWriteDone = 1;
+                } else {
+                    n_CacheWriteDone = 0;
+                }
+            }
+            goto endUpdate;
+        }
+
+        if (checkCache2(readAddress)) {
+            lastSet[index] = 1;
+            caches2[block] = i_CacheWriteData;
+            if (!queued2[index]) {
+                n_FsbWriteRequest = 1;
+                if (!n_FsbQueueFull) {
+                    pushWrite(readAddress);
+                    queued2[index] = 1;
+                    n_CacheWriteDone = 1;
+                } else {
+                    n_CacheWriteDone = 0;
+                }
+            }
+            goto endUpdate;
+        }
+
+    }
+
     if (!n_CacheFetching) {  // Handle reads
 
         if (!(checkCache1(readAddress) || checkCache2(readAddress))) {
@@ -241,47 +287,6 @@ void DataCache::Update(void)
         n_CacheValidData = 0;
         n_CacheFetching = 1;
         goto endUpdate;
-
-    }
-
-    if (i_CacheWriteEnable && !n_CacheFetching) {  // Handle writes
-
-        if (!(checkCache1(i_CacheAddress) || checkCache2(i_CacheAddress))) {
-            goto fetchFromRam;
-        }
-
-        if (checkCache1(i_CacheAddress)) {
-            lastSet[index] = 0;
-            caches1[block] = i_CacheWriteData;
-            
-            if (!queued1[index]) {
-                n_FsbWriteRequest = 1;
-                if (!n_FsbQueueFull) {
-                    pushWrite(i_CacheAddress);
-                    queued1[index] = 1;
-                    n_CacheWriteDone = 1;
-                } else {
-                    n_CacheWriteDone = 0;
-                }
-            }
-            goto endUpdate;
-        }
-
-        if (checkCache2(i_CacheAddress)) {
-            lastSet[index] = 1;
-            caches2[block] = i_CacheWriteData;
-            if (!queued2[index]) {
-                n_FsbWriteRequest = 1;
-                if (!n_FsbQueueFull) {
-                    pushWrite(i_CacheAddress);
-                    queued2[index] = 1;
-                    n_CacheWriteDone = 1;
-                } else {
-                    n_CacheWriteDone = 0;
-                }
-            }
-            goto endUpdate;
-        }
 
     }
 

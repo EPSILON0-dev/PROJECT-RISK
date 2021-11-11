@@ -7,6 +7,8 @@
 #include "../common/config.h"
 #include "../common/log.h"
 
+enum eFormat { FormatR, FormatI, FormatS, FormatB, FormatU, FormatJ };
+
 unsigned getFormat(unsigned op)
 {
     switch (op & 0x7F) {
