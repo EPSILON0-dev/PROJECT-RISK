@@ -9,9 +9,8 @@
 
 enum eOperation { read, write };
 enum eState { cIdle, cRow, cRowDel, cRd, cWr, cCL1, cCL2, cRdng, cWrng };
-unsigned getBank(unsigned a) { return (a >> 24) & 0x3; }
-unsigned getRow(unsigned a) { return (a >> 11) & 0x1FFF; }
-unsigned getCol(unsigned a) { return (a >> 1) & 0x3FF; }
+static unsigned getRow(unsigned a) { return (a >> 11) & 0x1FFF; }
+static unsigned getCol(unsigned a) { return (a >> 1) & 0x3FF; }
 
 
 MainRam::MainRam(void)

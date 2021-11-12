@@ -98,11 +98,6 @@ bool ce_ex  = 0;
 bool ce_mem = 0;
 bool ce_wb  = 0;
 
-CentralProcessingUnit::CentralProcessingUnit(void)
-{
-    
-}
-
 void CentralProcessingUnit::loadPointers(void* icache, void* dcache)
 {
     ic = (InstructionCache*)icache;
@@ -114,8 +109,8 @@ void CentralProcessingUnit::UpdateCombinational(void)
     
     /* FETCH */
     if_c_pc_inc = if_pc + 0x4;
-    ic->i_CacheAddress = if_pc;
-    ic->i_CacheReadEnable = 1;
+    ic->i_CAdr = if_pc;
+    ic->i_CRE = 1;
 
     /* DECODE */
     id_c_imm = getImmediate(id_ir);
@@ -175,11 +170,11 @@ void CentralProcessingUnit::UpdateCombinational(void)
 void CentralProcessingUnit::UpdateSequential(void)
 {
 
-    ce_if  = ic->o_CacheValidData && dc->o_CacheValidData && !hz_hazard;
-    ce_id  = ic->o_CacheValidData && dc->o_CacheValidData && !hz_hazard;
-    ce_ex  = ic->o_CacheValidData && dc->o_CacheValidData;
-    ce_mem = ic->o_CacheValidData && dc->o_CacheValidData;
-    ce_wb  = ic->o_CacheValidData && dc->o_CacheValidData;
+    ce_if  = ic->o_CVD && dc->o_CacheValidData && !hz_hazard;
+    ce_id  = ic->o_CVD && dc->o_CacheValidData && !hz_hazard;
+    ce_ex  = ic->o_CVD && dc->o_CacheValidData;
+    ce_mem = ic->o_CVD && dc->o_CacheValidData;
+    ce_wb  = ic->o_CVD && dc->o_CacheValidData;
 
     /* WRITE BACK */
     if (ce_wb) { 
@@ -249,7 +244,7 @@ void CentralProcessingUnit::UpdateSequential(void)
     if (ce_id) {
         id_ret = if_c_pc_inc;
         id_pc = if_pc;
-        id_ir = ic->o_CacheReadData;
+        id_ir = ic->o_CRDat;
     }
 
     /* FETCH */

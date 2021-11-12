@@ -6,67 +6,44 @@
 class InstructionCache
 {
 
-private:  // Internal memories and registers
-    unsigned* caches1;
-    unsigned short* tags1;
+private:
+    unsigned* cache1;
+    unsigned short* tag1;
     unsigned char* valid1;
-    
-    unsigned* caches2;
-    unsigned short* tags2;
+    unsigned* cache2;
+    unsigned short* tag2;
     unsigned char* valid2;
-
-    unsigned char* lastSet;  // 1 - second set, 0 - first set
-    bool fetchSet;           // 1 - second set, 0 - first set
-
-
-public:  // Input ports
-    unsigned i_CacheAddress;
-    bool i_CacheReadEnable;
-
-    unsigned i_FsbAddress;
-    unsigned i_FsbWriteData;
-    bool i_FsbReadAck;
-    bool i_FsbWriteEnable;
-    bool i_FsbLastAccess;
-
-
-private:  // Internal versions of output ports
-    unsigned n_CacheReadData;
-    bool n_CacheValidData;
-    bool n_CacheFetching;
-
-    unsigned n_FsbReadAddress;
-    unsigned n_FsbReadRequest;
-
-
-public:  // Output ports
-    unsigned o_CacheReadData;
-    bool o_CacheValidData;
-    bool o_CacheFetching;
-
-    unsigned o_FsbReadAddress;
-    unsigned o_FsbReadRequest;
-
-
-public:  // Constructor and destructor
+    unsigned char* lastSet;
+    bool fetchSet = 0;
+public:
+    unsigned i_CAdr = 0;
+    bool i_CRE = 0;
+    unsigned i_FAdr = 0;
+    unsigned i_FWDat = 0;
+    bool i_FRAck = 0;
+    bool i_FWE = 0;
+    bool i_FLA = 0;
+private:
+    unsigned n_CRDat = 0;
+    bool n_CVD = 0;
+    bool n_CFetch = 0;
+    unsigned n_FRAdr = 0;
+    unsigned n_FRReq = 0;
+public:
+    unsigned o_CRDat = 0;
+    bool o_CVD = 0;
+    bool o_CFetch = 0;
+    unsigned o_FRAdr = 0;
+    unsigned o_FRReq = 0;
+public:
     InstructionCache(void);
-    ~InstructionCache(void);
-
-
-private:  // Private functions for internal usage
-    unsigned getBlock(unsigned a);
-    unsigned getIndex(unsigned a);
-    unsigned getTag(unsigned a);
+private:
     bool checkCache1(unsigned a);
     bool checkCache2(unsigned a);
-
-
-public:  // Update function
+public:
     void Update(void);
     void UpdatePorts(void);
-
-
-public:  // Logging functions
+public:
     void log(void);
 
 };

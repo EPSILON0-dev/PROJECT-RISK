@@ -106,18 +106,18 @@ void FrontSideBus::Update(void)
 
         if (iCache) {
             if (request == cICache) {
-                iCache->i_FsbAddress = ddr->o_CAdr;
-                iCache->i_FsbWriteData = ddr->o_CWDat;
-                iCache->i_FsbWriteEnable = ddr->o_CWE;
-                iCache->i_FsbLastAccess = ddr->o_CLA;
-                iCache->i_FsbReadAck = ddr->o_RAck;
-                ddr->i_RRq = iCache->o_FsbReadRequest;
+                iCache->i_FAdr = ddr->o_CAdr;
+                iCache->i_FWDat = ddr->o_CWDat;
+                iCache->i_FWE = ddr->o_CWE;
+                iCache->i_FLA = ddr->o_CLA;
+                iCache->i_FRAck = ddr->o_RAck;
+                ddr->i_RRq = iCache->o_FRReq;
             } else {
-                iCache->i_FsbAddress = 0;
-                iCache->i_FsbWriteData = 0;
-                iCache->i_FsbWriteEnable = 0;
-                iCache->i_FsbLastAccess = 0;
-                iCache->i_FsbReadAck = 0;
+                iCache->i_FAdr = 0;
+                iCache->i_FWDat = 0;
+                iCache->i_FWE = 0;
+                iCache->i_FLA = 0;
+                iCache->i_FRAck = 0;
             }
         }
 
@@ -143,8 +143,8 @@ void FrontSideBus::Update(void)
         goto serviceRequest;
     }
 
-    if (iCache && iCache->o_FsbReadRequest) {  // Handle new I cache request
-        requestAddress = iCache->o_FsbReadAddress;
+    if (iCache && iCache->o_FRReq) {  // Handle new I cache request
+        requestAddress = iCache->o_FRAdr;
         ddr->i_Adr = requestAddress;
         request = cICache;
         goto serviceRequest;
