@@ -43,7 +43,7 @@ static unsigned getIndex(unsigned a) { return (a >> 5) & 0xFF; }
 static unsigned getTag(unsigned a) { return (a >> 14); }
 bool InstructionCache::checkCache1(unsigned a) { return (tag1[getIndex(a)] == getTag(a) && valid1[getIndex(a)]); }
 bool InstructionCache::checkCache2(unsigned a) { return (tag2[getIndex(a)] == getTag(a) && valid2[getIndex(a)]); }
-
+ 
 
 void InstructionCache::Update(void)
 {
