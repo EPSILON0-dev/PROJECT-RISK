@@ -1,31 +1,22 @@
 /**
- * This is a file for C++ emulator of the machine
+ * FRONT SIDE BUS
  * 
  */
 
 class FrontSideBus
 {
 
-private:  // Internal memories and registers
-    unsigned requestAddress;
-    char request;
+private:
+    unsigned reqAdr;
+    char req;
     enum eRequest { cNone, cDCache, cICache, cDWrite };
-
-
-public:  // Constructor and destructor 
+public:
     FrontSideBus(void);
-    ~FrontSideBus(void);
-
-
-public:  // Initialization function
+public:
     void loadPointers(void* instructionCache, void* dataCache, void* mainRam);
-
-
-public:  // Update function for front side bus
+public:
     void Update(void);
-
-
-public:  // Logging functions
+public:
     void log(void);
 
 };

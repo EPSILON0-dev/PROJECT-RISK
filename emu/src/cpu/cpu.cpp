@@ -86,9 +86,6 @@ unsigned ex_c_alu_b = 0;
 unsigned ex_c_alu = 0;
 unsigned ex_c_br_en = 0;
 
-bool hz_ex = 0;
-bool hz_mem = 0;
-bool hz_wb = 0;
 bool hz_br = 0;
 bool hz_hazard = 0;
 
@@ -160,9 +157,9 @@ void CentralProcessingUnit::UpdateCombinational(void)
     bool h4 = (getRs2(id_ir) != 0) && (getRs2(id_ir) == mem_c8) && id_c_h_rs2;
     bool h5 = (getRs1(id_ir) != 0) && (getRs1(id_ir) == wb_c8) && id_c_h_rs1;
     bool h6 = (getRs2(id_ir) != 0) && (getRs2(id_ir) == wb_c8) && id_c_h_rs2;
-    hz_ex  = h1 || h2;
-    hz_mem = h3 || h4;
-    hz_wb  = h5 || h6;
+    bool hz_ex  = h1 || h2;
+    bool hz_mem = h3 || h4;
+    bool hz_wb  = h5 || h6;
     hz_hazard = hz_ex || hz_mem || hz_wb;
 
 }
@@ -170,16 +167,16 @@ void CentralProcessingUnit::UpdateCombinational(void)
 void CentralProcessingUnit::UpdateSequential(void)
 {
 
-    ce_if  = ic->o_CVD && dc->o_CacheValidData && !hz_hazard;
-    ce_id  = ic->o_CVD && dc->o_CacheValidData && !hz_hazard;
-    ce_ex  = ic->o_CVD && dc->o_CacheValidData;
-    ce_mem = ic->o_CVD && dc->o_CacheValidData;
-    ce_wb  = ic->o_CVD && dc->o_CacheValidData;
+    ce_if  = ic->o_CVD && dc->o_CVD && !hz_hazard;
+    ce_id  = ic->o_CVD && dc->o_CVD && !hz_hazard;
+    ce_ex  = ic->o_CVD && dc->o_CVD;
+    ce_mem = ic->o_CVD && dc->o_CVD;
+    ce_wb  = ic->o_CVD && dc->o_CVD;
 
     /* WRITE BACK */
     if (ce_wb) { 
         wb_wb = (mem_c7 >> 1) ? mem_ret : 
-            (mem_c7 & 1) ? dc->o_CacheReadData : mem_alu;
+            (mem_c7 & 1) ? dc->o_CRDat : mem_alu;
 
         wb_c8 = mem_c8;
         wb_c9 = mem_c9;
@@ -197,10 +194,10 @@ void CentralProcessingUnit::UpdateSequential(void)
         mem_c8 = ex_c8;
         mem_c9 = ex_c9;
 
-        dc->i_CacheWriteEnable = mem_c5;
-        dc->i_CacheReadEnable = mem_c6;
-        if (mem_c5 || mem_c6) dc->i_CacheAddress = mem_alu;
-        if (mem_c5) dc->i_CacheWriteData = mem_rd2;
+        dc->i_CWE = mem_c5;
+        dc->i_CRE = mem_c6;
+        if (mem_c5 || mem_c6) dc->i_CAdr = mem_alu;
+        if (mem_c5) dc->i_CWDat = mem_rd2;
     }
 
     /* EXECUTE */

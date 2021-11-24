@@ -20,7 +20,22 @@ TOP_OBJ		+= $(OBJDIR)/cpu/cpu.o $(OBJDIR)/top.o
 ##################################     All     #################################
 
 .PHONEY: all
-all: msg directories obj top
+all: 
+	@$(MAKE) -s --no-print-directory msg
+	@$(MAKE) -s --no-print-directory compile
+
+.PHONEY: fresh
+fresh:
+	@$(MAKE) -s --no-print-directory msg
+	@$(MAKE) -s --no-print-directory realclean
+	@$(MAKE) -s --no-print-directory compile
+
+.PHONEY: compile
+compile:
+	@$(MAKE) -s --no-print-directory directories
+	@$(MAKE) -s --no-print-directory obj
+	@$(MAKE) -s --no-print-directory top
+
 
 .PHONEY: directories
 directories:
@@ -30,11 +45,14 @@ directories:
 
 ##################################  Messages  ##################################
 
-BANNER		:= "\033[38;1m\033[38;5;88m╔═╗ ╦═╗ ╔═╗  ╦ ╔═╗ ╔═╗ ╔╦╗     ╦═╗ ╦ ╔═╗ ╦╔═\n\033[38;5;124m╠═╝ ╠╦╝ ║ ║  ║ ║╣  ║    ║  ─── ╠╦╝ ║ ╚═╗ ╠╩╗\n\033[38;5;160m╩   ╩╚═ ╚═╝ ╚╝ ╚═╝ ╚═╝  ╩      ╩╚═ ╩ ╚═╝ ╩ ╩\033[m\n"
+BANNER		:= "\033[38;1m\033[38;5;88m╔═╗ ╦═╗ ╔═╗  ╦ ╔═╗ ╔═╗ ╔╦╗     ╦═╗ ╦ ╔═╗ ╦╔═\n\
+\033[38;5;124m╠═╝ ╠╦╝ ║ ║  ║ ║╣  ║    ║  ─── ╠╦╝ ║ ╚═╗ ╠╩╗\n\
+\033[38;5;160m╩   ╩╚═ ╚═╝ ╚╝ ╚═╝ ╚═╝  ╩      ╩╚═ ╩ ╚═╝ ╩ ╩\033[m\n"
 PLATFORM	:= $(shell uname)
 ARCH 		:= $(shell $(CXX) -dumpmachine)
 CXX_M		:= $(shell $(CXX) -dumpfullversion)
 
+.PHONEY: msg
 msg:
 	@printf $(BANNER)
 	@printf "\033[32;1mPLATFORM   \033[33;1m?| \033[m$(PLATFORM)\n"
@@ -73,6 +91,7 @@ clean:
 
 .PHONEY: realclean
 realclean: clean
+	@printf "\033[32;1mDeleting objects and directories\033[m...\n\n"
 	@$(RM) $(BINDIR)/*
 	@$(RM) $(OBJDIR)
 	@$(RM) $(BINDIR)

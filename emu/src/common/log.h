@@ -1,5 +1,5 @@
 /**
- * This is a file for C++ emulator of the machine
+ * LOGGING FUNCTIONS
  * 
  */
 #pragma once

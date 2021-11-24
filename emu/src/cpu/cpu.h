@@ -3,8 +3,6 @@
  * 
  */
 
-
-
 class CentralProcessingUnit
 {
 

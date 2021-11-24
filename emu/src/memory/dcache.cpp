@@ -19,240 +19,149 @@
  *  another block (with the same index) data can be lost
  * 
  */
-
 #include "../common/config.h"
 #include "../common/log.h"
 #include "fsb.h"
 #include "dcache.h"
 
 
-
-/**
- * @brief Constructor
- * 
- */
 DataCache::DataCache(void)
 {
-    caches1 = new unsigned[2048];
-    for (unsigned i = 0; i < 2048; i++) caches1[i] = 0;
-    tags1 = new unsigned short[256];
-    for (unsigned i = 0; i < 256; i++) tags1[i] = 0;
+    cache1 = new unsigned[2048];
+    for (unsigned i = 0; i < 2048; i++) cache1[i] = 0;
+    tag1 = new unsigned short[256];
+    for (unsigned i = 0; i < 256; i++) tag1[i] = 0;
     valid1 = new unsigned char[256];
     for (unsigned i = 0; i < 256; i++) valid1[i] = 0;
-    queued1 = new unsigned char[256];
-    for (unsigned i = 0; i < 256; i++) queued1[i] = 0;
-    caches2 = new unsigned[2048];
-    for (unsigned i = 0; i < 2048; i++) caches2[i] = 0;
-    tags2 = new unsigned short[256];
-    for (unsigned i = 0; i < 256; i++) tags2[i] = 0;
+    queue1 = new unsigned char[256];
+    for (unsigned i = 0; i < 256; i++) queue1[i] = 0;
+    cache2 = new unsigned[2048];
+    for (unsigned i = 0; i < 2048; i++) cache2[i] = 0;
+    tag2 = new unsigned short[256];
+    for (unsigned i = 0; i < 256; i++) tag2[i] = 0;
     valid2 = new unsigned char[256];
     for (unsigned i = 0; i < 256; i++) valid2[i] = 0;
-    queued2 = new unsigned char[256];
-    for (unsigned i = 0; i < 256; i++) queued1[i] = 0;
+    queue2 = new unsigned char[256];
+    for (unsigned i = 0; i < 256; i++) queue2[i] = 0;
     lastSet = new unsigned char[256];
     for (unsigned i = 0; i < 256; i++) lastSet[i] = 0;
-    writeAddressQueue = new unsigned[32];
-    for (unsigned i = 0; i < 32; i++) writeAddressQueue[i] = 0;
-    queuePointer = 0;
+    WAdrQueue = new unsigned[32];
+    for (unsigned i = 0; i < 32; i++) WAdrQueue[i] = 0;
+    queuePtr = 0;
     fetchSet = 0;
-
-    i_CacheAddress = 0;
-    i_CacheWriteData = 0;
-    i_CacheWriteEnable = 0;
-    i_CacheReadEnable = 0;
-    i_FsbAddress = 0;
-    i_FsbWriteData = 0;
-    i_FsbWriteEnable = 0;
-    i_FsbReadEnable = 0;
-    i_FsbLastAccess = 0;
-    i_FsbReadAck = 0;
-    i_FsbWriteAck = 0;
-
-    n_CacheReadData = 0;
-    n_CacheValidData = 1;
-    n_CacheFetching = 0;
-    n_FsbReadAddress = 0;
-    n_FsbReadRequest = 0;
-    n_FsbWriteRequest = 0;
-    n_FsbQueueFull = 0;
-
-    o_CacheReadData = 0;
-    o_CacheValidData = 1;
-    o_CacheFetching = 0;
-    o_FsbReadAddress = 0;
-    o_FsbReadRequest = 0;
-    o_FsbWriteRequest = 0;
-    o_FsbQueueFull = 0;
-
-    readAddress = 0;
 }
 
 
-
-/**
- * @brief Destructor
- * 
- */
-DataCache::~DataCache(void)
-{
-    delete[] caches1;
-    delete[] caches2;
-    delete[] tags1;
-    delete[] tags2;
-    delete[] valid1;
-    delete[] valid2;
-    delete[] lastSet;
-    delete[] writeAddressQueue;
-}
-
-
-
-unsigned DataCache::getBlock(unsigned a)
-{
-    return (a >> 2) & 0x7;
-}
-
-unsigned DataCache::getIndex(unsigned a)
-{
-    return (a >> 5) & 0xFF;
-}
-
-unsigned DataCache::getTag(unsigned a)
-{
-    return (a >> 14);
-}
-
-bool DataCache::checkCache1(unsigned a)
-{
-    return (tags1[getIndex(a)] == getTag(a) && valid1[getIndex(a)]);
-}
-
-bool DataCache::checkCache2(unsigned a)
-{
-    return (tags2[getIndex(a)] == getTag(a) && valid2[getIndex(a)]);
-}
-
-void DataCache::pushWrite(unsigned a)
-{
-    writeAddressQueue[queuePointer++] = a & 0xFFFFFE0;
-}
-
+static unsigned getBlock(unsigned a) { return (a >> 2) & 0x7; }
+static unsigned getIndex(unsigned a) { return (a >> 5) & 0xFF; }
+static unsigned getTag(unsigned a) { return (a >> 14); }
+bool DataCache::checkCache1(unsigned a) { return (tag1[getIndex(a)] == getTag(a) && valid1[getIndex(a)]); }
+bool DataCache::checkCache2(unsigned a) { return (tag2[getIndex(a)] == getTag(a) && valid2[getIndex(a)]); }
+void DataCache::pushWrite(unsigned a) { WAdrQueue[queuePtr++] = a & 0xFFFFFE0; }
 unsigned DataCache::pullWrite(void)
 {
-    unsigned a = writeAddressQueue[0];
+    unsigned a = WAdrQueue[0];
     for (unsigned i = 0; i < 31; i++)
-        writeAddressQueue[i] = writeAddressQueue[i+1];
-    writeAddressQueue[31] = 0;
-    if (queuePointer > 0)
-        queuePointer--;
+        WAdrQueue[i] = WAdrQueue[i+1];
+    WAdrQueue[31] = 0;
+    if (queuePtr > 0)
+        queuePtr--;
     return a;
 }
 
 
-
-/**
- * @brief Update function for data cache
- * 
- */
-void DataCache::Update(void)
+void DataCache::Update(void)  // TODO: Rewrite/make work
 {
 
-    unsigned block = getBlock(i_CacheAddress);
-    unsigned index = getIndex(i_CacheAddress);
+    unsigned block = getBlock(i_CAdr);
+    unsigned index = getIndex(i_CAdr);
 
-    if (i_FsbReadAck) {  // Turn off read request on ACK
-        n_FsbReadRequest = 0;
-    }
+    if (i_FRAck) { n_FRReq = 0; }  // Turn off read request on ACK
 
-    if (i_FsbWriteAck) {  // Turn off write request on 
-        n_FsbWriteRequest = 0;
-    }
+    if (i_FWAck) { n_FWReq = 0; }  // Turn off write request on ACK
 
-    if (i_FsbReadEnable) {  // Handle writing to RAM
+    if (i_FRE) {  // Handle writing to RAM
 
-        if (checkCache1(i_FsbAddress)) {
-            n_FsbWriteData = caches1[getBlock(i_FsbAddress)];
-        } else if (checkCache2(i_FsbAddress)) {
-            n_FsbWriteData = caches2[getBlock(i_FsbAddress)];
+        if (checkCache1(i_FAdr)) {
+            i_FWDat = cache1[getBlock(i_FAdr)];
+        } else if (checkCache2(i_FAdr)) {
+            i_FWDat = cache2[getBlock(i_FAdr)];
         } else {
-            n_FsbWriteData = 0x55AA55AA;
+            i_FWDat = 0x55AA55AA;
         }
 
-        if (i_FsbLastAccess) {
+        if (i_FLA) {
             pullWrite();
-            if (checkCache1(i_FsbAddress)) {
-                queued1[getIndex(i_FsbAddress)] = 0;
+            if (checkCache1(i_FAdr)) {
+                queue1[getIndex(i_FAdr)] = 0;
             } else {
-                queued2[getIndex(i_FsbAddress)] = 0;
+                queue2[getIndex(i_FAdr)] = 0;
             }
         }
 
     }
 
-    if (n_CacheFetching && i_FsbWriteEnable) {  // Handle fetching from RAM
+    if (n_CFetch && i_FWE) {  // Handle fetching from RAM
         
         if (fetchSet) {
-            caches2[getBlock(i_FsbAddress)] = i_FsbWriteData;
+            cache2[getBlock(i_FAdr)] = i_FWDat;
         } else {
-            caches1[getBlock(i_FsbAddress)] = i_FsbWriteData;
+            cache1[getBlock(i_FAdr)] = i_FWDat;
         }
     
-        if (i_FsbLastAccess) {
-            n_CacheFetching = 0;
+        if (i_FLA) {
+            n_CFetch = 0;
             if (fetchSet) {
-                tags2[getIndex(i_FsbAddress)] = getTag(i_FsbAddress);
-                valid2[getIndex(i_FsbAddress)] = 1;
-                lastSet[getIndex(i_FsbAddress)] = 1;
+                tag2[getIndex(i_FAdr)] = getTag(i_FAdr);
+                valid2[getIndex(i_FAdr)] = 1;
+                lastSet[getIndex(i_FAdr)] = 1;
             } else {
-                tags1[getIndex(i_FsbAddress)] = getTag(i_FsbAddress);
-                valid1[getIndex(i_FsbAddress)] = 1;
-                lastSet[getIndex(i_FsbAddress)] = 0;
+                tag1[getIndex(i_FAdr)] = getTag(i_FAdr);
+                valid1[getIndex(i_FAdr)] = 1;
+                lastSet[getIndex(i_FAdr)] = 0;
             }
-
         }
 
         goto endUpdate;
 
     }
 
-    if (i_CacheReadEnable) {
-        readAddress = i_CacheAddress;
-    }
+    if (i_CRE) { RAdr = i_CAdr; }
 
-    if (!n_CacheFetching && i_CacheWriteEnable) {  // Handle writes
+    if (!n_CFetch && i_CWE) {  // Handle writes
 
-        if (!(checkCache1(readAddress) || checkCache2(readAddress))) {
+        if (!(checkCache1(RAdr) || checkCache2(RAdr))) {
             goto fetchFromRam;
         }
 
-        if (checkCache1(readAddress)) {
+        if (checkCache1(RAdr)) {
             lastSet[index] = 0;
-            caches1[block] = i_CacheWriteData;
+            cache1[block] = i_CWDat;
             
-            if (!queued1[index]) {
-                n_FsbWriteRequest = 1;
-                if (!n_FsbQueueFull) {
-                    pushWrite(readAddress);
-                    queued1[index] = 1;
-                    n_CacheWriteDone = 1;
+            if (!queue1[index]) {
+                n_FWReq = 1;
+                if (!n_FQFull) {
+                    pushWrite(RAdr);
+                    queue1[index] = 1;
+                    n_CWDone = 1;
                 } else {
-                    n_CacheWriteDone = 0;
+                    n_CWDone = 0;
                 }
             }
             goto endUpdate;
         }
 
-        if (checkCache2(readAddress)) {
+        if (checkCache2(RAdr)) {
             lastSet[index] = 1;
-            caches2[block] = i_CacheWriteData;
-            if (!queued2[index]) {
-                n_FsbWriteRequest = 1;
-                if (!n_FsbQueueFull) {
-                    pushWrite(readAddress);
-                    queued2[index] = 1;
-                    n_CacheWriteDone = 1;
+            cache2[block] = i_CWDat;
+            if (!queue2[index]) {
+                n_FWReq = 1;
+                if (!n_FQFull) {
+                    pushWrite(RAdr);
+                    queue2[index] = 1;
+                    n_CWDone = 1;
                 } else {
-                    n_CacheWriteDone = 0;
+                    n_CWDone = 0;
                 }
             }
             goto endUpdate;
@@ -260,107 +169,97 @@ void DataCache::Update(void)
 
     }
 
-    if (!n_CacheFetching) {  // Handle reads
+    if (!n_CFetch) {  // Handle reads
 
-        if (!(checkCache1(readAddress) || checkCache2(readAddress))) {
+        if (!(checkCache1(RAdr) || checkCache2(RAdr))) {
             goto fetchFromRam;
         }
 
-        if (checkCache1(readAddress)) {
-            n_CacheReadData = caches1[getBlock(readAddress)];
-            n_CacheValidData = 1;
+        if (checkCache1(RAdr)) {
+            n_CRDat = cache1[getBlock(RAdr)];
+            n_CVD = 1;
             lastSet[index] = 0;
             goto endUpdate;
         }
 
-        if (checkCache2(readAddress)) {
-            n_CacheReadData = caches2[getBlock(readAddress)];
-            n_CacheValidData = 1;
+        if (checkCache2(RAdr)) {
+            n_CRDat = cache2[getBlock(RAdr)];
+            n_CVD = 1;
             lastSet[index] = 1;
             goto endUpdate;
         }
 
         fetchFromRam:
-        fetchSet = !lastSet[getIndex(readAddress)];
-        n_FsbReadAddress = readAddress & 0xFFFFFE0;
-        n_FsbReadRequest = 1;
-        n_CacheValidData = 0;
-        n_CacheFetching = 1;
+        fetchSet = !lastSet[getIndex(RAdr)];
+        n_FRAdr = RAdr & 0xFFFFFE0;
+        n_FRReq = 1;
+        n_CVD = 0;
+        n_CFetch = 1;
         goto endUpdate;
 
     }
 
     endUpdate:
-    if (queuePointer) {  // Turn on or off write request based on queue state
-        n_FsbWriteAddress = writeAddressQueue[0];
-        n_FsbQueueFull = (queuePointer == 32);
-        if (queuePointer > 1)
-            n_FsbWriteRequest = 1;
+    if (queuePtr) {  // Turn on or off write request based on queue state
+        n_FWAdr = WAdrQueue[0];
+        n_FQFull = (queuePtr == 32);
+        if (queuePtr > 1)
+            n_FWReq = 1;
     }
     return;
 
 }
 
 
-
-/**
- * @brief Output ports update function for data cache
- * 
- */
 void DataCache::UpdatePorts(void)
 {
-    o_CacheReadData   = n_CacheReadData;
-    o_CacheValidData  = n_CacheValidData;
-    o_CacheFetching   = n_CacheFetching;
-    o_CacheWriteDone  = n_CacheWriteDone;
-    o_FsbReadAddress  = n_FsbReadAddress;
-    o_FsbWriteAddress = n_FsbWriteAddress;
-    o_FsbWriteData    = n_FsbWriteData;
-    o_FsbReadRequest  = n_FsbReadRequest;
-    o_FsbWriteRequest = n_FsbWriteRequest;
-    o_FsbQueueFull    = n_FsbQueueFull;
+    o_CRDat  = n_CRDat;
+    o_CVD    = n_CVD;
+    o_CFetch = n_CFetch;
+    o_CWDone = n_CWDone;
+    o_FRAdr  = n_FRAdr;
+    o_FWAdr  = n_FWAdr;
+    o_FWDat  = n_FWDat;
+    o_FRReq  = n_FRReq;
+    o_FWReq  = n_FWReq;
+    o_FQFull = n_FQFull;
 }
 
 
-
-/**
- * @brief Logging function for data cache
- * 
- */
 void DataCache::log(void)
 {
 
     Log::logSrc(" DCACHE  ", COLOR_BLUE);
 
-    if (!n_CacheFetching) {
+    if (!n_CFetch) {
 
-        if (i_CacheReadEnable) {
+        if (i_CRE) {
 
             Log::log("Read ");
-            Log::logHex(i_CacheAddress, COLOR_MAGENTA, 8);
+            Log::logHex(i_CAdr, COLOR_MAGENTA, 8);
             Log::log(", ");
-            if (checkCache1(i_CacheAddress)) {
+            if (checkCache1(i_CAdr)) {
                 Log::log("[1: HIT]: ", COLOR_GREEN);
-                Log::logHex(caches1[getBlock(i_CacheAddress)], COLOR_MAGENTA, 8);
+                Log::logHex(cache1[getBlock(i_CAdr)], COLOR_MAGENTA, 8);
             }
-            if (checkCache2(i_CacheAddress)) {
+            if (checkCache2(i_CAdr)) {
                 Log::log("[2: HIT]: ", COLOR_GREEN);
-                Log::logHex(caches2[getBlock(i_CacheAddress)], COLOR_MAGENTA, 8);
+                Log::logHex(cache2[getBlock(i_CAdr)], COLOR_MAGENTA, 8);
             }
 
-        } else if (i_CacheWriteEnable) {
+        } else if (i_CWE) {
 
             Log::log("Write to ");
-            Log::logHex(i_CacheAddress, COLOR_MAGENTA, 8);
-            if (checkCache1(i_CacheAddress)) {
+            Log::logHex(i_CAdr, COLOR_MAGENTA, 8);
+            if (checkCache1(i_CAdr)) {
                 Log::log(" cache ");
                 Log::log("[1]: ", COLOR_GREEN);
-                Log::logHex(i_CacheWriteData, COLOR_MAGENTA, 8);
+                Log::logHex(i_CWDat, COLOR_MAGENTA, 8);
             }
-            if (checkCache2(i_CacheAddress)) {
+            if (checkCache2(i_CAdr)) {
                 Log::log(" cache ");
                 Log::log("[2]: ", COLOR_GREEN);
-                Log::logHex(i_CacheWriteData, COLOR_MAGENTA, 8);
+                Log::logHex(i_CWDat, COLOR_MAGENTA, 8);
             }
 
         } else {
@@ -375,9 +274,9 @@ void DataCache::log(void)
 
     }
 
-    if (queuePointer) {
+    if (queuePtr) {
       Log::log(" [Q:", COLOR_CYAN);
-      Log::logDec(queuePointer, COLOR_CYAN);
+      Log::logDec(queuePtr, COLOR_CYAN);
       Log::log("]", COLOR_CYAN);
     }
 
