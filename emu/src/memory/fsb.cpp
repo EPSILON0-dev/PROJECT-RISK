@@ -46,7 +46,7 @@ void FrontSideBus::Update(void)  // TODO: Rewrite/make work
 
     if (req) {  // Continue currently serviced request
         
-        serviceRequest:
+        request:
 
         if (dCache) {
             if (req == cDCache) {
@@ -66,7 +66,7 @@ void FrontSideBus::Update(void)  // TODO: Rewrite/make work
                 dCache->i_FLA = ddr->o_CLA;
                 dCache->i_FRAck = 0;
                 dCache->i_FWAck = ddr->o_WAck;
-                ddr->i_WRq = dCache->o_FRReq;
+                ddr->i_WRq = dCache->o_FWReq;
                 ddr->i_CRDat = dCache->o_FWDat;
             } else {
                 dCache->i_FAdr = 0;
@@ -110,28 +110,29 @@ void FrontSideBus::Update(void)  // TODO: Rewrite/make work
         reqAdr = dCache->o_FWAdr;
         ddr->i_Adr = reqAdr;
         req = cDWrite;
-        goto serviceRequest;
+        goto request;
     }
 
     if (dCache && dCache->o_FRReq) {  // Handle new D cache request
         reqAdr = dCache->o_FRAdr;
         ddr->i_Adr = reqAdr;
         req = cDCache;
-        goto serviceRequest;
+        goto request;
     }
 
     if (iCache && iCache->o_FRReq) {  // Handle new I cache request
         reqAdr = iCache->o_FRAdr;
         ddr->i_Adr = reqAdr;
         req = cICache;
-        goto serviceRequest;
+        goto request;
     }
 
     if (dCache && dCache->o_FWReq) {  // Handle new D cache write request
+        Log::log("Writing\n");
         reqAdr = dCache->o_FWAdr;
         ddr->i_Adr = reqAdr;
         req = cDWrite;
-        goto serviceRequest;
+        goto request;
     }
 
 }

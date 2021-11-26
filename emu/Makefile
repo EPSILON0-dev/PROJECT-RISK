@@ -8,7 +8,7 @@ BINDIR		= bin
 OBJDIR		= obj
 OBJSUBDIR	= obj/common obj/cpu obj/memory obj/tests
 
-OPTFLAGS	:= -g -O2 
+OPTFLAGS	:= -g -O0 
 WARNFLAGS	:= -Wall -Wextra
 
 TOP_OBJ		:= $(OBJDIR)/common/log.o $(OBJDIR)/memory/dcache.o $(OBJDIR)/memory/ddr.o
@@ -45,7 +45,7 @@ directories:
 
 ##################################  Messages  ##################################
 
-BANNER		:= "\033[38;1m\033[38;5;88m╔═╗ ╦═╗ ╔═╗  ╦ ╔═╗ ╔═╗ ╔╦╗     ╦═╗ ╦ ╔═╗ ╦╔═\n\
+BANNER		:= "\033[38;1m\033[38;5;88m ╔═╗ ╦═╗ ╔═╗  ╦ ╔═╗ ╔═╗ ╔╦╗     ╦═╗ ╦ ╔═╗ ╦╔═\n\
 \033[38;5;124m╠═╝ ╠╦╝ ║ ║  ║ ║╣  ║    ║  ─── ╠╦╝ ║ ╚═╗ ╠╩╗\n\
 \033[38;5;160m╩   ╩╚═ ╚═╝ ╚╝ ╚═╝ ╚═╝  ╩      ╩╚═ ╩ ╚═╝ ╩ ╩\033[m\n"
 PLATFORM	:= $(shell uname)

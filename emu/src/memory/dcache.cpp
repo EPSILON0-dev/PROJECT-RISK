@@ -126,22 +126,20 @@ void DataCache::Update(void)  // TODO: Rewrite/make work
 
     }
 
-    if (i_CRE) { RAdr = i_CAdr; }
+    if (i_CRE || i_CWE) { Adr = i_CAdr; }
 
     if (!n_CFetch && i_CWE) {  // Handle writes
 
-        if (!(checkCache1(RAdr) || checkCache2(RAdr))) {
-            goto fetchFromRam;
-        }
+        if (!(checkCache1(Adr) || checkCache2(Adr))) { goto fetchFromRam; }
 
-        if (checkCache1(RAdr)) {
+        if (checkCache1(Adr)) {
             lastSet[index] = 0;
             cache1[block] = i_CWDat;
-            
+            n_CVD = 1;
             if (!queue1[index]) {
                 n_FWReq = 1;
                 if (!n_FQFull) {
-                    pushWrite(RAdr);
+                    pushWrite(Adr);
                     queue1[index] = 1;
                     n_CWDone = 1;
                 } else {
@@ -151,13 +149,14 @@ void DataCache::Update(void)  // TODO: Rewrite/make work
             goto endUpdate;
         }
 
-        if (checkCache2(RAdr)) {
+        if (checkCache2(Adr)) {
             lastSet[index] = 1;
             cache2[block] = i_CWDat;
+            n_CVD = 1;
             if (!queue2[index]) {
                 n_FWReq = 1;
                 if (!n_FQFull) {
-                    pushWrite(RAdr);
+                    pushWrite(Adr);
                     queue2[index] = 1;
                     n_CWDone = 1;
                 } else {
@@ -171,27 +170,27 @@ void DataCache::Update(void)  // TODO: Rewrite/make work
 
     if (!n_CFetch) {  // Handle reads
 
-        if (!(checkCache1(RAdr) || checkCache2(RAdr))) {
+        if (!(checkCache1(Adr) || checkCache2(Adr))) {
             goto fetchFromRam;
         }
 
-        if (checkCache1(RAdr)) {
-            n_CRDat = cache1[getBlock(RAdr)];
+        if (checkCache1(Adr)) {
+            n_CRDat = cache1[getBlock(Adr)];
             n_CVD = 1;
             lastSet[index] = 0;
             goto endUpdate;
         }
 
-        if (checkCache2(RAdr)) {
-            n_CRDat = cache2[getBlock(RAdr)];
+        if (checkCache2(Adr)) {
+            n_CRDat = cache2[getBlock(Adr)];
             n_CVD = 1;
             lastSet[index] = 1;
             goto endUpdate;
         }
 
         fetchFromRam:
-        fetchSet = !lastSet[getIndex(RAdr)];
-        n_FRAdr = RAdr & 0xFFFFFE0;
+        fetchSet = !lastSet[getIndex(Adr)];
+        n_FRAdr = Adr & 0xFFFFFE0;
         n_FRReq = 1;
         n_CVD = 0;
         n_CFetch = 1;

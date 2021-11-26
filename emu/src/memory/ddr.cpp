@@ -49,17 +49,17 @@ void MainRam::Update(void)
         st = cRowDel;
         break;
 
-    case cRowDel:
+        case cRowDel:
         st = (curOp) ? cWr : cRd;
         break;
 
-    case cRd:
+        case cRd:
         wInx = 0;
         n_RAck = 1;
         st = cCL1;
         break;
 
-    case cWr:
+        case cWr:
         wInx = 1;
         n_WAck = 1;
         n_CRE = 1;
@@ -67,15 +67,15 @@ void MainRam::Update(void)
         st = cWrng;
         break;
 
-    case cCL1:
+        case cCL1:
         st = cCL2;
         break;
 
-    case cCL2:
+        case cCL2:
         st = cRdng;
         break;
 
-    case cRdng:
+        case cRdng:
         n_RAck = 0;
         n_CWE = 1;
         n_CAdr = adr + (wInx << 2);
@@ -83,7 +83,7 @@ void MainRam::Update(void)
         if (++wInx == 8) { st = cIdle; n_CLA = 1; }
         break;
 
-    case cWrng:
+        case cWrng:
         n_WAck = 0;
         n_CAdr = adr + (wInx << 2);
         if (wInx >= 2) { ram[((n_CAdr & 0x3FFFFFF) >> 2) - 2] = i_CRDat; }
@@ -113,49 +113,49 @@ void MainRam::log(void)
     
     switch (st) {
 
-    case cRow:
+        case cRow:
         Log::log("Activate row ");
         Log::logHex(getRow(adr), COLOR_MAGENTA, 4);
         Log::log("\n");
         break;
 
-    case cRowDel:
+        case cRowDel:
         Log::log("Waiting for activate\n");
         break;
 
-    case cRd:
+        case cRd:
         Log::log("Reading column ");
         Log::logHex(getCol(adr), COLOR_MAGENTA, 3);
         Log::log("\n");
         break;
 
-    case cWr:
+        case cWr:
         Log::log("Writing column ");
         Log::logHex(getCol(adr), COLOR_MAGENTA, 3);
         Log::log("\n");
         break;
 
-    case cCL1:
+        case cCL1:
         Log::log("Waiting for read\n");
         break;
 
-    case cCL2:
+        case cCL2:
         Log::log("Waiting for read\n");
         break;
 
-    case cRdng:
+        case cRdng:
         Log::log("Reading word ");
         Log::logDec(wInx);
         Log::log("\n");
         break;
 
-    case cWrng:
+        case cWrng:
         Log::log("Writing word ");
         Log::logDec(wInx - 1);
         Log::log("\n");
         break;
 
-    default:
+        default:
         Log::log("Idle cycle\n");
         break;
 
