@@ -21,20 +21,20 @@ TOP_OBJ		+= $(OBJDIR)/cpu/cpu.o $(OBJDIR)/top.o
 
 .PHONEY: all
 all: 
-	@$(MAKE) -s --no-print-directory msg
-	@$(MAKE) -s --no-print-directory compile
+	@$(MAKE) -s msg
+	@$(MAKE) -s compile
 
 .PHONEY: fresh
 fresh:
-	@$(MAKE) -s --no-print-directory msg
-	@$(MAKE) -s --no-print-directory realclean
-	@$(MAKE) -s --no-print-directory compile
+	@$(MAKE) -s msg
+	@$(MAKE) -s realclean
+	@$(MAKE) -s compile
 
 .PHONEY: compile
 compile:
-	@$(MAKE) -s --no-print-directory directories
-	@$(MAKE) -s --no-print-directory obj
-	@$(MAKE) -s --no-print-directory top
+	@$(MAKE) -s directories
+	@$(MAKE) -s obj
+	@$(MAKE) -s top
 
 
 .PHONEY: directories
