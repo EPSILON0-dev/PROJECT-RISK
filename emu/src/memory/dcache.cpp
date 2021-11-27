@@ -1,7 +1,7 @@
 /**
  * DATA CACHE
  * 
- * Each block of cache contains 32
+ * Each block of cache contains 32 bytes
  * 
  * Address is constructed like this:
  *   26    14   13        5   4         2   1        0
@@ -24,7 +24,10 @@
 #include "fsb.h"
 #include "dcache.h"
 
-
+/**
+ * @brief Construct the Data Cache object
+ * 
+ */
 DataCache::DataCache(void)
 {
     cache1 = new unsigned[2048];
@@ -57,7 +60,21 @@ static unsigned getIndex(unsigned a) { return (a >> 5) & 0xFF; }
 static unsigned getTag(unsigned a) { return (a >> 14); }
 bool DataCache::checkCache1(unsigned a) { return (tag1[getIndex(a)] == getTag(a) && valid1[getIndex(a)]); }
 bool DataCache::checkCache2(unsigned a) { return (tag2[getIndex(a)] == getTag(a) && valid2[getIndex(a)]); }
-void DataCache::pushWrite(unsigned a) { WAdrQueue[queuePtr++] = a & 0xFFFFFE0; }
+
+/**
+ * @brief Push write to the write queue
+ * 
+ * @param a Write address
+ */
+void DataCache::pushWrite(unsigned a) { 
+    WAdrQueue[queuePtr++] = a & 0xFFFFFE0; 
+}
+
+/**
+ * @brief Pull a write from write queue
+ * 
+ * @return Write address from queue
+ */
 unsigned DataCache::pullWrite(void)
 {
     unsigned a = WAdrQueue[0];
@@ -69,8 +86,11 @@ unsigned DataCache::pullWrite(void)
     return a;
 }
 
-
-void DataCache::Update(void)  // TODO: Rewrite/make work
+/**
+ * @brief Perform a single cycle of operation
+ * 
+ */
+void DataCache::Update(void)
 {
 
     unsigned block = getBlock(i_CAdr);
@@ -210,6 +230,10 @@ void DataCache::Update(void)  // TODO: Rewrite/make work
 }
 
 
+/**
+ * @brief Copy the data from internal outputs to output ports
+ * 
+ */
 void DataCache::UpdatePorts(void)
 {
     o_CRDat  = n_CRDat;
@@ -225,6 +249,10 @@ void DataCache::UpdatePorts(void)
 }
 
 
+/**
+ * @brief Log the activity
+ * 
+ */
 void DataCache::log(void)
 {
 

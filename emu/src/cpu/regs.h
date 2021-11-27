@@ -1,10 +1,6 @@
-/**
- * REGISTER SET
- * 
- */
-
 class RegisterSet
 {
+
 private:
     unsigned* regs;
 public:
@@ -12,4 +8,5 @@ public:
     unsigned read(unsigned a);
     void write(unsigned a, unsigned d);
     void log(void);
+    
 };

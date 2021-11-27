@@ -1,8 +1,3 @@
-/**
- * TOP CPU BLOCK
- * 
- */
-
 class CentralProcessingUnit
 {
 

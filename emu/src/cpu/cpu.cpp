@@ -1,8 +1,3 @@
-/**
- * CENTRAL PROCESSING UNIT
- * 
- * 
- */
 #include "alu.h"
 #include "branch.h"
 #include "cpu.h"
@@ -14,9 +9,11 @@
 #include "../memory/icache.h"
 #include "../memory/dcache.h"
 
+
 RegisterSet rs;
 InstructionCache* ic;
 DataCache* dc;
+
 
 unsigned if_pc = 0;
 
@@ -95,12 +92,24 @@ bool ce_ex  = 0;
 bool ce_mem = 0;
 bool ce_wb  = 0;
 
+
+/**
+ * @brief Load the memory class pointers
+ * 
+ * @param icache Instruction Cache pointer
+ * @param dcache Data Cache pointer
+ */
 void CentralProcessingUnit::loadPointers(void* icache, void* dcache)
 {
     ic = (InstructionCache*)icache;
     dc = (DataCache*)dcache;
 }
 
+
+/**
+ * @brief First of the two updates, computes combinational logic
+ * 
+ */
 void CentralProcessingUnit::UpdateCombinational(void)
 {
     
@@ -164,6 +173,11 @@ void CentralProcessingUnit::UpdateCombinational(void)
 
 }
 
+
+/**
+ * @brief Second update, stores the results of the combinational calculations to the pipeline registers
+ * 
+ */
 void CentralProcessingUnit::UpdateSequential(void)
 {
 
@@ -261,6 +275,11 @@ void CentralProcessingUnit::UpdateSequential(void)
 
 }
 
+
+/**
+ * @brief Decorated logging of the status
+ * 
+ */
 void CentralProcessingUnit::log(void)
 {
     Log::logSrc("  IF    ", (ce_if) ? COLOR_GREEN : COLOR_RED);

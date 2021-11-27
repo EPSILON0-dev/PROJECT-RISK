@@ -1,21 +1,21 @@
 ################################## Definitions #################################
 
-CXX		= g++
-RM		= rm -rf
-MK		= mkdir -p
+CXX			= g++
+RM			= rm -rf
+MK			= mkdir -p
+
 SRCDIR		= src
 BINDIR		= bin
 OBJDIR		= obj
-OBJSUBDIR	= obj/common obj/cpu obj/memory obj/tests
+OBJSUBDIR	= obj/main obj/common obj/cpu obj/memory obj/tests
 
 OPTFLAGS	:= -g -O0 
 WARNFLAGS	:= -Wall -Wextra
 
-TOP_OBJ		:= $(OBJDIR)/common/log.o $(OBJDIR)/memory/dcache.o $(OBJDIR)/memory/ddr.o
-TOP_OBJ		+= $(OBJDIR)/memory/fsb.o $(OBJDIR)/memory/icache.o $(OBJDIR)/cpu/alu.o
-TOP_OBJ		+= $(OBJDIR)/cpu/regs.o $(OBJDIR)/cpu/decode.o $(OBJDIR)/cpu/branch.o
-TOP_OBJ		+= $(OBJDIR)/cpu/cpu.o $(OBJDIR)/top.o
-
+OBJ			:= $(OBJDIR)/common/log.o 	$(OBJDIR)/memory/dcache.o 	$(OBJDIR)/memory/ddr.o
+OBJ			+= $(OBJDIR)/memory/fsb.o 	$(OBJDIR)/memory/icache.o 	$(OBJDIR)/cpu/alu.o
+OBJ			+= $(OBJDIR)/cpu/regs.o 	$(OBJDIR)/cpu/decode.o 		$(OBJDIR)/cpu/branch.o
+OBJ			+= $(OBJDIR)/cpu/cpu.o 		$(OBJDIR)/main/system.o 	$(OBJDIR)/main/main.o
 
 ##################################     All     #################################
 
@@ -34,8 +34,7 @@ fresh:
 compile:
 	@$(MAKE) -s directories
 	@$(MAKE) -s obj
-	@$(MAKE) -s top
-
+	@$(MAKE) -s main
 
 .PHONEY: directories
 directories:
@@ -65,7 +64,7 @@ msg:
 
 ##################################   Objects   #################################
 
-obj: obj_msg $(TOP_OBJ)
+obj: obj_msg $(OBJ)
 
 obj_msg:
 	@printf "\033[32;1mCompiling Objects\033[m...\n"
@@ -76,11 +75,11 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 
 ##################################  Binaries  ##################################
 
-top: bin/top
-bin/top: $(TOP_OBJ)
+main: bin/main
+bin/main: $(OBJ)
 	@printf "\n\033[32;1mLinking and optimizing binary\033[m...\n"
 	@$(CXX) $(OPTFLAGS) $(WARNFLAGS) -o $@ $^
-	@printf "\033[32;1m-> \033[37;1mbin/top\033[m\n"
+	@printf "\033[32;1m-> \033[37;1mbin/main\033[m\n"
 
 
 ##################################  Cleaning  ##################################

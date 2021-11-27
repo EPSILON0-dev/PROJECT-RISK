@@ -1,12 +1,12 @@
-/**
- * MEMORY LOGIC
- * 
- */
 #include "mem.h"
 
+
 /**
- * @brief Internal usage
+ * @brief Shift the d by s octets
  * 
+ * @param s Shift amount
+ * @param d Data
+ * @return Shift result 
  */
 unsigned shift(char s, unsigned d) 
 {
@@ -28,13 +28,13 @@ unsigned shift(char s, unsigned d)
 
 }
 
+
 /**
  * @brief Compute write data for memory 
  * 
  * @param s Shift of the output data
  * @param l Length of the output data
  * @param d Data
- * 
  * @return Result of the operation
  */
 unsigned writeData(char s, char l, unsigned d) 
@@ -44,6 +44,7 @@ unsigned writeData(char s, char l, unsigned d)
     return shift(s, d);
 }
 
+
 /**
  * @brief Compute read data from memory 
  * 
@@ -51,7 +52,6 @@ unsigned writeData(char s, char l, unsigned d)
  * @param l Length of the length data
  * @param u Unsigned extend
  * @param d Data
- * 
  * @return Result of the operation
  */
 unsigned readData(char s, char l, bool u, unsigned d) 

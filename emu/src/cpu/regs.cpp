@@ -1,12 +1,11 @@
-/**
- * REGISTER SET
- * 
- */
 #include "../common/config.h"
 #include "../common/log.h"
 #include "regs.h"
 
-
+/**
+ * @brief Construct the Register Set object
+ * 
+ */
 RegisterSet::RegisterSet(void)
 {
     regs = new unsigned[32];
@@ -19,7 +18,6 @@ RegisterSet::RegisterSet(void)
  * @brief Read from register set
  * 
  * @param a Read address
- * 
  * @return Data from register set
  */
 unsigned RegisterSet::read(unsigned a)

@@ -19,6 +19,10 @@
 #include "icache.h"
 
 
+/**
+ * @brief Construct the Instruction Cache object
+ * 
+ */
 InstructionCache::InstructionCache(void)
 {
     cache1 = new unsigned[2048];
@@ -45,6 +49,10 @@ bool InstructionCache::checkCache1(unsigned a) { return (tag1[getIndex(a)] == ge
 bool InstructionCache::checkCache2(unsigned a) { return (tag2[getIndex(a)] == getTag(a) && valid2[getIndex(a)]); }
  
 
+/**
+ * @brief Perform a single cycle of operation
+ * 
+ */
 void InstructionCache::Update(void)
 {
 
@@ -112,6 +120,10 @@ void InstructionCache::Update(void)
 }
 
 
+/**
+ * @brief Copy the data from internal outputs to output ports
+ * 
+ */
 void InstructionCache::UpdatePorts(void)
 {
     o_CRDat  = n_CRDat;
@@ -122,6 +134,10 @@ void InstructionCache::UpdatePorts(void)
 }
 
 
+/**
+ * @brief Log the activity
+ * 
+ */
 void InstructionCache::log(void)
 {
     Log::logSrc(" ICACHE  ", COLOR_BLUE);

@@ -1,7 +1,3 @@
-/**
- * MAIN LPDDR RAM
- * 
- */
 #include "../common/config.h"
 #include "../common/log.h"
 #include "ddr.h"
@@ -13,6 +9,10 @@ static unsigned getRow(unsigned a) { return (a >> 11) & 0x1FFF; }
 static unsigned getCol(unsigned a) { return (a >> 1) & 0x3FF; }
 
 
+/**
+ * @brief Construct the Main Ram object
+ * 
+ */
 MainRam::MainRam(void)
 {
     Log::logSrc("   DDR   ", COLOR_BLUE);
@@ -29,6 +29,10 @@ MainRam::MainRam(void)
 }
 
 
+/**
+ * @brief Perform a single cycle of operation
+ * 
+ */
 void MainRam::Update(void) 
 {
     
@@ -95,6 +99,10 @@ void MainRam::Update(void)
 }
 
 
+/**
+ * @brief Copy the data from internal outputs to output ports
+ * 
+ */
 void MainRam::UpdatePorts(void) 
 {
     o_CAdr  = n_CAdr;
@@ -107,6 +115,10 @@ void MainRam::UpdatePorts(void)
 }
 
 
+/**
+ * @brief Log the activity
+ * 
+ */
 void MainRam::log(void)
 {
     Log::logSrc("   DDR   ", COLOR_BLUE);

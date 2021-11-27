@@ -1,14 +1,18 @@
-/**
- * DECODE
- * 
- */
 #include <string>
 #include "decode.h"
 #include "../common/config.h"
 #include "../common/log.h"
 
+
 enum eFormat { FormatR, FormatI, FormatS, FormatB, FormatU, FormatJ };
 
+
+/**
+ * @brief Get the format of the operations
+ * 
+ * @param op opcode 
+ * @return Format from the eFormat enum 
+ */
 unsigned getFormat(unsigned op)
 {
     switch (op & 0x7F) {
@@ -46,6 +50,13 @@ unsigned getFormat(unsigned op)
     }
 }
 
+
+/**
+ * @brief Get the immediate part of the opcode
+ * 
+ * @param op opcode
+ * @return Immediate value 
+ */
 unsigned getImmediate(unsigned op)
 {
     switch (getFormat(op)) {
@@ -73,27 +84,9 @@ unsigned getImmediate(unsigned op)
     }
 }
 
-unsigned getRs1(unsigned op)
-{
-    return (op >> 15) & 0x1F;
-}
 
-unsigned getRs2(unsigned op)
-{
-    return (op >> 20) & 0x1F;
-}
-
-unsigned getRd(unsigned op)
-{
-    return (op >> 7) & 0x1F;
-}
-
-unsigned getOpcode(unsigned op)
-{
-    return (op >> 2) & 0x1F;
-}
-
-unsigned getFunct3(unsigned op)
-{
-    return (op >> 12) & 0x7;
-}
+unsigned getRs1(unsigned op) { return (op >> 15) & 0x1F; }
+unsigned getRs2(unsigned op) { return (op >> 20) & 0x1F; }
+unsigned getRd(unsigned op) { return (op >> 7) & 0x1F; }
+unsigned getOpcode(unsigned op) { return (op >> 2) & 0x1F; }
+unsigned getFunct3(unsigned op) { return (op >> 12) & 0x7; }

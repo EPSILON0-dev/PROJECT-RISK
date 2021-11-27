@@ -1,8 +1,3 @@
-/**
- * MAIN LPDDR RAM
- * 
- */
-
 class MainRam 
 {
 

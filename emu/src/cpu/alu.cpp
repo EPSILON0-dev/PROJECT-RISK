@@ -1,9 +1,5 @@
-/**
- * ARYTHMETIC AND LOGIC UNIT
- * 
- */
-
 #include "alu.h"
+
 
 /**
  * @brief Do a single operation on ALU, 
@@ -13,7 +9,6 @@
  * @param a Input A
  * @param b Input B
  * @param o Command input [5]: Enable [4]: Imm [3]: funct7 [2:0]: funct3
- * 
  * @return Result of the operation
  */
 unsigned alu(unsigned a, unsigned b, unsigned o)

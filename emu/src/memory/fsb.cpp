@@ -33,6 +33,13 @@ FrontSideBus::FrontSideBus(void)
 }
 
 
+/**
+ * @brief Load the memory class pointers
+ * 
+ * @param instructionCache Instruction Cache pointer
+ * @param dataCache Data Cache pointer
+ * @param mainRam Main LPDDR RAM pointer
+ */
 void FrontSideBus::loadPointers(void* instructionCache, void* dataCache, void* mainRam)
 {
     iCache = (InstructionCache*)instructionCache;
@@ -41,7 +48,11 @@ void FrontSideBus::loadPointers(void* instructionCache, void* dataCache, void* m
 }
 
 
-void FrontSideBus::Update(void)  // TODO: Rewrite/make work
+/**
+ * @brief Perform a single cycle of operation
+ * 
+ */
+void FrontSideBus::Update(void)
 {
 
     if (req) {  // Continue currently serviced request
@@ -138,6 +149,10 @@ void FrontSideBus::Update(void)  // TODO: Rewrite/make work
 }
 
 
+/**
+ * @brief Log the activity
+ * 
+ */
 void FrontSideBus::log(void)
 {
     Log::logSrc("   FSB   ", COLOR_BLUE);

@@ -1,8 +1,3 @@
-/**
- * FRONT SIDE BUS
- * 
- */
-
 class FrontSideBus
 {
 

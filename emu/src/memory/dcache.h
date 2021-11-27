@@ -1,8 +1,3 @@
-/**
- * DATA CACHE
- * 
- */
-
 class DataCache
 {
 

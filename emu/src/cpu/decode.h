@@ -1,8 +1,3 @@
-/**
- * DECODE
- * 
- */
-
 unsigned getFormat(unsigned op);
 unsigned getImmediate(unsigned op);
 unsigned getRs1(unsigned op);
