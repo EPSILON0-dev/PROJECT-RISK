@@ -1,7 +1,3 @@
-/**
- * LOGGING FUNCTIONS
- * 
- */
 #pragma once
 #include <string>
 

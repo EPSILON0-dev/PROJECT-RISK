@@ -9,13 +9,14 @@ BINDIR		= bin
 OBJDIR		= obj
 OBJSUBDIR	= obj/main obj/common obj/cpu obj/memory obj/tests
 
-OPTFLAGS	:= -g -O0 
+OPTFLAGS	:= -O2
 WARNFLAGS	:= -Wall -Wextra
 
 OBJ			:= $(OBJDIR)/common/log.o 	$(OBJDIR)/memory/dcache.o 	$(OBJDIR)/memory/ddr.o
 OBJ			+= $(OBJDIR)/memory/fsb.o 	$(OBJDIR)/memory/icache.o 	$(OBJDIR)/cpu/alu.o
 OBJ			+= $(OBJDIR)/cpu/regs.o 	$(OBJDIR)/cpu/decode.o 		$(OBJDIR)/cpu/branch.o
-OBJ			+= $(OBJDIR)/cpu/cpu.o 		$(OBJDIR)/main/system.o 	$(OBJDIR)/main/main.o
+OBJ			+= $(OBJDIR)/cpu/cpu.o 		$(OBJDIR)/main/system.o 	$(OBJDIR)/main/arg.o
+OBJ			+= $(OBJDIR)/main/main.o
 
 ##################################     All     #################################
 

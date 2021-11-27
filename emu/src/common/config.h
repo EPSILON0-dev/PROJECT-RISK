@@ -6,4 +6,4 @@
 #define COLOR_MAGENTA   "\x1b[35m"
 #define COLOR_CYAN      "\x1b[36m"
 #define COLOR_WHITE     "\x1b[37m"
-#define COLOR_NONE      ""
+#define COLOR_NONE      "\x1b[0m"

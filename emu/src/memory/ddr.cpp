@@ -15,15 +15,6 @@ static unsigned getCol(unsigned a) { return (a >> 1) & 0x3FF; }
  */
 MainRam::MainRam(void)
 {
-    Log::logSrc("   DDR   ", COLOR_BLUE);
-    Log::log("Sending the configuration to the DDR memory\n");
-    Log::logSrc("   DDR   ", COLOR_BLUE);
-    Log::log("Bank ");
-    Log::log("0x0", COLOR_MAGENTA);
-    Log::log(", address ");
-    Log::log("0x0024", COLOR_MAGENTA);
-    Log::log(", all control lines low\n");
-    
     ram = new unsigned[16 * 1024 * 1024];
     for (unsigned i = 0; i < 16 * 1024 * 1024; i++) ram[i] = (i << 2) | 0x55000000;
 }
