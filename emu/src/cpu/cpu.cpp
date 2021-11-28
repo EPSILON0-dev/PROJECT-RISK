@@ -84,7 +84,7 @@ unsigned ex_c_alu = 0;
 unsigned ex_c_br_en = 0;
 
 bool hz_br = 0;
-bool hz_hazard = 0;
+bool hz_hz = 0;
 
 bool ce_if  = 0;
 bool ce_id  = 0;
@@ -169,7 +169,7 @@ void CentralProcessingUnit::UpdateCombinational(void)
     bool hz_ex  = h1 || h2;
     bool hz_mem = h3 || h4;
     bool hz_wb  = h5 || h6;
-    hz_hazard = hz_ex || hz_mem || hz_wb;
+    hz_hz = hz_ex || hz_mem || hz_wb;
 
 }
 
@@ -181,8 +181,8 @@ void CentralProcessingUnit::UpdateCombinational(void)
 void CentralProcessingUnit::UpdateSequential(void)
 {
 
-    ce_if  = ic->o_CVD && dc->o_CVD && !hz_hazard;
-    ce_id  = ic->o_CVD && dc->o_CVD && !hz_hazard;
+    ce_if  = ic->o_CVD && dc->o_CVD && !hz_hz;
+    ce_id  = ic->o_CVD && dc->o_CVD && !hz_hz;
     ce_ex  = ic->o_CVD && dc->o_CVD;
     ce_mem = ic->o_CVD && dc->o_CVD;
     ce_wb  = ic->o_CVD && dc->o_CVD;
@@ -216,7 +216,7 @@ void CentralProcessingUnit::UpdateSequential(void)
 
     /* EXECUTE */
     if (ce_ex) {
-        if (!hz_hazard && !hz_br) {
+        if (!hz_hz && !hz_br) {
             ex_rd1 = id_c_rd1;
             ex_rd2 = id_c_rd2;
             ex_imm = id_c_imm;
@@ -282,6 +282,7 @@ void CentralProcessingUnit::UpdateSequential(void)
  */
 void CentralProcessingUnit::log(void)
 {
+
     Log::logSrc("  IF    ", (ce_if) ? COLOR_GREEN : COLOR_RED);
     Log::log("if_pc: ");
     Log::logHex(if_pc, COLOR_MAGENTA, 8);
@@ -363,11 +364,74 @@ void CentralProcessingUnit::log(void)
     Log::logDec(wb_c9, COLOR_MAGENTA);
     Log::log("\n");
 
-    if (hz_hazard) {
+    if (hz_hz) {
         Log::logSrc(" HAZARD  ", COLOR_RED);
-        Log::log("HAZARD DETECTED", COLOR_RED);
+        Log::log("DATA HAZARD", COLOR_RED);
+        Log::log("\n");
+    }
+
+    if (hz_br) {
+        Log::logSrc(" HAZARD  ", COLOR_RED);
+        Log::log("BRANCH HAZARD", COLOR_RED);
         Log::log("\n");
     }
 
     rs.log();
+
+}
+
+
+/**
+ * @brief JSON logging of the status
+ * 
+ */
+void CentralProcessingUnit::logJson(void)
+{
+
+    Log::log("{\n");
+
+    Log::log("\"if_pc\": ");   Log::logDec(if_pc);   Log::log(",\n");
+
+    Log::log("\"id_ret\": ");  Log::logDec(id_ret);  Log::log(",\n");
+    Log::log("\"id_pc\": ");   Log::logDec(id_pc);   Log::log(",\n");
+    Log::log("\"id_ir\": ");   Log::logDec(id_ir);   Log::log(",\n");
+
+    Log::log("\"ex_rd1\": ");  Log::logDec(ex_rd1);  Log::log(",\n");
+    Log::log("\"ex_rd2\": ");  Log::logDec(ex_rd2);  Log::log(",\n");
+    Log::log("\"ex_imm\": ");  Log::logDec(ex_imm);  Log::log(",\n");
+    Log::log("\"ex_pc\": ");   Log::logDec(ex_pc);   Log::log(",\n");
+    Log::log("\"ex_ret\": ");  Log::logDec(ex_ret);  Log::log(",\n");
+    Log::log("\"ex_c1\": ");   Log::logDec(ex_c1);   Log::log(",\n");
+    Log::log("\"ex_c2\": ");   Log::logDec(ex_c2);   Log::log(",\n");
+    Log::log("\"ex_c3\": ");   Log::logDec(ex_c3);   Log::log(",\n");
+    Log::log("\"ex_c4\": ");   Log::logDec(ex_c4);   Log::log(",\n");
+    Log::log("\"ex_c5\": ");   Log::logDec(ex_c5);   Log::log(",\n");
+    Log::log("\"ex_c6\": ");   Log::logDec(ex_c6);   Log::log(",\n");
+    Log::log("\"ex_c7\": ");   Log::logDec(ex_c7);   Log::log(",\n");
+    Log::log("\"ex_c8\": ");   Log::logDec(ex_c8);   Log::log(",\n");
+    Log::log("\"ex_c9\": ");   Log::logDec(ex_c9);   Log::log(",\n");
+
+    Log::log("\"mem_rd2\": "); Log::logDec(mem_rd2); Log::log(",\n");
+    Log::log("\"mem_alu\": "); Log::logDec(mem_alu); Log::log(",\n");
+    Log::log("\"mem_ret\": "); Log::logDec(mem_ret); Log::log(",\n");
+    Log::log("\"mem_c5\": ");  Log::logDec(mem_c5);  Log::log(",\n");
+    Log::log("\"mem_c6\": ");  Log::logDec(mem_c6);  Log::log(",\n");
+    Log::log("\"mem_c7\": ");  Log::logDec(mem_c7);  Log::log(",\n");
+    Log::log("\"mem_c8\": ");  Log::logDec(mem_c8);  Log::log(",\n");
+    Log::log("\"mem_c9\": ");  Log::logDec(mem_c9);  Log::log(",\n");
+
+    Log::log("\"wb_wb\": ");   Log::logDec(wb_wb);   Log::log(",\n");
+    Log::log("\"wb_c8\": ");   Log::logDec(wb_c8);   Log::log(",\n");
+    Log::log("\"wb_c9\": ");   Log::logDec(wb_c9);   Log::log(",\n");
+
+    Log::log("\"hz_hz\": ");   Log::logDec(hz_hz);   Log::log(",\n");
+    Log::log("\"hz_br\": ");   Log::logDec(hz_br);   Log::log(",\n");
+    Log::log("\"ce_if\": ");   Log::logDec(ce_if);   Log::log(",\n");
+    Log::log("\"ce_id\": ");   Log::logDec(ce_id);   Log::log(",\n");
+    Log::log("\"ce_ex\": ");   Log::logDec(ce_ex);   Log::log(",\n");
+    Log::log("\"ce_mem\": ");  Log::logDec(ce_mem);  Log::log(",\n");
+    Log::log("\"ce_wb\": ");   Log::logDec(ce_wb);   Log::log(",\n");
+
+    Log::log("}\n\n");
+
 }

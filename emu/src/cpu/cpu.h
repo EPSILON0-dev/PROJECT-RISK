@@ -7,5 +7,6 @@ public:
     void UpdateCombinational(void);
     void UpdateSequential(void);
     void log(void);
+    void logJson(void);
     
 };

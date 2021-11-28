@@ -1,7 +1,5 @@
-#include "../common/log.h"
 #include "../main/system.h"
 #include "../main/arg.h"
-#include <fstream>
 
 int main(int argc, char** argv)
 {
@@ -12,7 +10,7 @@ int main(int argc, char** argv)
     if (argResult) { return -1; }
 
     // Let's get started
-    if (CPU::start(argv[1])) { return -1; }
+    if (CPU::start(argv[argc-1])) { return -1; }
 
     return 0;
 

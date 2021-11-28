@@ -1,3 +1,5 @@
+#define NAME            "main"
+#define BANNER          "\x1b[38;1m\x1b[38;5;88m╔═╗ ╦═╗ ╔═╗  ╦ ╔═╗ ╔═╗ ╔╦╗     ╦═╗ ╦ ╔═╗ ╦╔═\n\x1b[38;5;124m╠═╝ ╠╦╝ ║ ║  ║ ║╣  ║    ║  ─── ╠╦╝ ║ ╚═╗ ╠╩╗\n\x1b[38;5;160m╩   ╩╚═ ╚═╝ ╚╝ ╚═╝ ╚═╝  ╩      ╩╚═ ╩ ╚═╝ ╩ ╩\x1b[m\n"
 #define COLOR_BLACK     "\x1b[30m"
 #define COLOR_RED       "\x1b[31m"
 #define COLOR_GREEN     "\x1b[32m"

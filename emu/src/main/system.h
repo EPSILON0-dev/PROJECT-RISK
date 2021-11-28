@@ -3,4 +3,5 @@ namespace CPU {
     void loop(void);
     unsigned cycle(void);
     unsigned cycleLog(void);
+    unsigned cycleLogJson(void);
 }

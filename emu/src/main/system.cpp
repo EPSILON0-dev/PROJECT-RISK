@@ -17,6 +17,9 @@ CentralProcessingUnit cpu;
 extern unsigned if_pc;
 unsigned clockCycle = 0;
 
+bool enableLog = 0;
+bool enableJsonLog = 0;
+bool enableExitStatus = 0;
 unsigned cycleLimit = -1;
 unsigned killAddress = -1;
 
@@ -57,8 +60,21 @@ int CPU::start(char* ramFile)
  */
 void CPU::loop(void) {
     
-    for (unsigned i = 0; i < 256; i++) {
-        CPU::cycleLog();
+    // Get the correct function
+    unsigned (*cycleFunction)(void) = &CPU::cycle;
+    if (enableLog) cycleFunction = &CPU::cycleLog;
+    if (enableJsonLog) cycleFunction = &CPU::cycleLogJson;
+
+    // Execute function until killed
+    for (unsigned i = 0; i < cycleLimit; i++) {
+        (*cycleFunction)();
+        if (if_pc == killAddress) { break; }
+    }
+
+    // Show exit code
+    if (enableExitStatus) {
+        Log::log("\nEXIT STATUS:\n");
+        cpu.log();
     }
 
 }
@@ -123,6 +139,39 @@ unsigned CPU::cycleLog(void) {
     Log::log("\n");
     cpu.log();       
     Log::log("\n");
+
+    return if_pc;
+
+}
+
+
+/**
+ * @brief Do a single CPU cycle (with logging in json format)
+ * 
+ * @return Program counter after finishing the cycle 
+ */
+unsigned CPU::cycleLogJson(void) {
+
+    cpu.UpdateCombinational();
+
+    //iCache.log();
+    //dCache.log();
+    //ddr.log();
+    //fsb.log();
+
+    iCache.Update();
+    dCache.Update();
+    ddr.Update();
+
+    iCache.UpdatePorts();
+    dCache.UpdatePorts();
+    ddr.UpdatePorts();
+
+    fsb.Update();
+
+    cpu.UpdateSequential(); 
+
+    cpu.logJson();       
 
     return if_pc;
 

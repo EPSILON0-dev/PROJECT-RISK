@@ -9,14 +9,14 @@ BINDIR		= bin
 OBJDIR		= obj
 OBJSUBDIR	= obj/main obj/common obj/cpu obj/memory obj/tests
 
-OPTFLAGS	:= -O2
+OPTFLAGS	:= -O0 -g
 WARNFLAGS	:= -Wall -Wextra
 
 OBJ			:= $(OBJDIR)/common/log.o 	$(OBJDIR)/memory/dcache.o 	$(OBJDIR)/memory/ddr.o
 OBJ			+= $(OBJDIR)/memory/fsb.o 	$(OBJDIR)/memory/icache.o 	$(OBJDIR)/cpu/alu.o
 OBJ			+= $(OBJDIR)/cpu/regs.o 	$(OBJDIR)/cpu/decode.o 		$(OBJDIR)/cpu/branch.o
 OBJ			+= $(OBJDIR)/cpu/cpu.o 		$(OBJDIR)/main/system.o 	$(OBJDIR)/main/arg.o
-OBJ			+= $(OBJDIR)/main/main.o
+OBJ			+= $(OBJDIR)/main/help.o	$(OBJDIR)/main/main.o
 
 ##################################     All     #################################
 
@@ -45,7 +45,7 @@ directories:
 
 ##################################  Messages  ##################################
 
-BANNER		:= "\033[38;1m\033[38;5;88m ╔═╗ ╦═╗ ╔═╗  ╦ ╔═╗ ╔═╗ ╔╦╗     ╦═╗ ╦ ╔═╗ ╦╔═\n\
+BANNER		:= "\033[38;5;88m ╔═╗ ╦═╗ ╔═╗  ╦ ╔═╗ ╔═╗ ╔╦╗     ╦═╗ ╦ ╔═╗ ╦╔═\n\
 \033[38;5;124m╠═╝ ╠╦╝ ║ ║  ║ ║╣  ║    ║  ─── ╠╦╝ ║ ╚═╗ ╠╩╗\n\
 \033[38;5;160m╩   ╩╚═ ╚═╝ ╚╝ ╚═╝ ╚═╝  ╩      ╩╚═ ╩ ╚═╝ ╩ ╩\033[m\n"
 PLATFORM	:= $(shell uname)
