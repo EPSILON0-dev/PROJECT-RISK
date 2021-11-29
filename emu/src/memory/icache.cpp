@@ -1,5 +1,10 @@
 /**
- * INSTRUCTION CACHE
+ * @file icache.h
+ * @author EPSILON0-dev (lforenc@wp.pl)
+ * @brief Instruction cache
+ * @version 0.7
+ * @date 2021-09-19
+ * 
  * 
  * Each block of cache contains 32
  * 
@@ -14,6 +19,8 @@
  * Main array: ____----____----____
  * Tag array:  __----____----____--
  */
+
+
 #include "../common/config.h"
 #include "../common/log.h"
 #include "icache.h"

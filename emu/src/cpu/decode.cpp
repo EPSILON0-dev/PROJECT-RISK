@@ -1,3 +1,13 @@
+/**
+ * @file branch.cpp
+ * @author EPSILON0-dev (lforenc@wp.pl)
+ * @brief Instruction decoder
+ * @version 0.6
+ * @date 2021-10-03
+ * 
+ */
+
+
 #include <string>
 #include "decode.h"
 #include "../common/config.h"

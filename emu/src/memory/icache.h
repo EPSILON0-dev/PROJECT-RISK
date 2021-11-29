@@ -1,3 +1,13 @@
+/**
+ * @file icache.h
+ * @author EPSILON0-dev (lforenc@wp.pl)
+ * @brief Instruction cache
+ * @version 0.7
+ * @date 2021-09-19
+ * 
+ */
+
+
 class InstructionCache
 {
 

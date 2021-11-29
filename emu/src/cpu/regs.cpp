@@ -1,6 +1,17 @@
+/**
+ * @file regs.cpp
+ * @author EPSILON0-dev (lforenc@wp.pl)
+ * @brief Register file class
+ * @version 0.6
+ * @date 2021-10-21
+ * 
+ */
+
+
 #include "../common/config.h"
 #include "../common/log.h"
 #include "regs.h"
+
 
 /**
  * @brief Construct the Register Set object

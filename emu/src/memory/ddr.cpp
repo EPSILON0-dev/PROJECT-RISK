@@ -1,3 +1,13 @@
+/**
+ * @file ddr.cpp
+ * @author EPSILON0-dev (lforenc@wp.pl)
+ * @brief LPDDR memory emulator
+ * @version 0.9
+ * @date 2021-09-19
+ * 
+ */
+
+
 #include "../common/config.h"
 #include "../common/log.h"
 #include "ddr.h"

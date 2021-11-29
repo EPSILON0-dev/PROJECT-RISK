@@ -1,3 +1,12 @@
+/**
+ * @file log.h
+ * @author EPSILON0-dev (lforenc@wp.pl)
+ * @brief Console output functions
+ * @version 0.7
+ * @date 2021-09-01
+ * 
+ */
+
 #pragma once
 #include <string>
 

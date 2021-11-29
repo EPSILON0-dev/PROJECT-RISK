@@ -1,3 +1,13 @@
+/**
+ * @file system.cpp
+ * @author EPSILON0-dev (lforenc@wp.pl)
+ * @brief Main system file
+ * @version 0.4
+ * @date 2021-11-27
+ * 
+ */
+
+
 #include "../common/log.h"
 #include "../cpu/cpu.h"
 #include "../memory/icache.h"
@@ -20,8 +30,10 @@ unsigned clockCycle = 0;
 bool enableLog = 0;
 bool enableJsonLog = 0;
 bool enableExitStatus = 0;
+bool hideMemoryInit = 0;
 unsigned cycleLimit = -1;
 unsigned killAddress = -1;
+char* ramFile;
 
 
 /**
@@ -30,7 +42,7 @@ unsigned killAddress = -1;
  * @param ramFile Name of the RAM image file
  * @return Exit code
  */
-int CPU::start(char* ramFile) 
+int CPU::start() 
 {
 
     fsb.loadPointers(&iCache, &dCache, &ddr);
@@ -67,7 +79,11 @@ void CPU::loop(void) {
 
     // Execute function until killed
     for (unsigned i = 0; i < cycleLimit; i++) {
-        (*cycleFunction)();
+        if (hideMemoryInit && i < 27) {
+            CPU::cycle();
+        } else {
+            (*cycleFunction)();
+        }
         if (if_pc == killAddress) { break; }
     }
 
@@ -86,6 +102,8 @@ void CPU::loop(void) {
  * @return Program counter after finishing the cycle 
  */
 unsigned CPU::cycle(void) {
+
+    clockCycle++;
 
     cpu.UpdateCombinational();
 

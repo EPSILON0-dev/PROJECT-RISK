@@ -1,5 +1,10 @@
 /**
- * FRONT SIDE BUS
+ * @file fsb.cpp
+ * @author EPSILON0-dev (lforenc@wp.pl)
+ * @brief Front Side Bus
+ * @version 0.7
+ * @date 2021-09-19
+ * 
  * 
  * In the final system 3 read callers and 1 write caller are expected
  * On chip access will be performed ommiting the cache and thus the FSB

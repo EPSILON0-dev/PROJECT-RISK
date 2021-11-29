@@ -1,3 +1,13 @@
+/**
+ * @file help.cpp
+ * @author EPSILON0-dev (lforenc@wp.pl)
+ * @brief Help message
+ * @version 0.2
+ * @date 2021-11-28
+ * 
+ */
+
+
 #include "../common/config.h"
 #include <iostream>
 using namespace std;
@@ -15,6 +25,7 @@ void printHelp(void)
     cout << "  \x1b[1m-j        \x1b[m   - Log in JSON format (for use with GUI navigator)\n";
     cout << "  \x1b[1m-c        \x1b[m   - Kill the emulator after given amount of cycles\n";
     cout << "  \x1b[1m-k        \x1b[m   - Kill the emulator after reaching given address\n";
+    cout << "  \x1b[1m-m        \x1b[m   - Hide memory initialization (first 27 cycles)\n";
     cout << "  \x1b[1m-e        \x1b[m   - Show exit status\n";
 
 }

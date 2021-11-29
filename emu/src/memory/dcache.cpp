@@ -1,5 +1,10 @@
 /**
- * DATA CACHE
+ * @file dcache.cpp
+ * @author EPSILON0-dev (lforenc@wp.pl)
+ * @brief Data cache
+ * @version 0.8
+ * @date 2021-09-19
+ * 
  * 
  * Each block of cache contains 32 bytes
  * 
@@ -19,10 +24,13 @@
  *  another block (with the same index) data can be lost
  * 
  */
+
+
 #include "../common/config.h"
 #include "../common/log.h"
 #include "fsb.h"
 #include "dcache.h"
+
 
 /**
  * @brief Construct the Data Cache object

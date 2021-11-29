@@ -1,3 +1,13 @@
+/**
+ * @file dcache.cpp
+ * @author EPSILON0-dev (lforenc@wp.pl)
+ * @brief Data cache
+ * @version 0.8
+ * @date 2021-09-19
+ * 
+ */
+
+
 class DataCache
 {
 
