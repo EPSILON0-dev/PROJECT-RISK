@@ -1,8 +1,9 @@
 ################################## Definitions #################################
 
 CXX			= g++
-RM			= rm -rf
+RM			= rm
 MK			= mkdir -p
+RMDIR		= rmdir
 
 SRCDIR		= src
 BINDIR		= bin
@@ -93,5 +94,5 @@ clean:
 realclean: clean
 	@printf "\033[32;1mDeleting objects and directories\033[m...\n\n"
 	@$(RM) $(BINDIR)/*
-	@$(RM) $(OBJDIR)
-	@$(RM) $(BINDIR)
+	@$(RMDIR) $(OBJDIR)
+	@$(RMDIR) $(BINDIR)
