@@ -88,11 +88,11 @@ bin/main: $(OBJ)
 
 .PHONEY: clean
 clean:
-	@$(RM) $(OBJDIR)/*/*.o
+	@$(RM) ./$(OBJDIR)/*/*.o
 
 .PHONEY: realclean
 realclean: clean
 	@printf "\033[32;1mDeleting objects and directories\033[m...\n\n"
-	@$(RM) $(BINDIR)/*
-	@$(RMDIR) $(OBJDIR)
-	@$(RMDIR) $(BINDIR)
+	@$(RM) ./$(BINDIR)/*
+	@$(RMDIR) ./$(OBJDIR)
+	@$(RMDIR) ./$(BINDIR)
