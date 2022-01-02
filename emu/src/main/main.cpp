@@ -2,7 +2,6 @@
  * @file main.cpp
  * @author EPSILON0-dev (lforenc@wp.pl)
  * @brief Main emulator file
- * @version 0.2
  * @date 2021-11-28
  * 
  */

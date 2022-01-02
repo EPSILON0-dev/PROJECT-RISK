@@ -2,7 +2,6 @@
  * @file system.cpp
  * @author EPSILON0-dev (lforenc@wp.pl)
  * @brief Main system file
- * @version 0.4
  * @date 2021-11-27
  * 
  */
@@ -75,7 +74,7 @@ void CPU::loop(void) {
     // Get the correct function
     unsigned (*cycleFunction)(void) = &CPU::cycle;
     if (enableLog) cycleFunction = &CPU::cycleLog;
-    if (enableJsonLog) cycleFunction = &CPU::cycleLogJson;
+    if (enableLog && enableJsonLog) cycleFunction = &CPU::cycleLogJson;
 
     // Execute function until killed
     for (unsigned i = 0; i < cycleLimit; i++) {
@@ -89,8 +88,9 @@ void CPU::loop(void) {
 
     // Show exit code
     if (enableExitStatus) {
-        Log::log("\nEXIT STATUS:\n");
-        cpu.log();
+        
+        if (enableJsonLog) { cpu.logJson(); }
+        else { Log::log("\nEXIT STATUS:\n"); cpu.log(); }
     }
 
 }

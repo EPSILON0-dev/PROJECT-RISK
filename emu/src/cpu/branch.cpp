@@ -2,7 +2,6 @@
  * @file branch.cpp
  * @author EPSILON0-dev (lforenc@wp.pl)
  * @brief Branch conditioning functions
- * @version 0.6
  * @date 2021-10-04
  * 
  */
@@ -16,7 +15,7 @@
  * 
  * @param a Compare register A
  * @param b Compare register B
- * @param o Opcode [7:5]: funct3 [4:0]: opcode[6:2]
+ * @param o funct3 [14:12] and opcode [6:2]
  * @return Branch enable
  */
 bool branch(unsigned a, unsigned b, unsigned o) {

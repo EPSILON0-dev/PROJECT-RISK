@@ -2,7 +2,6 @@
  * @file branch.cpp
  * @author EPSILON0-dev (lforenc@wp.pl)
  * @brief Instruction decoder
- * @version 0.6
  * @date 2021-10-03
  * 
  */
@@ -33,7 +32,7 @@ unsigned getFormat(unsigned op)
         return FormatU;
 
         // Format J
-        case 0b1100111:
+        case 0b1101111:
         return FormatJ;
 
         // Format B

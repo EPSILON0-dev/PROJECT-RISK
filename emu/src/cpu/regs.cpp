@@ -2,7 +2,6 @@
  * @file regs.cpp
  * @author EPSILON0-dev (lforenc@wp.pl)
  * @brief Register file class
- * @version 0.6
  * @date 2021-10-21
  * 
  */
@@ -45,7 +44,7 @@ unsigned RegisterSet::read(unsigned a)
  */
 void RegisterSet::write(unsigned a, unsigned d)
 {
-    regs[a] = d;
+    if (a) regs[a] = d;
 }
 
 
@@ -62,5 +61,20 @@ void RegisterSet::log(void)
             Log::log(" ");
         }
         Log::log("\n");
+    }
+}
+
+
+/**
+ * @brief Print out the contents of the registers as JSON
+ * 
+ */
+void RegisterSet::logJson(void)
+{
+    for (unsigned i = 0; i < 32; i++) {
+        Log::log(",\"x");
+        Log::logDec(i);
+        Log::log("\":");
+        Log::logDec(regs[i]);
     }
 }

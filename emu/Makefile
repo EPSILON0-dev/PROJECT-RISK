@@ -1,14 +1,14 @@
 ################################## Definitions #################################
 
 CXX			= g++
-RM			= rm
+RM			= rm -f
 MK			= mkdir -p
 RMDIR		= rmdir
 
 SRCDIR		= src
 BINDIR		= bin
-OBJDIR		= obj
-OBJSUBDIR	= obj/main obj/common obj/cpu obj/memory obj/tests
+OBJDIR		= ./obj
+OBJSUBDIR	= ./obj/main ./obj/common ./obj/cpu ./obj/memory
 
 OPTFLAGS	:= -O0 -g
 WARNFLAGS	:= -Wall -Wextra
@@ -23,11 +23,13 @@ OBJ			+= $(OBJDIR)/main/help.o	$(OBJDIR)/main/main.o
 
 .PHONEY: all
 all: 
+	@$(MAKE) -s banner
 	@$(MAKE) -s msg
 	@$(MAKE) -s compile
 
 .PHONEY: fresh
 fresh:
+	@$(MAKE) -s banner
 	@$(MAKE) -s msg
 	@$(MAKE) -s realclean
 	@$(MAKE) -s compile
@@ -37,6 +39,10 @@ compile:
 	@$(MAKE) -s directories
 	@$(MAKE) -s obj
 	@$(MAKE) -s main
+
+.PHONY: test
+test: compile
+	@python3 ./test/selftest.py
 
 .PHONEY: directories
 directories:
@@ -53,9 +59,12 @@ PLATFORM	:= $(shell uname)
 ARCH 		:= $(shell $(CXX) -dumpmachine)
 CXX_M		:= $(shell $(CXX) -dumpfullversion)
 
-.PHONEY: msg
-msg:
+.PHONY: banner
+banner:
 	@printf $(BANNER)
+
+.PHONY: msg
+msg:
 	@printf "\033[32;1mPLATFORM   \033[33;1m?| \033[m$(PLATFORM)\n"
 	@printf "\033[36;1mARCH       \033[33;1m?| \033[m$(ARCH)\n"
 	@printf "\033[33;1mCXX        \033[33;1m?| \033[m$(CXX)\n"
@@ -66,11 +75,8 @@ msg:
 
 ##################################   Objects   #################################
 
-obj: obj_msg $(OBJ)
+obj: $(OBJ)
 
-obj_msg:
-	@printf "\033[32;1mCompiling Objects\033[m...\n"
-	
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 	@$(CXX) -c $(OPTFLAGS) $(WARNFLAGS) -o $@ $<
 	@printf "\033[32;1m-> \033[37;1m$@\n"
@@ -81,18 +87,19 @@ main: bin/main
 bin/main: $(OBJ)
 	@printf "\n\033[32;1mLinking and optimizing binary\033[m...\n"
 	@$(CXX) $(OPTFLAGS) $(WARNFLAGS) -o $@ $^
-	@printf "\033[32;1m-> \033[37;1mbin/main\033[m\n"
+	@printf "\033[32;1m-> \033[37;1mbin/main\033[m\n\n"
 
 
 ##################################  Cleaning  ##################################
 
-.PHONEY: clean
+.PHONY: clean
 clean:
 	@$(RM) ./$(OBJDIR)/*/*.o
 
-.PHONEY: realclean
+.PHONY: realclean
 realclean: clean
 	@printf "\033[32;1mDeleting objects and directories\033[m...\n\n"
 	@$(RM) ./$(BINDIR)/*
+	@$(RMDIR) ./$(OBJSUBDIR)
 	@$(RMDIR) ./$(OBJDIR)
 	@$(RMDIR) ./$(BINDIR)

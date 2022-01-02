@@ -2,7 +2,6 @@
  * @file config.h
  * @author EPSILON0-dev (lforenc@wp.pl)
  * @brief Constant config for console output
- * @version 0.4
  * @date 2021-09-19
  * 
  */

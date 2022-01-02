@@ -144,7 +144,6 @@ void FrontSideBus::Update(void)
     }
 
     if (dCache && dCache->o_FWReq) {  // Handle new D cache write request
-        Log::log("Writing\n");
         reqAdr = dCache->o_FWAdr;
         ddr->i_Adr = reqAdr;
         req = cDWrite;

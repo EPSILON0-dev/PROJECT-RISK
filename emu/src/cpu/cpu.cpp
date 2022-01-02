@@ -2,7 +2,6 @@
  * @file cpu.cpp
  * @author EPSILON0-dev (lforenc@wp.pl)
  * @brief Main CPU File
- * @version 0.9
  * @date 2021-10-08
  * 
  */
@@ -25,82 +24,82 @@ InstructionCache* ic;
 DataCache* dc;
 
 
-unsigned if_pc = 0;
+unsigned if_pc {};        // Program counter value in IF stage
 
-unsigned id_ret = 0;
-unsigned id_pc = 0;
-unsigned id_ir = 0;
+unsigned id_ret {};       // Return PC value from IF with 0x4 added (used for return from JAL and JALR)
+unsigned id_pc {};        // PC value from IF without 0x4 added
+unsigned id_ir {};        // Instruction loaded from ICACHE
 
-unsigned ex_rd1 = 0;
-unsigned ex_rd2 = 0;
-unsigned ex_imm = 0;
-unsigned ex_pc = 0;
-unsigned ex_ret = 0;
-unsigned ex_c1 = 0;
-unsigned ex_c2 = 0;
-unsigned ex_c3 = 0;
-unsigned ex_c4 = 0;
-unsigned ex_c5 = 0;
-unsigned ex_c6 = 0;
-unsigned ex_c7 = 0;
-unsigned ex_c8 = 0;
-unsigned ex_c9 = 0;
+unsigned ex_rd1 {};       // Data read from register rs1 [19:15]
+unsigned ex_rd2 {};       // Data read from register rs2 [24:20]
+unsigned ex_imm {};       // Immediate value from opcode
+unsigned ex_pc {};        // PC value forwarded from ID
+unsigned ex_ret {};       // Return PC value forwarded from ID
+unsigned ex_c1 {};        // Branch conditioner opcode (id_ir[6:2])
+unsigned ex_c2 {};        // ALU B multiplexer (1:ex_imm/0:ex_rd2)
+unsigned ex_c3 {};        // ALU A multiplexer (1:ex_pc/0:ex_rd1)
+unsigned ex_c4 {};        // ALU opcode (ex_c2, enable, funct3(id_ir[14:12]))
+unsigned ex_c5 {};        // DCACHE write enable
+unsigned ex_c6 {};        // DCACHE read enable
+unsigned ex_c7 {};        // Write back data select
+unsigned ex_c8 {};        // Write back address
+unsigned ex_c9 {};        // Write back enable
 
-unsigned mem_rd2 = 0;
-unsigned mem_alu = 0;
-unsigned mem_ret = 0;
-unsigned mem_c5 = 0;
-unsigned mem_c6 = 0;
-unsigned mem_c7 = 0;
-unsigned mem_c8 = 0;
-unsigned mem_c9 = 0;
+unsigned mem_rd2 {};      // Data read from register rs2 [24:20]
+unsigned mem_alu {};      // Result of ALU operation
+unsigned mem_ret {};      // Return PC value forwarded from ID
+unsigned mem_c5 {};       // DCACHE write enable
+unsigned mem_c6 {};       // DCACHE read enable
+unsigned mem_c7 {};       // Write back data select
+unsigned mem_c8 {};       // Write back address
+unsigned mem_c9 {};       // Write back enable
 
-unsigned wb_wb = 0;
-unsigned wb_c8 = 0;
-unsigned wb_c9 = 0;
+unsigned wb_wb {};        // Write back data
+unsigned wb_c8 {};        // Write back address
+unsigned wb_c9 {};        // Write back enable
 
-unsigned if_c_pc_inc = 0;
+unsigned if_c_pc_inc {};  // PC increment enable
 
-unsigned id_c_imm = 0;
-unsigned id_c_rd1 = 0;
-unsigned id_c_rd2 = 0;
+unsigned id_c_imm {};     // (COMBINATIONAL) ex_imm
+unsigned id_c_rd1 {};     // (COMBINATIONAL) ex_rd1
+unsigned id_c_rd2 {};     // (COMBINATIONAL) ex_rd2
 
-bool id_c_load = 0;
-bool id_c_store = 0;
-bool id_c_jalr = 0;
-bool id_c_jal = 0;
-bool id_c_op_imm = 0;
-bool id_c_op = 0;
-bool id_c_auipc = 0;
-bool id_c_lui = 0;
-bool id_c_branch = 0;
-bool id_c_h_rs1 = 0;
-bool id_c_h_rs2 = 0;
+bool id_c_load {};        // Load operation
+bool id_c_store {};       // Store operation
+bool id_c_jalr {};        // Jump And Link Register operation
+bool id_c_jal {};         // Jump And Link operation
+bool id_c_op_imm {};      // Immediate arythmetic operation
+bool id_c_op {};          // Arythmetic operation
+bool id_c_auipc {};       // Add Upper Immediate to PC operation
+bool id_c_lui {};         // Load Upper Immediate operation
+bool id_c_branch {};      // Branch operation
+bool id_c_h_rs1 {};       // rs1 can generate data hazards
+bool id_c_h_rs2 {};       // rs2 can generate data hazards
 
-unsigned id_c_op_ok = 0;
-unsigned id_c_c1 = 0;
-unsigned id_c_c2 = 0;
-unsigned id_c_c3 = 0;
-unsigned id_c_c4 = 0;
-unsigned id_c_c5 = 0;
-unsigned id_c_c6 = 0;
-unsigned id_c_c7 = 0;
-unsigned id_c_c8 = 0;
-unsigned id_c_c9 = 0;
+unsigned id_c_op_ok {};   // Opcode is OK
+unsigned id_c_c1 {};      // (COMBINATIONAL) ex_c1
+unsigned id_c_c2 {};      // (COMBINATIONAL) ex_c2
+unsigned id_c_c3 {};      // (COMBINATIONAL) ex_c3
+unsigned id_c_c4 {};      // (COMBINATIONAL) ex_c4
+unsigned id_c_c5 {};      // (COMBINATIONAL) ex_c5
+unsigned id_c_c6 {};      // (COMBINATIONAL) ex_c6
+unsigned id_c_c7 {};      // (COMBINATIONAL) ex_c7
+unsigned id_c_c8 {};      // (COMBINATIONAL) ex_c8
+unsigned id_c_c9 {};      // (COMBINATIONAL) ex_c9
 
-unsigned ex_c_alu_a = 0;
-unsigned ex_c_alu_b = 0;
-unsigned ex_c_alu = 0;
-unsigned ex_c_br_en = 0;
+unsigned ex_c_alu_a {};   // Multiplexed ALU input A
+unsigned ex_c_alu_b {};   // Multiplexed ALU input B
+unsigned ex_c_alu {};     // (COMBINATIONAL) ALU output
+unsigned ex_c_br_en {};   // (COMBINATIONAL) Branch enable
 
-bool hz_br = 0;
-bool hz_hz = 0;
+bool hz_br  {};           // Branch hazard
+bool hz_dat {};           // Data hazard
 
-bool ce_if  = 0;
-bool ce_id  = 0;
-bool ce_ex  = 0;
-bool ce_mem = 0;
-bool ce_wb  = 0;
+bool ce_if  {};           // Clock enable for IF
+bool ce_id  {};           // Clock enable for ID
+bool ce_ex  {};           // Clock enable for EX
+bool ce_mem {};           // Clock enable for MEM
+bool ce_wb  {};           // Clock enable for WB
 
 
 /**
@@ -123,20 +122,15 @@ void CentralProcessingUnit::loadPointers(void* icache, void* dcache)
 void CentralProcessingUnit::UpdateCombinational(void)
 {
     
-    /* FETCH */
-    if_c_pc_inc = if_pc + 0x4;
-    ic->i_CAdr = if_pc;
-    ic->i_CRE = 1;
+    /*********************************  FETCH   ******************************/
 
-    /* DECODE */
-    id_c_imm = getImmediate(id_ir);
-    id_c_rd1 = rs.read(getRs1(id_ir));
-    id_c_rd2 = rs.read(getRs2(id_ir));
+    if_c_pc_inc = if_pc + 0x4;  // Generate "PC + 0x4" signal
+    ic->i_CAdr = if_pc;         // Supply ICACHE with address pointed to by PC
+    ic->i_CRE = 1;              // Enable reading from ICACHE
 
-    if (wb_c9) {
-        rs.write(wb_c8, wb_wb);
-    }
+    /*********************************  DECODE  ******************************/
 
+    // Generate signals for all operation types
     id_c_load   = (getOpcode(id_ir) == 0b00000) && ((id_ir & 0b11) == 3);
     id_c_store  = (getOpcode(id_ir) == 0b01000) && ((id_ir & 0b11) == 3);
     id_c_jalr   = (getOpcode(id_ir) == 0b11001) && ((id_ir & 0b11) == 3);
@@ -147,29 +141,57 @@ void CentralProcessingUnit::UpdateCombinational(void)
     id_c_lui    = (getOpcode(id_ir) == 0b01101) && ((id_ir & 0b11) == 3);
     id_c_branch = (getOpcode(id_ir) == 0b11000) && ((id_ir & 0b11) == 3);
 
+    // Get the immediate value and read from register set
+    //  If currently executing lui force rd1 to read from 0
+    //  This is needed to ensure that ALU adds immediate to 0
+    id_c_imm = getImmediate(id_ir);
+    id_c_rd1 = rs.read((id_c_lui) ? 0 : getRs1(id_ir));
+    id_c_rd2 = rs.read(getRs2(id_ir));
+
+    // Write back result if WB enabled
+    if (wb_c9) rs.write(wb_c8, wb_wb);
+
+    // Determine if current operations can generate data hazards
+    //  Only LUI, AUIPC and JAL don't use rs1 so they disable hazard on rs1
+    //  Only branches, store and normal arythmetic use rs2, they enable hazard on it
     id_c_h_rs1 = !id_c_lui && !id_c_auipc && !id_c_jal;
     id_c_h_rs2 = id_c_branch || id_c_store || id_c_op;
 
+    // Check if operation if valid 32bit opcode (by checking if bits 1 and 0 are set)
     id_c_op_ok = ((id_ir & 0x3) == 0x3);
+    // If operation is valid supply branch conditioner with data
     id_c_c1 = (id_c_op_ok)? ((getFunct3(id_ir) << 5) | getOpcode(id_ir)) : 0;
+    // Only normal arythmetic doesn't use immediates an ALU B input
     id_c_c2 = !(id_c_op);
+    // Only branches and JAL use ALU to generate address
     id_c_c3 = (id_c_jal | id_c_branch);
-    id_c_c4 = ((id_c_op | id_c_op_imm) << 5) | (!(id_c_op) << 4) | 
-        (((id_ir >> 30) & 1) << 3) | getFunct3(id_ir);
+    // Combine all needed signals to form ALU input opcode
+    id_c_c4 = ((id_c_op | id_c_op_imm) << 5) | (!(id_c_op) << 4) | (((id_ir >> 30) & 1) << 3) | getFunct3(id_ir);
+    // If operation is store and it's OK enable DCACHE write
     id_c_c5 = id_c_store && id_c_op_ok;
+    // If operation is load and it's OK enable DCACHE read
     id_c_c6 = id_c_load && id_c_op_ok;
-    id_c_c7 = id_c_load;
-    if (id_c_jal || id_c_jalr) id_c_c7 = 2;
+    // Generate a write back select signal
+    id_c_c7 = id_c_load; if (id_c_jal || id_c_jalr) id_c_c7 = 2;
+    // Get the write back address
     id_c_c8 = getRd(id_ir);
+    // Only store and branches don't write back any data
     id_c_c9 = !(id_c_store | id_c_branch) && id_c_op_ok;
 
-    /* EXECUTE */
+    /********************************  EXECUTE   *****************************/
+
+    // Select the correct input data for ALU input A
     ex_c_alu_a = (ex_c3) ? ex_pc  : ex_rd1;
+    // Select the correct input data for ALU input B
     ex_c_alu_b = (ex_c2) ? ex_imm : ex_rd2;
+    // Perform an ALU operation
     ex_c_alu = alu(ex_c_alu_a, ex_c_alu_b, ex_c4);
+    // Use branch conditioner to check if branch should be taken
     ex_c_br_en = branch(ex_rd1, ex_rd2, ex_c1);
 
-    /* HAZARD DETECTION */
+    /****************************  HAZARD DETECTION  *************************/
+
+    // Check for hazard on EX, MEM and WB stages
     bool h1 = (getRs1(id_ir) != 0) && (getRs1(id_ir) == ex_c8) && id_c_h_rs1;
     bool h2 = (getRs2(id_ir) != 0) && (getRs2(id_ir) == ex_c8) && id_c_h_rs2;
     bool h3 = (getRs1(id_ir) != 0) && (getRs1(id_ir) == mem_c8) && id_c_h_rs1;
@@ -179,7 +201,8 @@ void CentralProcessingUnit::UpdateCombinational(void)
     bool hz_ex  = h1 || h2;
     bool hz_mem = h3 || h4;
     bool hz_wb  = h5 || h6;
-    hz_hz = hz_ex || hz_mem || hz_wb;
+    // Generate data hazard signal if hazard occured on any stage of the pipeline
+    hz_dat = hz_ex || hz_mem || hz_wb;
 
 }
 
@@ -191,48 +214,59 @@ void CentralProcessingUnit::UpdateCombinational(void)
 void CentralProcessingUnit::UpdateSequential(void)
 {
 
-    ce_if  = ic->o_CVD && dc->o_CVD && !hz_hz;
-    ce_id  = ic->o_CVD && dc->o_CVD && !hz_hz;
+    /******************************  CLOCK ENABLE  ***************************/
+
+    // Generate clock enable signals for all pipeline stages
+    ce_if  = ic->o_CVD && dc->o_CVD && !hz_dat;
+    ce_id  = ic->o_CVD && dc->o_CVD && !hz_dat;
     ce_ex  = ic->o_CVD && dc->o_CVD;
     ce_mem = ic->o_CVD && dc->o_CVD;
     ce_wb  = ic->o_CVD && dc->o_CVD;
 
-    /* WRITE BACK */
-    if (ce_wb) { 
-        wb_wb = (mem_c7 >> 1) ? mem_ret : 
-            (mem_c7 & 1) ? dc->o_CRDat : mem_alu;
+    /*******************************  WRITE BACK  ****************************/
 
+    if (ce_wb) 
+    { 
+        // Generate correct writeback data
+        wb_wb = (mem_c7 >> 1) ? mem_ret : (mem_c7 & 1) ? dc->o_CRDat : mem_alu;
+        // Copy control signals from previous stage
         wb_c8 = mem_c8;
         wb_c9 = mem_c9;
     }
 
-    /* MEMORY ACCESS */
-    if (ce_mem) {
-        mem_rd2 = ex_rd2;
-        mem_alu = ex_c_alu;
-        mem_ret = ex_ret;
+    /*****************************  MEMORY ACCESS   **************************/
 
+    if (ce_mem) 
+    {
+        // Store ALU operation result
+        mem_alu = ex_c_alu;
+        // Copy signals from previous  stage
+        mem_rd2 = ex_rd2;
+        mem_ret = ex_ret;
         mem_c5 = ex_c5;
         mem_c6 = ex_c6;
         mem_c7 = ex_c7;
         mem_c8 = ex_c8;
         mem_c9 = ex_c9;
-
+        // Supply DCACHE with necessary signals
         dc->i_CWE = mem_c5;
         dc->i_CRE = mem_c6;
         if (mem_c5 || mem_c6) dc->i_CAdr = mem_alu;
         if (mem_c5) dc->i_CWDat = mem_rd2;
     }
 
-    /* EXECUTE */
-    if (ce_ex) {
-        if (!hz_hz && !hz_br) {
+    /********************************  EXECUTE   *****************************/
+
+    if (ce_ex) 
+    {
+        // If there weren't any hazards store the combitional signals in registers
+        if (!hz_dat && !hz_br) 
+        {
             ex_rd1 = id_c_rd1;
             ex_rd2 = id_c_rd2;
             ex_imm = id_c_imm;
             ex_pc = id_pc;
             ex_ret = id_ret;
-
             ex_c1 = id_c_c1;
             ex_c2 = id_c_c2;
             ex_c3 = id_c_c3;
@@ -242,13 +276,15 @@ void CentralProcessingUnit::UpdateSequential(void)
             ex_c7 = id_c_c7;
             ex_c8 = id_c_c8;
             ex_c9 = id_c_c9;
-        } else {
+        } 
+        // Else fill registers with zeros
+        else 
+        {
             ex_rd1 = 0;
             ex_rd2 = 0;
             ex_imm = 0;
             ex_pc = 0;
             ex_ret = 0;
-
             ex_c1 = 0;
             ex_c2 = 0;
             ex_c3 = 0;
@@ -261,24 +297,32 @@ void CentralProcessingUnit::UpdateSequential(void)
         }
     }
 
-    /* DECODE */
-    if (ce_id) {
-        id_ret = if_c_pc_inc;
-        id_pc = if_pc;
-        id_ir = ic->o_CRDat;
+    /*********************************  DECODE  ******************************/
+
+    if (ce_id) 
+    {
+        id_ret = if_c_pc_inc;  // Store the return address in register
+        id_pc = if_pc;         // Copy the PC from previous stage
+        id_ir = ic->o_CRDat;   // Store opcode read from memory in register
     }
 
-    /* FETCH */
-    if (hz_br) hz_br = 0;
-    if (ce_if) {
-        if (ex_c_br_en) {
-            ex_c1 = 0;
-            ex_c5 = 0;
-            ex_c6 = 0;
-            ex_c9 = 0;
-            if_pc = ex_c_alu;
-            hz_br = 1;
-        } else {
+    /*********************************  FETCH   ******************************/
+
+    if (hz_br) hz_br = 0;  // If branch hazard was set clear it
+    if (ce_if) 
+    {
+        
+        if (ex_c_br_en) 
+        {
+            // If branch was taken:
+            ex_c1 = 0;ex_c5 = 0; ex_c6 = 0; ex_c9 = 0;  // Prevent next instruction from executing
+            if_pc = ex_c_alu;                           // Copy the ALU operation result to PC
+            hz_br = 1;                                  // Set the branch hazard
+            // Data hazard is set to give time to read next instruction from ICACHE
+        } 
+        else 
+        {
+            // Else just advance the PC
             if_pc = if_c_pc_inc;
         }
     }
@@ -374,7 +418,7 @@ void CentralProcessingUnit::log(void)
     Log::logDec(wb_c9, COLOR_MAGENTA);
     Log::log("\n");
 
-    if (hz_hz) {
+    if (hz_dat) {
         Log::logSrc(" HAZARD  ", COLOR_RED);
         Log::log("DATA HAZARD", COLOR_RED);
         Log::log("\n");
@@ -398,50 +442,52 @@ void CentralProcessingUnit::log(void)
 void CentralProcessingUnit::logJson(void)
 {
 
-    Log::log("{\n");
+    Log::log("{");
 
-    Log::log("\"if_pc\": ");   Log::logDec(if_pc);   Log::log(",\n");
+    Log::log("\"if_pc\":");   Log::logDec(if_pc);   Log::log(",");
 
-    Log::log("\"id_ret\": ");  Log::logDec(id_ret);  Log::log(",\n");
-    Log::log("\"id_pc\": ");   Log::logDec(id_pc);   Log::log(",\n");
-    Log::log("\"id_ir\": ");   Log::logDec(id_ir);   Log::log(",\n");
+    Log::log("\"id_ret\":");  Log::logDec(id_ret);  Log::log(",");
+    Log::log("\"id_pc\":");   Log::logDec(id_pc);   Log::log(",");
+    Log::log("\"id_ir\":");   Log::logDec(id_ir);   Log::log(",");
 
-    Log::log("\"ex_rd1\": ");  Log::logDec(ex_rd1);  Log::log(",\n");
-    Log::log("\"ex_rd2\": ");  Log::logDec(ex_rd2);  Log::log(",\n");
-    Log::log("\"ex_imm\": ");  Log::logDec(ex_imm);  Log::log(",\n");
-    Log::log("\"ex_pc\": ");   Log::logDec(ex_pc);   Log::log(",\n");
-    Log::log("\"ex_ret\": ");  Log::logDec(ex_ret);  Log::log(",\n");
-    Log::log("\"ex_c1\": ");   Log::logDec(ex_c1);   Log::log(",\n");
-    Log::log("\"ex_c2\": ");   Log::logDec(ex_c2);   Log::log(",\n");
-    Log::log("\"ex_c3\": ");   Log::logDec(ex_c3);   Log::log(",\n");
-    Log::log("\"ex_c4\": ");   Log::logDec(ex_c4);   Log::log(",\n");
-    Log::log("\"ex_c5\": ");   Log::logDec(ex_c5);   Log::log(",\n");
-    Log::log("\"ex_c6\": ");   Log::logDec(ex_c6);   Log::log(",\n");
-    Log::log("\"ex_c7\": ");   Log::logDec(ex_c7);   Log::log(",\n");
-    Log::log("\"ex_c8\": ");   Log::logDec(ex_c8);   Log::log(",\n");
-    Log::log("\"ex_c9\": ");   Log::logDec(ex_c9);   Log::log(",\n");
+    Log::log("\"ex_rd1\":");  Log::logDec(ex_rd1);  Log::log(",");
+    Log::log("\"ex_rd2\":");  Log::logDec(ex_rd2);  Log::log(",");
+    Log::log("\"ex_imm\":");  Log::logDec(ex_imm);  Log::log(",");
+    Log::log("\"ex_pc\":");   Log::logDec(ex_pc);   Log::log(",");
+    Log::log("\"ex_ret\":");  Log::logDec(ex_ret);  Log::log(",");
+    Log::log("\"ex_c1\":");   Log::logDec(ex_c1);   Log::log(",");
+    Log::log("\"ex_c2\":");   Log::logDec(ex_c2);   Log::log(",");
+    Log::log("\"ex_c3\":");   Log::logDec(ex_c3);   Log::log(",");
+    Log::log("\"ex_c4\":");   Log::logDec(ex_c4);   Log::log(",");
+    Log::log("\"ex_c5\":");   Log::logDec(ex_c5);   Log::log(",");
+    Log::log("\"ex_c6\":");   Log::logDec(ex_c6);   Log::log(",");
+    Log::log("\"ex_c7\":");   Log::logDec(ex_c7);   Log::log(",");
+    Log::log("\"ex_c8\":");   Log::logDec(ex_c8);   Log::log(",");
+    Log::log("\"ex_c9\":");   Log::logDec(ex_c9);   Log::log(",");
 
-    Log::log("\"mem_rd2\": "); Log::logDec(mem_rd2); Log::log(",\n");
-    Log::log("\"mem_alu\": "); Log::logDec(mem_alu); Log::log(",\n");
-    Log::log("\"mem_ret\": "); Log::logDec(mem_ret); Log::log(",\n");
-    Log::log("\"mem_c5\": ");  Log::logDec(mem_c5);  Log::log(",\n");
-    Log::log("\"mem_c6\": ");  Log::logDec(mem_c6);  Log::log(",\n");
-    Log::log("\"mem_c7\": ");  Log::logDec(mem_c7);  Log::log(",\n");
-    Log::log("\"mem_c8\": ");  Log::logDec(mem_c8);  Log::log(",\n");
-    Log::log("\"mem_c9\": ");  Log::logDec(mem_c9);  Log::log(",\n");
+    Log::log("\"mem_rd2\":"); Log::logDec(mem_rd2); Log::log(",");
+    Log::log("\"mem_alu\":"); Log::logDec(mem_alu); Log::log(",");
+    Log::log("\"mem_ret\":"); Log::logDec(mem_ret); Log::log(",");
+    Log::log("\"mem_c5\":");  Log::logDec(mem_c5);  Log::log(",");
+    Log::log("\"mem_c6\":");  Log::logDec(mem_c6);  Log::log(",");
+    Log::log("\"mem_c7\":");  Log::logDec(mem_c7);  Log::log(",");
+    Log::log("\"mem_c8\":");  Log::logDec(mem_c8);  Log::log(",");
+    Log::log("\"mem_c9\":");  Log::logDec(mem_c9);  Log::log(",");
 
-    Log::log("\"wb_wb\": ");   Log::logDec(wb_wb);   Log::log(",\n");
-    Log::log("\"wb_c8\": ");   Log::logDec(wb_c8);   Log::log(",\n");
-    Log::log("\"wb_c9\": ");   Log::logDec(wb_c9);   Log::log(",\n");
+    Log::log("\"wb_wb\":");   Log::logDec(wb_wb);   Log::log(",");
+    Log::log("\"wb_c8\":");   Log::logDec(wb_c8);   Log::log(",");
+    Log::log("\"wb_c9\":");   Log::logDec(wb_c9);   Log::log(",");
 
-    Log::log("\"hz_hz\": ");   Log::logDec(hz_hz);   Log::log(",\n");
-    Log::log("\"hz_br\": ");   Log::logDec(hz_br);   Log::log(",\n");
-    Log::log("\"ce_if\": ");   Log::logDec(ce_if);   Log::log(",\n");
-    Log::log("\"ce_id\": ");   Log::logDec(ce_id);   Log::log(",\n");
-    Log::log("\"ce_ex\": ");   Log::logDec(ce_ex);   Log::log(",\n");
-    Log::log("\"ce_mem\": ");  Log::logDec(ce_mem);  Log::log(",\n");
-    Log::log("\"ce_wb\": ");   Log::logDec(ce_wb);   Log::log(",\n");
+    Log::log("\"hz_dat\":");  Log::logDec(hz_dat);  Log::log(",");
+    Log::log("\"hz_br\":");   Log::logDec(hz_br);   Log::log(",");
+    Log::log("\"ce_if\":");   Log::logDec(ce_if);   Log::log(",");
+    Log::log("\"ce_id\":");   Log::logDec(ce_id);   Log::log(",");
+    Log::log("\"ce_ex\":");   Log::logDec(ce_ex);   Log::log(",");
+    Log::log("\"ce_mem\":");  Log::logDec(ce_mem);  Log::log(",");
+    Log::log("\"ce_wb\":");   Log::logDec(ce_wb);
 
-    Log::log("}\n\n");
+    rs.logJson();
+
+    Log::log("}\n");
 
 }
