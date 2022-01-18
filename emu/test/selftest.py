@@ -7,7 +7,6 @@
 '''
 
 import subprocess
-import threading
 import json
 
 
@@ -49,7 +48,7 @@ def main():
             fail = 1
             print('\x1b[31;1mFailed test: ' + str(result) + '\x1b[0m')
     if fail:
-        print('\n\x1b[37;1mContinue working...\nWe\'re all gonna make it\n\x1b[0m')
+        print('\n\x1b[37;1mFailed...\n\x1b[0m')
 
-
-main()
+if __name__ == '__main__':
+    main()

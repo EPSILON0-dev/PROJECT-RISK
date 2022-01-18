@@ -7,6 +7,7 @@
  */
 
 
+#include <iostream>
 #include "alu.h"
 #include "branch.h"
 #include "cpu.h"
@@ -92,7 +93,7 @@ unsigned ex_c_alu_b {};   // Multiplexed ALU input B
 unsigned ex_c_alu {};     // (COMBINATIONAL) ALU output
 unsigned ex_c_br_en {};   // (COMBINATIONAL) Branch enable
 
-bool hz_br  {};           // Branch hazard
+bool hz_br {};            // Branch hazard
 bool hz_dat {};           // Data hazard
 
 bool ce_if  {};           // Clock enable for IF
@@ -163,8 +164,8 @@ void CentralProcessingUnit::UpdateCombinational(void)
     id_c_c1 = (id_c_op_ok)? ((getFunct3(id_ir) << 5) | getOpcode(id_ir)) : 0;
     // Only normal arythmetic doesn't use immediates an ALU B input
     id_c_c2 = !(id_c_op);
-    // Only branches and JAL use ALU to generate address
-    id_c_c3 = (id_c_jal | id_c_branch);
+    // Only branches, JAL and AUIPC use ALU to generate address
+    id_c_c3 = (id_c_jal | id_c_branch | id_c_auipc);
     // Combine all needed signals to form ALU input opcode
     id_c_c4 = ((id_c_op | id_c_op_imm) << 5) | (!(id_c_op) << 4) | (((id_ir >> 30) & 1) << 3) | getFunct3(id_ir);
     // If operation is store and it's OK enable DCACHE write
@@ -217,7 +218,7 @@ void CentralProcessingUnit::UpdateSequential(void)
     /******************************  CLOCK ENABLE  ***************************/
 
     // Generate clock enable signals for all pipeline stages
-    ce_if  = ic->o_CVD && dc->o_CVD && !hz_dat;
+    ce_if  = ic->o_CVD && dc->o_CVD && (!hz_dat || ex_c_br_en);
     ce_id  = ic->o_CVD && dc->o_CVD && !hz_dat;
     ce_ex  = ic->o_CVD && dc->o_CVD;
     ce_mem = ic->o_CVD && dc->o_CVD;
@@ -301,9 +302,13 @@ void CentralProcessingUnit::UpdateSequential(void)
 
     if (ce_id) 
     {
-        id_ret = if_c_pc_inc;  // Store the return address in register
-        id_pc = if_pc;         // Copy the PC from previous stage
-        id_ir = ic->o_CRDat;   // Store opcode read from memory in register
+        id_ret = if_c_pc_inc; // Store the return address in register
+        id_pc = if_pc;        // Copy the PC from previous stage
+        id_ir = ic->o_CRDat;  // Store opcode read from memory in register
+    }
+    if (ex_c_br_en)           // If branch was taken: 
+    {
+        id_ir = 0;            // Clear IR in case instruction would somehow get to execution phase
     }
 
     /*********************************  FETCH   ******************************/
@@ -315,9 +320,9 @@ void CentralProcessingUnit::UpdateSequential(void)
         if (ex_c_br_en) 
         {
             // If branch was taken:
-            ex_c1 = 0;ex_c5 = 0; ex_c6 = 0; ex_c9 = 0;  // Prevent next instruction from executing
-            if_pc = ex_c_alu;                           // Copy the ALU operation result to PC
-            hz_br = 1;                                  // Set the branch hazard
+            ex_c1 = 0; ex_c5 = 0; ex_c6 = 0; ex_c9 = 0;  // Prevent next instruction from executing
+            if_pc = ex_c_alu;                            // Copy the ALU operation result to PC
+            hz_br = 1;                                   // Set the branch hazard flag
             // Data hazard is set to give time to read next instruction from ICACHE
         } 
         else 
@@ -444,47 +449,51 @@ void CentralProcessingUnit::logJson(void)
 
     Log::log("{");
 
-    Log::log("\"if_pc\":");   Log::logDec(if_pc);   Log::log(",");
+    Log::log("\"if_pc\":");   Log::logDec(if_pc);      Log::log(",");
 
-    Log::log("\"id_ret\":");  Log::logDec(id_ret);  Log::log(",");
-    Log::log("\"id_pc\":");   Log::logDec(id_pc);   Log::log(",");
-    Log::log("\"id_ir\":");   Log::logDec(id_ir);   Log::log(",");
+    Log::log("\"id_ret\":");  Log::logDec(id_ret);     Log::log(",");
+    Log::log("\"id_pc\":");   Log::logDec(id_pc);      Log::log(",");
+    Log::log("\"id_ir\":");   Log::logDec(id_ir);      Log::log(",");
 
-    Log::log("\"ex_rd1\":");  Log::logDec(ex_rd1);  Log::log(",");
-    Log::log("\"ex_rd2\":");  Log::logDec(ex_rd2);  Log::log(",");
-    Log::log("\"ex_imm\":");  Log::logDec(ex_imm);  Log::log(",");
-    Log::log("\"ex_pc\":");   Log::logDec(ex_pc);   Log::log(",");
-    Log::log("\"ex_ret\":");  Log::logDec(ex_ret);  Log::log(",");
-    Log::log("\"ex_c1\":");   Log::logDec(ex_c1);   Log::log(",");
-    Log::log("\"ex_c2\":");   Log::logDec(ex_c2);   Log::log(",");
-    Log::log("\"ex_c3\":");   Log::logDec(ex_c3);   Log::log(",");
-    Log::log("\"ex_c4\":");   Log::logDec(ex_c4);   Log::log(",");
-    Log::log("\"ex_c5\":");   Log::logDec(ex_c5);   Log::log(",");
-    Log::log("\"ex_c6\":");   Log::logDec(ex_c6);   Log::log(",");
-    Log::log("\"ex_c7\":");   Log::logDec(ex_c7);   Log::log(",");
-    Log::log("\"ex_c8\":");   Log::logDec(ex_c8);   Log::log(",");
-    Log::log("\"ex_c9\":");   Log::logDec(ex_c9);   Log::log(",");
+    Log::log("\"ex_rd1\":");  Log::logDec(ex_rd1);     Log::log(",");
+    Log::log("\"ex_rd2\":");  Log::logDec(ex_rd2);     Log::log(",");
+    Log::log("\"ex_imm\":");  Log::logDec(ex_imm);     Log::log(",");
+    Log::log("\"ex_pc\":");   Log::logDec(ex_pc);      Log::log(",");
+    Log::log("\"ex_ret\":");  Log::logDec(ex_ret);     Log::log(",");
+    Log::log("\"ex_cb\":");   Log::logDec(ex_c_br_en); Log::log(",");
+    Log::log("\"ex_c1\":");   Log::logDec(ex_c1);      Log::log(",");
+    Log::log("\"ex_c2\":");   Log::logDec(ex_c2);      Log::log(",");
+    Log::log("\"ex_c3\":");   Log::logDec(ex_c3);      Log::log(",");
+    Log::log("\"ex_c4\":");   Log::logDec(ex_c4);      Log::log(",");
+    Log::log("\"ex_c5\":");   Log::logDec(ex_c5);      Log::log(",");
+    Log::log("\"ex_c6\":");   Log::logDec(ex_c6);      Log::log(",");
+    Log::log("\"ex_c7\":");   Log::logDec(ex_c7);      Log::log(",");
+    Log::log("\"ex_c8\":");   Log::logDec(ex_c8);      Log::log(",");
+    Log::log("\"ex_c9\":");   Log::logDec(ex_c9);      Log::log(",");
 
-    Log::log("\"mem_rd2\":"); Log::logDec(mem_rd2); Log::log(",");
-    Log::log("\"mem_alu\":"); Log::logDec(mem_alu); Log::log(",");
-    Log::log("\"mem_ret\":"); Log::logDec(mem_ret); Log::log(",");
-    Log::log("\"mem_c5\":");  Log::logDec(mem_c5);  Log::log(",");
-    Log::log("\"mem_c6\":");  Log::logDec(mem_c6);  Log::log(",");
-    Log::log("\"mem_c7\":");  Log::logDec(mem_c7);  Log::log(",");
-    Log::log("\"mem_c8\":");  Log::logDec(mem_c8);  Log::log(",");
-    Log::log("\"mem_c9\":");  Log::logDec(mem_c9);  Log::log(",");
+    Log::log("\"mem_rd2\":"); Log::logDec(mem_rd2);    Log::log(",");
+    Log::log("\"mem_alu\":"); Log::logDec(mem_alu);    Log::log(",");
+    Log::log("\"mem_ret\":"); Log::logDec(mem_ret);    Log::log(",");
+    Log::log("\"mem_c5\":");  Log::logDec(mem_c5);     Log::log(",");
+    Log::log("\"mem_c6\":");  Log::logDec(mem_c6);     Log::log(",");
+    Log::log("\"mem_c7\":");  Log::logDec(mem_c7);     Log::log(",");
+    Log::log("\"mem_c8\":");  Log::logDec(mem_c8);     Log::log(",");
+    Log::log("\"mem_c9\":");  Log::logDec(mem_c9);     Log::log(",");
 
-    Log::log("\"wb_wb\":");   Log::logDec(wb_wb);   Log::log(",");
-    Log::log("\"wb_c8\":");   Log::logDec(wb_c8);   Log::log(",");
-    Log::log("\"wb_c9\":");   Log::logDec(wb_c9);   Log::log(",");
-
-    Log::log("\"hz_dat\":");  Log::logDec(hz_dat);  Log::log(",");
-    Log::log("\"hz_br\":");   Log::logDec(hz_br);   Log::log(",");
-    Log::log("\"ce_if\":");   Log::logDec(ce_if);   Log::log(",");
-    Log::log("\"ce_id\":");   Log::logDec(ce_id);   Log::log(",");
-    Log::log("\"ce_ex\":");   Log::logDec(ce_ex);   Log::log(",");
-    Log::log("\"ce_mem\":");  Log::logDec(ce_mem);  Log::log(",");
-    Log::log("\"ce_wb\":");   Log::logDec(ce_wb);
+    Log::log("\"wb_wb\":");   Log::logDec(wb_wb);      Log::log(",");
+    Log::log("\"wb_c8\":");   Log::logDec(wb_c8);      Log::log(",");
+    Log::log("\"wb_c9\":");   Log::logDec(wb_c9);      Log::log(",");
+ 
+    Log::log("\"hz_dat\":");  Log::logDec(hz_dat);     Log::log(",");
+    Log::log("\"hz_br\":");   Log::logDec(hz_br);      Log::log(",");
+    Log::log("\"ce_if\":");   Log::logDec(ce_if);      Log::log(",");
+    Log::log("\"ce_id\":");   Log::logDec(ce_id);      Log::log(",");
+    Log::log("\"ce_ex\":");   Log::logDec(ce_ex);      Log::log(",");
+    Log::log("\"ce_mem\":");  Log::logDec(ce_mem);     Log::log(",");
+    Log::log("\"ce_wb\":");   Log::logDec(ce_wb);      Log::log(",");
+ 
+    Log::log("\"i_fetch\":"); Log::logDec(ic->o_CVD);  Log::log(",");
+    Log::log("\"d_fetch\":"); Log::logDec(dc->o_CVD);
 
     rs.logJson();
 

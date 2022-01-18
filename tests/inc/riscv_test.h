@@ -43,7 +43,9 @@
   li x28, 0;                                                            \
   li x29, 0;                                                            \
   li x30, 0;                                                            \
-  li x31, 0;
+  li x31, 0;                                                            \
+  nop;                                                                  \
+  nop;
 
 #define RVTEST_CODE_BEGIN                                               \
         .section .text.init;                                            \

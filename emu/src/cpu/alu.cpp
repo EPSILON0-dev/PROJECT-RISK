@@ -46,7 +46,7 @@ unsigned alu(unsigned a, unsigned b, unsigned o)
             return a ^ b;
 
         case 5:  // Shift Right Logical
-            if (!(o & 0x10) && (o & 0x8)) {
+            if (o & 0x8) {
                 return (unsigned)((int)a >> b);
             } else {
                 return (unsigned)a >> b;
