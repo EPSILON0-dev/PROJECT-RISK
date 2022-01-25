@@ -7,6 +7,16 @@
  * 
  */
 
+#ifndef FSB_H
+#define FSB_H
+
+#include <random>
+#include "../common/config.h"
+#include "../common/log.h"
+#include "icache.h"
+#include "dcache.h"
+#include "ddr.h"
+
 
 class FrontSideBus
 {
@@ -26,3 +36,5 @@ public:
     void logJson(void);
 
 };
+
+#endif

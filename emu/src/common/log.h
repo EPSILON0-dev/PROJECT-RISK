@@ -6,8 +6,12 @@
  * 
  */
 
-#pragma once
+#ifndef LOG_H
+#define LOG_H
+
 #include <string>
+#include <iomanip>
+#include <iostream>
 
 namespace Log 
 {
@@ -22,3 +26,5 @@ namespace Log
     void logDec(unsigned val);
     void logDec(unsigned val, const char* color);
 }
+
+#endif

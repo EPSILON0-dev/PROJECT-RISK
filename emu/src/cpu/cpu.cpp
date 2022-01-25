@@ -6,18 +6,7 @@
  * 
  */
 
-
-#include <iostream>
-#include "alu.h"
-#include "branch.h"
 #include "cpu.h"
-#include "decode.h"
-#include "regs.h"
-#include "mem.h"
-#include "../common/config.h"
-#include "../common/log.h"
-#include "../memory/icache.h"
-#include "../memory/dcache.h"
 
 
 RegisterSet rs;

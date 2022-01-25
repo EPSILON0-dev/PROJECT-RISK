@@ -21,8 +21,6 @@
  */
 
 
-#include "../common/config.h"
-#include "../common/log.h"
 #include "icache.h"
 
 

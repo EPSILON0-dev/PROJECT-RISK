@@ -6,6 +6,12 @@
  * 
  */
 
+#ifndef REGS_H
+#define REGS_H
+
+#include "../common/config.h"
+#include "../common/log.h"
+
 
 class RegisterSet
 {
@@ -20,3 +26,5 @@ public:
     void logJson(void);
     
 };
+
+#endif

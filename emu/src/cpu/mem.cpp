@@ -19,8 +19,10 @@
 unsigned shift(char s, unsigned d) 
 {
 
-    if (s) {
-        switch (s & 3) {
+    if (s) 
+    {
+        switch (s & 3) 
+        {
             case 1: return d<<8  | d>>24;
             case 2: return d<<16 | d>>16;
             case 3: return d<<24 | d>>8;
@@ -66,9 +68,11 @@ unsigned readData(char s, char l, bool u, unsigned d)
     unsigned d2 = (l&1)? d : (d&0xFFFF);
     d = (l>>1)? d2 : d1;
 
-    if (!u) {
+    if (!u) 
+    {
         // Sign extend
-        switch (l) {
+        switch (l) 
+        {
             case 1: if (d&(1<<7))  return d | 0xFFFFFF00; break;
             case 2: if (d&(1<<15)) return d | 0xFFFF0000; break;
             default: return d;

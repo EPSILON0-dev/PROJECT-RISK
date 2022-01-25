@@ -7,6 +7,12 @@
  * 
  */
 
+#ifndef DDR_H
+#define DDR_H
+
+#include "../common/config.h"
+#include "../common/log.h"
+
 
 class MainRam 
 {
@@ -50,3 +56,5 @@ public:
     void logJson(void);
 
 };
+
+#endif

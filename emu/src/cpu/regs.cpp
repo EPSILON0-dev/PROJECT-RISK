@@ -7,8 +7,6 @@
  */
 
 
-#include "../common/config.h"
-#include "../common/log.h"
 #include "regs.h"
 
 
@@ -54,9 +52,11 @@ void RegisterSet::write(unsigned a, unsigned d)
  */
 void RegisterSet::log(void)
 {
-    for (unsigned y = 0; y < 8; y++) {
+    for (unsigned y = 0; y < 8; y++) 
+    {
         Log::logSrc("  REGS   ", COLOR_GREEN);
-        for (unsigned x = 0; x < 4; x++) {
+        for (unsigned x = 0; x < 4; x++) 
+        {
             Log::logHex(regs[y*4+x], (regs[y*4+x])? COLOR_GREEN : COLOR_BLUE, 8);
             Log::log(" ");
         }
@@ -71,7 +71,8 @@ void RegisterSet::log(void)
  */
 void RegisterSet::logJson(void)
 {
-    for (unsigned i = 0; i < 32; i++) {
+    for (unsigned i = 0; i < 32; i++) 
+    {
         Log::log(",\"x");
         Log::logDec(i);
         Log::log("\":");

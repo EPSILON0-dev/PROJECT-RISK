@@ -6,6 +6,11 @@
  * 
  */
 
+#ifndef MEM_H
+#define MEM_H
+
 
 unsigned writeData(char s, char l, unsigned d);
 unsigned readData(char s, char l, bool u, unsigned d);
+
+#endif

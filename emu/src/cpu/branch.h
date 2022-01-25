@@ -6,5 +6,10 @@
  * 
  */
 
+#ifndef BRANCH_H
+#define BRANCH_H
+
 
 bool branch(unsigned a, unsigned b, unsigned o);
+
+#endif

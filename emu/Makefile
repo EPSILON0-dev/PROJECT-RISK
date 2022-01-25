@@ -10,7 +10,7 @@ BINDIR		= bin
 OBJDIR		= ./obj
 OBJSUBDIR	= ./obj/main ./obj/common ./obj/cpu ./obj/memory
 
-OPTFLAGS	:= -O0 -g
+OPTFLAGS	:= -O2
 WARNFLAGS	:= -Wall -Wextra
 
 OBJ			:= $(OBJDIR)/common/log.o 	$(OBJDIR)/memory/dcache.o 	$(OBJDIR)/memory/ddr.o

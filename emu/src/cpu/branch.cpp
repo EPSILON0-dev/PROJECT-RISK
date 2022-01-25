@@ -22,8 +22,10 @@ bool branch(unsigned a, unsigned b, unsigned o) {
 
     if ((o & 0x1d) == 0x19) return 1;  // JAL and JALR
 
-    if ((o & 0x1F) == 0x18) {  // Branches
-        switch ((o >> 5) & 0x7) {   
+    if ((o & 0x1F) == 0x18)  // Branches
+    {  
+        switch ((o >> 5) & 0x7) 
+        {   
             case 0b000: if (a == b) return 1; else return 0;
             case 0b001: if (a != b) return 1; else return 0;
             case 0b100: if ((int)a < (int)b) return 1; else return 0;

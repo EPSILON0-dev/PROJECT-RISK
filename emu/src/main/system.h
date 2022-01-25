@@ -6,6 +6,17 @@
  * 
  */
 
+#ifndef SYSTEM_H
+#define SYSTEM_H
+
+#include "../common/log.h"
+#include "../cpu/cpu.h"
+#include "../memory/icache.h"
+#include "../memory/dcache.h"
+#include "../memory/fsb.h"
+#include "../memory/ddr.h"
+#include <fstream>
+
 
 namespace CPU {
     int start();
@@ -14,3 +25,5 @@ namespace CPU {
     unsigned cycleLog(void);
     unsigned cycleLogJson(void);
 }
+
+#endif

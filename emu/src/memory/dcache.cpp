@@ -26,11 +26,7 @@
  */
 
 
-#include "../common/config.h"
-#include "../common/log.h"
-#include "fsb.h"
 #include "dcache.h"
-#include <iostream>
 
 
 /**

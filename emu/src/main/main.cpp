@@ -7,8 +7,8 @@
  */
 
 
-#include "../main/system.h"
-#include "../main/arg.h"
+#include "system.h"
+#include "arg.h"
 
 int main(int argc, char** argv)
 {

@@ -6,6 +6,20 @@
  * 
  */
 
+#ifndef CPU_H
+#define CPU_H
+
+#include <iostream>
+#include "alu.h"
+#include "branch.h"
+#include "decode.h"
+#include "regs.h"
+#include "mem.h"
+#include "../common/config.h"
+#include "../common/log.h"
+#include "../memory/icache.h"
+#include "../memory/dcache.h"
+
 
 class CentralProcessingUnit
 {
@@ -19,3 +33,5 @@ public:
     void logJson(void);
     
 };
+
+#endif

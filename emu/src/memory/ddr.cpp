@@ -8,8 +8,6 @@
  */
 
 
-#include "../common/config.h"
-#include "../common/log.h"
 #include "ddr.h"
 
 

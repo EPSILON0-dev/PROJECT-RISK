@@ -6,5 +6,10 @@
  * 
  */
 
+#ifndef ALU_H
+#define ALU_H
+
 
 unsigned alu(unsigned a, unsigned b, unsigned o);
+
+#endif

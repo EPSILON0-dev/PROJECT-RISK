@@ -7,10 +7,7 @@
  */
 
 
-#include <string>
 #include "decode.h"
-#include "../common/config.h"
-#include "../common/log.h"
 
 
 enum eFormat { FormatR, FormatI, FormatS, FormatB, FormatU, FormatJ };
@@ -24,7 +21,8 @@ enum eFormat { FormatR, FormatI, FormatS, FormatB, FormatU, FormatJ };
  */
 unsigned getFormat(unsigned op)
 {
-    switch (op & 0x7F) {
+    switch (op & 0x7F) 
+    {
         
         // Format U
         case 0b0110111: 
@@ -69,7 +67,8 @@ unsigned getFormat(unsigned op)
  */
 unsigned getImmediate(unsigned op)
 {
-    switch (getFormat(op)) {
+    switch (getFormat(op)) 
+    {
         
         default:
         return 0;

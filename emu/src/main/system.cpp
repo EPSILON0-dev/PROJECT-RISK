@@ -7,13 +7,6 @@
  */
 
 
-#include "../common/log.h"
-#include "../cpu/cpu.h"
-#include "../memory/icache.h"
-#include "../memory/dcache.h"
-#include "../memory/fsb.h"
-#include "../memory/ddr.h"
-#include <fstream>
 #include "system.h"
 
 

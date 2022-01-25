@@ -18,13 +18,9 @@
  * 
  */
 
-#include <random>
-#include "../common/config.h"
-#include "../common/log.h"
-#include "icache.h"
-#include "dcache.h"
-#include "ddr.h"
+
 #include "fsb.h"
+
 
 static InstructionCache* iCache;
 static DataCache* dCache;

@@ -6,5 +6,13 @@
  * 
  */
 
+#ifndef HELP_H
+#define HELP_H
+
+#include "../common/config.h"
+#include <iostream>
+
 
 void printHelp(void);
+
+#endif

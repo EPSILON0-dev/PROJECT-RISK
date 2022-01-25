@@ -6,5 +6,16 @@
  * 
  */
 
+#ifndef ARG_H
+#define ARG_H
+
+#include "../common/config.h"
+#include "help.h"
+#include <string>
+#include <cstring>
+#include <iostream>
+
 
 int parseArgs(int argc, char** argv);
+
+#endif

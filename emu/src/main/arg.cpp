@@ -7,11 +7,7 @@
  */
 
 
-#include "../common/config.h"
-#include "help.h"
-#include <string>
-#include <cstring>
-#include <iostream>
+#include "arg.h"
 
 
 unsigned parseValue(char* str);
@@ -44,7 +40,8 @@ extern char* ramFile;
 int parseArgs(int argc, char** argv) 
 {
 
-    if (argc == 1) {
+    if (argc == 1) 
+    {
         std::cout << "No arguments given, use " << COLOR_YELLOW << "'-h'" << COLOR_NONE << " for help\n";
         return -1;
     }
@@ -71,27 +68,32 @@ int parseArgs(int argc, char** argv)
 
     // -c
     parseCycles(argc, argv);
-    if (!valueOk) {
+    if (!valueOk) 
+    {
         std::cout << "Invalid cycles value " << COLOR_YELLOW << "(-c)" << COLOR_NONE << "\n";
         return -1;
     }
 
     // -k
     parseKill(argc, argv);
-    if (!valueOk) {
+    if (!valueOk) 
+    {
         std::cout << "Invalid kill address " << COLOR_YELLOW << "(-k)" << COLOR_NONE << "\n";
         return -1;
     }
 
     // RAM image file
-    if (!parseFile(argc, argv)) {
+    if (!parseFile(argc, argv)) 
+    {
         std::cout << "RAM image not supplied\n";
         return -1;
     }
 
     // Check for invalid arguments
-    for (int i = 0; i < argc-1; i++) {
-        if (args[i] == 0) {
+    for (int i = 0; i < argc-1; i++) 
+    {
+        if (args[i] == 0) 
+        {
             std::cout << "Invalid argument: " << argv[i] << "\n";
             return -1;
         }
@@ -111,8 +113,10 @@ int parseArgs(int argc, char** argv)
  */
 unsigned parseHelp(int argc, char** argv) 
 {
-    for (int i = 1; i < argc; i++) {
-        if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
+    for (int i = 1; i < argc; i++) 
+    {
+        if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) 
+        {
             printHelp();
             return 1;
         }
@@ -130,8 +134,10 @@ unsigned parseHelp(int argc, char** argv)
  */
 void parseLog(int argc, char** argv) 
 {
-    for (int i = 1; i < argc; i++) {
-        if (!strcmp(argv[i], "-l")) {
+    for (int i = 1; i < argc; i++) 
+    {
+        if (!strcmp(argv[i], "-l")) 
+        {
             args[i] = 1;
             enableLog = 1;
             return;
@@ -148,8 +154,10 @@ void parseLog(int argc, char** argv)
  */
 void parseLogJson(int argc, char** argv) 
 {
-    for (int i = 1; i < argc; i++) {
-        if (!strcmp(argv[i], "-j")) {
+    for (int i = 1; i < argc; i++) 
+    {
+        if (!strcmp(argv[i], "-j")) 
+        {
             args[i] = 1;
             enableJsonLog = 1;
             return;
@@ -166,8 +174,10 @@ void parseLogJson(int argc, char** argv)
  */
 void parseExit(int argc, char** argv) 
 {
-    for (int i = 1; i < argc; i++) {
-        if (!strcmp(argv[i], "-e")) {
+    for (int i = 1; i < argc; i++) 
+    {
+        if (!strcmp(argv[i], "-e")) 
+        {
             args[i] = 1;
             enableExitStatus = 1;
             return;
@@ -184,8 +194,10 @@ void parseExit(int argc, char** argv)
  */
 void parseMemoryInit(int argc, char** argv) 
 {
-    for (int i = 1; i < argc; i++) {
-        if (!strcmp(argv[i], "-m")) {
+    for (int i = 1; i < argc; i++) 
+    {
+        if (!strcmp(argv[i], "-m")) 
+        {
             args[i] = 1;
             hideMemoryInit = 1;
             return;
@@ -202,13 +214,18 @@ void parseMemoryInit(int argc, char** argv)
  */
 void parseCycles(int argc, char** argv) 
 {
-    for (int i = 1; i < argc; i++) {
-        if (!strncmp(argv[i], "-c", 2)) {
-            if (!strcmp(argv[i], "-c")) {
+    for (int i = 1; i < argc; i++) 
+    {
+        if (!strncmp(argv[i], "-c", 2)) 
+        {
+            if (!strcmp(argv[i], "-c")) 
+            {
                 cycleLimit = parseValue(argv[i+1]);
                 args[i] = 1; args[i+1] = 1;
                 return;
-            } else {
+            } 
+            else 
+            {
                 cycleLimit = parseValue(argv[i]+2);
                 args[i] = 1;
                 return;
@@ -226,13 +243,18 @@ void parseCycles(int argc, char** argv)
  */
 void parseKill(int argc, char** argv) 
 {
-    for (int i = 1; i < argc; i++) {
-        if (!strncmp(argv[i], "-k", 2)) {
-            if (!strcmp(argv[i], "-k")) {
+    for (int i = 1; i < argc; i++) 
+    {
+        if (!strncmp(argv[i], "-k", 2)) 
+        {
+            if (!strcmp(argv[i], "-k")) 
+            {
                 killAddress = parseValue(argv[i+1]);
                 args[i] = 1; args[i+1] = 1;
                 return;
-            } else {
+            } 
+            else 
+            {
                 killAddress = parseValue(argv[i]+2);
                 args[i] = 1;
                 return;
@@ -251,8 +273,10 @@ void parseKill(int argc, char** argv)
  */
 unsigned parseFile(int argc, char** argv) 
 {
-    for (int i = 1; i < argc; i++) {
-        if (!args[i] && argv[i][0] != '-') {
+    for (int i = 1; i < argc; i++) 
+    {
+        if (!args[i] && argv[i][0] != '-') 
+        {
             ramFile = argv[i];
             args[i] = 1;
             return 1;
@@ -271,13 +295,16 @@ unsigned parseFile(int argc, char** argv)
  */
 unsigned parseValue(char* str) 
 {
-    try {
+    try 
+    {
         if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X'))
             return std::stoul(str+2, nullptr, 16);
         if (str[0] == '0' && (str[1] == 'b' || str[1] == 'B'))
             return std::stoul(str+2, nullptr, 2);
         return std::stoul(str, nullptr, 10);
-    } catch (std::exception const&) {
+    } 
+    catch (std::exception const&) 
+    {
         valueOk = 0;
         return 0;
     }

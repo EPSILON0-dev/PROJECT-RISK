@@ -6,6 +6,13 @@
  * 
  */
 
+#ifndef DECODE_H
+#define DECODE_H
+
+#include <string>
+#include "../common/config.h"
+#include "../common/log.h"
+
 
 unsigned getFormat(unsigned op);
 unsigned getImmediate(unsigned op);
@@ -14,3 +21,5 @@ unsigned getRs2(unsigned op);
 unsigned getRd(unsigned op);
 unsigned getOpcode(unsigned op);
 unsigned getFunct3(unsigned op);
+
+#endif

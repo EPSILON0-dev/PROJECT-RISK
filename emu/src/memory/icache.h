@@ -7,6 +7,12 @@
  * 
  */
 
+#ifndef ICACHE_H
+#define ICACHE_H
+
+#include "../common/config.h"
+#include "../common/log.h"
+
 
 class InstructionCache
 {
@@ -53,3 +59,5 @@ public:
     void logJson(void);
 
 };
+
+#endif

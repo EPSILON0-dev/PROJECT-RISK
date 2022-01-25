@@ -23,13 +23,17 @@
 unsigned alu(unsigned a, unsigned b, unsigned o)
 {
 
-    if (o & 0x20) {
+    if (o & 0x20) 
+    {
         switch (o & 0x7) 
         {
         default: // Add / Subtract
-            if (!(o & 0x10) && (o & 0x8)) {
+            if (!(o & 0x10) && (o & 0x8)) 
+            {
                 return a - b;
-            } else {
+            } 
+            else 
+            {
                 return a + b;
             }
 
@@ -46,9 +50,12 @@ unsigned alu(unsigned a, unsigned b, unsigned o)
             return a ^ b;
 
         case 5:  // Shift Right Logical
-            if (o & 0x8) {
+            if (o & 0x8) 
+            {
                 return (unsigned)((int)a >> b);
-            } else {
+            } 
+            else 
+            {
                 return (unsigned)a >> b;
             }
 

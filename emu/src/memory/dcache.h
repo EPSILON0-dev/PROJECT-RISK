@@ -7,6 +7,14 @@
  * 
  */
 
+#ifndef DCACHE_H
+#define DCACHE_H
+
+#include "../common/config.h"
+#include "../common/log.h"
+#include "fsb.h"
+#include <iostream>
+
 
 class DataCache
 {
@@ -74,3 +82,5 @@ public:
     void logJson(void);
 
 };
+
+#endif
