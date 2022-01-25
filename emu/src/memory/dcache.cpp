@@ -30,6 +30,7 @@
 #include "../common/log.h"
 #include "fsb.h"
 #include "dcache.h"
+#include <iostream>
 
 
 /**
@@ -64,7 +65,7 @@ DataCache::DataCache(void)
 
 
 static unsigned getBlock(unsigned a) { return (a >> 2) & 0x7; }
-static unsigned getIndex(unsigned a) { return (a >> 5) & 0xFF; }
+static unsigned getIndex(unsigned a) { return (a >> 5) & 0x1FF; }
 static unsigned getTag(unsigned a) { return (a >> 14); }
 bool DataCache::checkCache1(unsigned a) { return (tag1[getIndex(a)] == getTag(a) && valid1[getIndex(a)]); }
 bool DataCache::checkCache2(unsigned a) { return (tag2[getIndex(a)] == getTag(a) && valid2[getIndex(a)]); }
@@ -154,16 +155,22 @@ void DataCache::Update(void)
 
     }
 
-    if (i_CRE || i_CWE) { Adr = i_CAdr; }
+    if (i_CRE || !!i_CWE) { Adr = i_CAdr; }
 
-    if (!n_CFetch && i_CWE) {  // Handle writes
+    if (!n_CFetch && !!i_CWE) {  // Handle writes
 
         if (!(checkCache1(Adr) || checkCache2(Adr))) { goto fetchFromRam; }
 
         if (checkCache1(Adr)) {
+            unsigned char* blockBase = (unsigned char*)&cache1[block];
+            if (i_CWE & 0x1) blockBase[0] = (i_CWDat)       & 0xFF;
+            if (i_CWE & 0x2) blockBase[1] = (i_CWDat >>  8) & 0xFF;
+            if (i_CWE & 0x4) blockBase[2] = (i_CWDat >> 16) & 0xFF;
+            if (i_CWE & 0x8) blockBase[3] = (i_CWDat >> 24) & 0xFF;
+
             lastSet[index] = 0;
-            cache1[block] = i_CWDat;
             n_CVD = 1;
+
             if (!queue1[index]) {
                 n_FWReq = 1;
                 if (!n_FQFull) {
@@ -174,13 +181,20 @@ void DataCache::Update(void)
                     n_CWDone = 0;
                 }
             }
+
             goto endUpdate;
         }
 
         if (checkCache2(Adr)) {
+            unsigned char* blockBase = (unsigned char*)&cache2[block];
+            if (i_CWE & 0x1) blockBase[0] = (i_CWDat)       & 0xFF;
+            if (i_CWE & 0x2) blockBase[1] = (i_CWDat >>  8) & 0xFF;
+            if (i_CWE & 0x4) blockBase[2] = (i_CWDat >> 16) & 0xFF;
+            if (i_CWE & 0x8) blockBase[3] = (i_CWDat >> 24) & 0xFF;
+
             lastSet[index] = 1;
-            cache2[block] = i_CWDat;
             n_CVD = 1;
+
             if (!queue2[index]) {
                 n_FWReq = 1;
                 if (!n_FQFull) {
@@ -191,6 +205,7 @@ void DataCache::Update(void)
                     n_CWDone = 0;
                 }
             }
+
             goto endUpdate;
         }
 
@@ -282,7 +297,7 @@ void DataCache::log(void)
                 Log::logHex(cache2[getBlock(i_CAdr)], COLOR_MAGENTA, 8);
             }
 
-        } else if (i_CWE) {
+        } else if (!!i_CWE) {
 
             Log::log("Write to ");
             Log::logHex(i_CAdr, COLOR_MAGENTA, 8);
@@ -316,5 +331,67 @@ void DataCache::log(void)
     }
 
     Log::log("\n");
+    
+}
+
+
+/**
+ * @brief Log the activity
+ * 
+ */
+void DataCache::logJson(void)
+{
+
+    Log::log("\"md\":\"");
+
+    if (!n_CFetch) {
+
+        if (i_CRE) {
+
+            Log::log("Read ");
+            Log::logHex(i_CAdr, 8);
+            Log::log(", ");
+            if (checkCache1(i_CAdr)) {
+                Log::log("[1: HIT]: ");
+                Log::logHex(cache1[getBlock(i_CAdr)], 8);
+            }
+            if (checkCache2(i_CAdr)) {
+                Log::log("[2: HIT]: ");
+                Log::logHex(cache2[getBlock(i_CAdr)], 8);
+            }
+
+        } else if (!!i_CWE) {
+
+            Log::log("Write to ");
+            Log::logHex(i_CAdr, 8);
+            if (checkCache1(i_CAdr)) {
+                Log::log(" cache ");
+                Log::log("[1]: ");
+                Log::logHex(i_CWDat, 8);
+            }
+            if (checkCache2(i_CAdr)) {
+                Log::log(" cache ");
+                Log::log("[2]: ");
+                Log::logHex(i_CWDat, 8);
+            }
+
+        } else {
+
+            Log::log("Idle cycle");
+
+        }
+
+    } else {
+
+        Log::log("Fetching");
+
+    }
+
+    if (queuePtr) {
+      Log::log(" [Q:");
+      Log::logDec(queuePtr);
+      Log::log("]");
+    }
+    Log::log("\",");
     
 }

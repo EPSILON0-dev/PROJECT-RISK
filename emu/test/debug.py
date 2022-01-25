@@ -297,20 +297,51 @@ def render_status(stat_win, json_cycles, cur_cycle):
     stat_win.addstr('  |  EX_AL -> ', curses.A_BOLD)
     stat_win.addstr(ALU_OPS[cycle['ex_c4']])
     stat_win.addstr('\nEX_RW -> ', curses.A_BOLD)
-    stat_win.addstr(['NOP', ' WR', ' RD', 'WTF'][(cycle['ex_c6']<<1)+cycle['ex_c5']])
+    stat_win.addstr(['NOP', ' WR', ' RD', 'WTF'][((cycle['ex_c6']>0)<<1)+(cycle['ex_c5']>0)])
     stat_win.addstr('  |  EX_WB -> ', curses.A_BOLD)
     stat_win.addstr(['NOP', 'NOP', 'NOP', 'NOP', 'ALU', ' RD', 'RET', 'WTF'][cycle['ex_c7']+(cycle['ex_c9']<<2)])
     
 
     # Print MA control flow
     stat_win.addstr('  |  MA_RW -> ', curses.A_BOLD)
-    stat_win.addstr(['NOP', ' WR', ' RD', 'WTF'][(cycle['mem_c6']<<1)+cycle['mem_c5']])
+    stat_win.addstr(['NOP', ' WR', ' RD', 'WTF'][((cycle['mem_c6']>0)<<1)+(cycle['mem_c5']>0)])
     stat_win.addstr('  |  MA_WB -> ', curses.A_BOLD)
     stat_win.addstr(['NOP', 'NOP', 'NOP', 'NOP', 'ALU', ' RD', 'RET', 'WTF'][cycle['mem_c7']+(cycle['mem_c9']<<2)])
+    stat_win.addstr('\n'+'─'*65, curses.A_BOLD)
+
+
+    # Print memory messages
+    stat_win.addstr('ICACHE -> ', curses.A_BOLD)
+    stat_win.addstr(cycle['mi'])
+    stat_win.addstr('\nDCACHE -> ', curses.A_BOLD)
+    stat_win.addstr(cycle['md'])
+    stat_win.addstr('\nDDR    -> ', curses.A_BOLD)
+    stat_win.addstr(cycle['mr'])
+    stat_win.addstr('\nFSB    -> ', curses.A_BOLD)
+    stat_win.addstr(cycle['mf'])
 
 
     # Window stuff
     stat_win.refresh()
+
+
+
+# Render pipeline register status
+def render_raw(raw_win, json_cycles, cur_cycle):
+    # Window stuff
+    raw_win.clear()
+
+    # Get current cycle
+    cycle = json.loads(json_cycles[cur_cycle])
+
+    # Print ID registers
+    for i in range(1, 10):
+        raw_win.addstr(' c' + str(i) + ' -> ', curses.A_BOLD)
+        raw_win.addstr(str(cycle['ex_c'+str(i)])+'\n')
+
+    # Window stuff
+    raw_win.refresh()
+
 
 
 def render_dump(dump_win, lines, dump, json_cycles, cur_cycle):
@@ -365,8 +396,9 @@ def main(stdscr):
     reg_win = curses.newwin(10, 36, 3, 2)
     reg_log_win = curses.newwin(curses.LINES - 19, 36, 16, 2)
     cyc_win = curses.newwin(1, 36, curses.LINES - 2, 2)
-    stat_win = curses.newwin(10, 65, 3, 40)
-    dump_win = curses.newwin(curses.LINES - 17, curses.COLS - 41, 16, 40)
+    stat_win = curses.newwin(14, 65, 3, 40)
+    raw_win = curses.newwin(14, curses.COLS-107, 3, 106)
+    dump_win = curses.newwin(curses.LINES - 21, curses.COLS - 41, 20, 40)
     
     # Clear, print the background and refresh the main screen
     stdscr.clear()
@@ -375,13 +407,18 @@ def main(stdscr):
     stdscr.addstr('╟'  + '─'*37 + '╫'  + '─'*66 + '╫' + '─'*(curses.COLS-107) + '╢')
     stdscr.addstr(('║' + ' '*37 + '║'  + ' '*66 + '║' + ' '*(curses.COLS-107) + '║')*4)
     stdscr.addstr('║'  + ' '*37 + '╟─' + ' '*65 + '╢' + ' '*(curses.COLS-107) + '║')
-    stdscr.addstr(('║' + ' '*37 + '║'  + ' '*66 + '║' + ' '*(curses.COLS-107) + '║')*3)
+    stdscr.addstr(('║' + ' '*37 + '║'  + ' '*66 + '║' + ' '*(curses.COLS-107) + '║')*2)
+    stdscr.addstr('║'  + ' '*37 + '╟─' + ' '*65 + '╢' + ' '*(curses.COLS-107) + '║')
     stdscr.addstr('╟─' + ' '*36 + '╢'  + ' '*66 + '║' + ' '*(curses.COLS-107) + '║')
     stdscr.addstr('║'  + ' '*37 + '║'  + ' '*66 + '║' + ' '*(curses.COLS-107) + '║')
-    stdscr.addstr('╠'  + '═'*37 + '╬'  + '═'*66 + '╩' + '═'*(curses.COLS-107) + '╣')
-    stdscr.addstr('║'  + ' '*8 + ' REGISTER CHANGE LOG ' + ' '*8 + '║' + ' '*ceil((curses.COLS-55)/2) + ' ASSEMBLY DUMP ' + ' '*floor((curses.COLS-55)/2) + '║')
-    stdscr.addstr('╟'  + '─'*37 + '╫'  + '─'*66 + '─' + '─'*(curses.COLS-107) + '╣')
-    stdscr.addstr(('║' + ' '*37 + '║'  + ' '*66 + ' ' + ' '*(curses.COLS-107) + '║')*(curses.LINES-19))
+    stdscr.addstr('╠'  + '═'*37 + '╣'  + ' '*66 + '║' + ' '*(curses.COLS-107) + '║')
+    stdscr.addstr('║'  + ' '*8 + ' REGISTER CHANGE LOG ' + ' '*8 + '║' + ' '*66 + '║' + ' '*(curses.COLS-107) + '║') #  + '║')
+    stdscr.addstr('╟'  + '─'*37 + '╢'  + ' '*66 + '║' + ' '*(curses.COLS-107) + '║')
+    stdscr.addstr('║'  + ' '*37 + '║'  + ' '*66 + '║' + ' '*(curses.COLS-107) + '║')
+    stdscr.addstr('║'  + ' '*37 + '╠'  + '═'*66 + '╩' + '═'*(curses.COLS-107) + '╣')
+    stdscr.addstr('║'  + ' '*37 + '║'  + ' '*ceil((curses.COLS-55)/2) + ' ASSEMBLY DUMP ' + ' '*floor((curses.COLS-55)/2)+ '║')
+    stdscr.addstr('║'  + ' '*37 + '╟'  + '─'*66 + '─' + '─'*(curses.COLS-107) + '╢')
+    stdscr.addstr(('║' + ' '*37 + '║'  + ' '*66 + ' ' + ' '*(curses.COLS-107) + '║')*(curses.LINES-23))
     stdscr.addstr('╠'  + '═'*37 + '╣'  + ' '*66 + ' ' + ' '*(curses.COLS-107) + '║')
     stdscr.addstr('║'  + ' '*37 + '║'  + ' '*66 + '║' + ' '*(curses.COLS-107) + '║')
     stdscr.addstr('╚'  + '═'*37 + '╩'  + '═'*66 + '═' + '═'*(curses.COLS-107))
@@ -393,7 +430,8 @@ def main(stdscr):
         render_cycle(cyc_win, json_cycles, cur_cycle)
         render_reg_update_log(reg_log_win, reg_updates, cur_cycle)
         render_status(stat_win, json_cycles, cur_cycle)
-        render_dump(dump_win, curses.LINES - 17, dump, json_cycles, cur_cycle)
+        render_raw(raw_win, json_cycles, cur_cycle)
+        render_dump(dump_win, curses.LINES - 21, dump, json_cycles, cur_cycle)
 
         # Get the keyboard input
         key = stdscr.getch()

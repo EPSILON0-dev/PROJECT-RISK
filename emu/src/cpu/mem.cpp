@@ -9,7 +9,6 @@
 
 #include "mem.h"
 
-
 /**
  * @brief Shift the d by s octets
  * 
@@ -21,15 +20,10 @@ unsigned shift(char s, unsigned d)
 {
 
     if (s) {
-        unsigned char w3 = (d >> 24) & 0xFF;
-        unsigned char w2 = (d >> 16) & 0xFF;
-        unsigned char w1 = (d >> 8)  & 0xFF;
-        unsigned char w0 = d & 0xFF;
-
         switch (s & 3) {
-            case 1: return (w2<<24) || (w1<<16) || (w0<<8) || (w3);
-            case 2: return (w1<<24) || (w0<<16) || (w3<<8) || (w2);
-            case 3: return (w0<<24) || (w3<<16) || (w2<<8) || (w1);
+            case 1: return d<<8  | d>>24;
+            case 2: return d<<16 | d>>16;
+            case 3: return d<<24 | d>>8;
         }
     }
 
@@ -49,7 +43,9 @@ unsigned shift(char s, unsigned d)
 unsigned writeData(char s, char l, unsigned d) 
 {
     // Resize the data
-    d = (l)? ((l&1)? d : (d&0xFFFF)) : (d&0xFF);
+    unsigned d1 = (l&1)? (d&0xFF) : 0;
+    unsigned d2 = (l&1)? d : (d&0xFFFF);
+    d = (l>>1)? d2 : d1;
     return shift(s, d);
 }
 
@@ -65,19 +61,19 @@ unsigned writeData(char s, char l, unsigned d)
  */
 unsigned readData(char s, char l, bool u, unsigned d) 
 {
-    d = shift(s, d);
+    d = shift((4-s) & 0x3, d);
+    unsigned d1 = (l&1)? (d&0xFF) : 0;
+    unsigned d2 = (l&1)? d : (d&0xFFFF);
+    d = (l>>1)? d2 : d1;
 
-    if (u) {
-        goto ret;
-    } else {
+    if (!u) {
         // Sign extend
         switch (l) {
-            case 0: if (d&(1<<7))  return d & 0xFFFFFF00;
-            case 1: if (d&(1<<15)) return d & 0xFFFF0000;
+            case 1: if (d&(1<<7))  return d | 0xFFFFFF00; break;
+            case 2: if (d&(1<<15)) return d | 0xFFFF0000; break;
+            default: return d;
         }
     }
 
-    // Return shortened
-    ret:
-    return (l)? ((l&1)? d : (d&0xFFFF)) : (d&0xFF);;
+    return d;
 }

@@ -181,3 +181,31 @@ void FrontSideBus::log(void)
         break;
     }
 }
+
+
+/**
+ * @brief Log the activity
+ * 
+ */
+void FrontSideBus::logJson(void)
+{
+    Log::log("\"mf\":\"");
+    switch (req) {
+        case cDCache:
+        Log::log("D cache read ");
+        Log::logHex(reqAdr, 8);
+        break;
+        case cICache:
+        Log::log("I cache read ");
+        Log::logHex(reqAdr, 8);
+        break;
+        case cDWrite:
+        Log::log("D cache write ");
+        Log::logHex(reqAdr, 8);
+        break;
+        default:
+        Log::log("Idle cycle");
+        break;
+    }
+    Log::log("\",");
+}

@@ -169,9 +169,9 @@ void CentralProcessingUnit::UpdateCombinational(void)
     // Combine all needed signals to form ALU input opcode
     id_c_c4 = ((id_c_op | id_c_op_imm) << 5) | (!(id_c_op) << 4) | (((id_ir >> 30) & 1) << 3) | getFunct3(id_ir);
     // If operation is store and it's OK enable DCACHE write
-    id_c_c5 = id_c_store && id_c_op_ok;
+    id_c_c5 = (id_c_store && id_c_op_ok) ? ((getFunct3(id_ir) & 0x3) + 1) : 0;
     // If operation is load and it's OK enable DCACHE read
-    id_c_c6 = id_c_load && id_c_op_ok;
+    id_c_c6 = (id_c_load && id_c_op_ok) ? (((getFunct3(id_ir) & 0x3) + 1) + (getFunct3(id_ir) & 0x4)) : 0;
     // Generate a write back select signal
     id_c_c7 = id_c_load; if (id_c_jal || id_c_jalr) id_c_c7 = 2;
     // Get the write back address
@@ -190,6 +190,9 @@ void CentralProcessingUnit::UpdateCombinational(void)
     // Use branch conditioner to check if branch should be taken
     ex_c_br_en = branch(ex_rd1, ex_rd2, ex_c1);
 
+    /*****************************  MEMORY ACCESS   **************************/
+
+    
     /****************************  HAZARD DETECTION  *************************/
 
     // Check for hazard on EX, MEM and WB stages
@@ -229,7 +232,8 @@ void CentralProcessingUnit::UpdateSequential(void)
     if (ce_wb) 
     { 
         // Generate correct writeback data
-        wb_wb = (mem_c7 >> 1) ? mem_ret : (mem_c7 & 1) ? dc->o_CRDat : mem_alu;
+        unsigned wb_read_data = readData(mem_alu & 0x3, mem_c6 & 0x3, mem_c6>>2, dc->o_CRDat);
+        wb_wb = (mem_c7 >> 1) ? mem_ret : (mem_c7 & 1) ? wb_read_data : mem_alu;
         // Copy control signals from previous stage
         wb_c8 = mem_c8;
         wb_c9 = mem_c9;
@@ -241,6 +245,7 @@ void CentralProcessingUnit::UpdateSequential(void)
     {
         // Store ALU operation result
         mem_alu = ex_c_alu;
+
         // Copy signals from previous  stage
         mem_rd2 = ex_rd2;
         mem_ret = ex_ret;
@@ -249,11 +254,16 @@ void CentralProcessingUnit::UpdateSequential(void)
         mem_c7 = ex_c7;
         mem_c8 = ex_c8;
         mem_c9 = ex_c9;
+
         // Supply DCACHE with necessary signals
-        dc->i_CWE = mem_c5;
-        dc->i_CRE = mem_c6;
-        if (mem_c5 || mem_c6) dc->i_CAdr = mem_alu;
-        if (mem_c5) dc->i_CWDat = mem_rd2;
+        unsigned mem_c_we = (mem_c5>>1)? ((mem_c5&1)? 0xF : 0x3) : ((mem_c5&1)? 0x1 : 0x0);
+        mem_c_we = mem_c_we << (mem_alu & 3);
+        mem_c_we = mem_c_we & 0xF;
+        dc->i_CWE = mem_c_we;
+
+        dc->i_CRE = !!mem_c6;
+        if (!!mem_c5 || !!mem_c6) dc->i_CAdr = mem_alu;
+        if (!!mem_c5) dc->i_CWDat = writeData(mem_alu & 0x3, mem_c5, mem_rd2);
     }
 
     /********************************  EXECUTE   *****************************/
@@ -447,8 +457,6 @@ void CentralProcessingUnit::log(void)
 void CentralProcessingUnit::logJson(void)
 {
 
-    Log::log("{");
-
     Log::log("\"if_pc\":");   Log::logDec(if_pc);      Log::log(",");
 
     Log::log("\"id_ret\":");  Log::logDec(id_ret);     Log::log(",");
@@ -496,7 +504,5 @@ void CentralProcessingUnit::logJson(void)
     Log::log("\"d_fetch\":"); Log::logDec(dc->o_CVD);
 
     rs.logJson();
-
-    Log::log("}\n");
 
 }

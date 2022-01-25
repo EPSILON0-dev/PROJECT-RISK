@@ -89,7 +89,7 @@ void CPU::loop(void) {
     // Show exit code
     if (enableExitStatus) {
         
-        if (enableJsonLog) { cpu.logJson(); }
+        if (enableJsonLog) { Log::log("{"); cpu.logJson(); Log::log("}"); }
         else { Log::log("\nEXIT STATUS:\n"); cpu.log(); }
     }
 
@@ -170,12 +170,9 @@ unsigned CPU::cycleLog(void) {
  */
 unsigned CPU::cycleLogJson(void) {
 
+    Log::log("{");
+    
     cpu.UpdateCombinational();
-
-    //iCache.log();
-    //dCache.log();
-    //ddr.log();
-    //fsb.log();
 
     iCache.Update();
     dCache.Update();
@@ -187,9 +184,16 @@ unsigned CPU::cycleLogJson(void) {
 
     fsb.Update();
 
+    iCache.logJson();
+    dCache.logJson();
+    ddr.logJson();
+    fsb.logJson();
+
     cpu.UpdateSequential(); 
 
     cpu.logJson();       
+
+    Log::log("}\n");
 
     return if_pc;
 

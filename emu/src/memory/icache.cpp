@@ -49,8 +49,8 @@ InstructionCache::InstructionCache(void)
 }
 
 
-static unsigned getBlock(unsigned a) { return (a >> 2) & 0x7FF; }
-static unsigned getIndex(unsigned a) { return (a >> 5) & 0xFF; }
+static unsigned getBlock(unsigned a) { return (a >> 2) & 0xFF; }
+static unsigned getIndex(unsigned a) { return (a >> 5) & 0x1FF; }
 static unsigned getTag(unsigned a) { return (a >> 14); }
 bool InstructionCache::checkCache1(unsigned a) { return (tag1[getIndex(a)] == getTag(a) && valid1[getIndex(a)]); }
 bool InstructionCache::checkCache2(unsigned a) { return (tag2[getIndex(a)] == getTag(a) && valid2[getIndex(a)]); }
@@ -168,5 +168,36 @@ void InstructionCache::log(void)
     } 
 
     Log::log("Idle cycle\n");
+
+}
+
+
+/**
+ * @brief Log the activity
+ * 
+ */
+void InstructionCache::logJson(void)
+{
+    Log::log("\"mi\":\"");
+
+    if (n_CFetch) { Log::log("Fetching\","); return; }
+
+    if (i_CRE) {
+        Log::log("Read ");
+        Log::logHex(i_CAdr, 8);
+        Log::log(", ");
+        if (checkCache1(i_CAdr)) {
+            Log::log("[1: HIT]: ");
+            Log::logHex(cache1[getBlock(i_CAdr)], 8);
+        }
+        if (checkCache2(i_CAdr)) {
+            Log::log("[2: HIT]: ");
+            Log::logHex(cache2[getBlock(i_CAdr)], 8);
+        }
+        Log::log("\",");
+        return;
+    } 
+
+    Log::log("Idle cycle\",");
 
 }

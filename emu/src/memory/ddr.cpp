@@ -175,3 +175,61 @@ void MainRam::log(void)
     }
 
 }
+
+
+/**
+ * @brief Log the activity
+ * 
+ */
+void MainRam::logJson(void)
+{
+    Log::log("\"mr\":\"");
+    
+    switch (st) {
+
+        case cRow:
+        Log::log("Activate row ");
+        Log::logHex(getRow(adr), 4);
+        break;
+
+        case cRowDel:
+        Log::log("Waiting for activate");
+        break;
+
+        case cRd:
+        Log::log("Reading column ");
+        Log::logHex(getCol(adr), 3);
+        break;
+
+        case cWr:
+        Log::log("Writing column ");
+        Log::logHex(getCol(adr), 3);
+        break;
+
+        case cCL1:
+        Log::log("Waiting for read");
+        break;
+
+        case cCL2:
+        Log::log("Waiting for read");
+        break;
+
+        case cRdng:
+        Log::log("Reading word ");
+        Log::logDec(wInx);
+        break;
+
+        case cWrng:
+        Log::log("Writing word ");
+        Log::logDec(wInx - 1);
+        break;
+
+        default:
+        Log::log("Idle cycle");
+        break;
+
+    }
+
+    Log::log("\",");
+
+}

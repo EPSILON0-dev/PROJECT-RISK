@@ -47,7 +47,7 @@ unsigned getFormat(unsigned op)
 
         // Format S
         case 0b0100011:
-        return FormatI;
+        return FormatS;
         
         // Format R
         case 0b0110011:
@@ -78,7 +78,7 @@ unsigned getImmediate(unsigned op)
         return ((op >> 31)? 0xFFFFF000 : 0) | op >> 20;
 
         case FormatS:
-        return ((op >> 31)? 0xFFFFF000 : 0) | ((op >> 20) & 0xFE0) | (op & 0x1E);
+        return ((op >> 31)? 0xFFFFF000 : 0) | ((op >> 20) & 0xFE0) | (op>>7 & 0x1F);
 
         case FormatB:
         return (((op >> 31) ? 0xFFFFF000 : 0x0) | ((op << 4) & 0x800) | 

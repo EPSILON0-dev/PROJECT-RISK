@@ -16,8 +16,8 @@ WARNFLAGS	:= -Wall -Wextra
 OBJ			:= $(OBJDIR)/common/log.o 	$(OBJDIR)/memory/dcache.o 	$(OBJDIR)/memory/ddr.o
 OBJ			+= $(OBJDIR)/memory/fsb.o 	$(OBJDIR)/memory/icache.o 	$(OBJDIR)/cpu/alu.o
 OBJ			+= $(OBJDIR)/cpu/regs.o 	$(OBJDIR)/cpu/decode.o 		$(OBJDIR)/cpu/branch.o
-OBJ			+= $(OBJDIR)/cpu/cpu.o 		$(OBJDIR)/main/system.o 	$(OBJDIR)/main/arg.o
-OBJ			+= $(OBJDIR)/main/help.o	$(OBJDIR)/main/main.o
+OBJ			+= $(OBJDIR)/cpu/cpu.o 		$(OBJDIR)/cpu/mem.o 		$(OBJDIR)/main/system.o
+OBJ			+= $(OBJDIR)/main/arg.o		$(OBJDIR)/main/help.o		$(OBJDIR)/main/main.o
 
 ##################################     All     #################################
 

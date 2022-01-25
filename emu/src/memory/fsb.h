@@ -23,5 +23,6 @@ public:
     void Update(void);
 public:
     void log(void);
+    void logJson(void);
 
 };

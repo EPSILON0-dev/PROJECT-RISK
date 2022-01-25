@@ -47,5 +47,6 @@ public:
     void UpdatePorts(void);
 public:
     void log(void);
+    void logJson(void);
 
 };
