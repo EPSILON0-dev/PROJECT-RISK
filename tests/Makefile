@@ -1,72 +1,118 @@
-#=======================================================================
-# Makefile for riscv-tests/isa
-#-----------------------------------------------------------------------
+################################## Definitions #################################
 
-XLEN ?= 64
+RISCV_PREFIX	:= riscv64-elf-
+RISCV_GCC 		:= $(RISCV_PREFIX)gcc
 
-src_dir := .
+CXX				:= $(RISCV_PREFIX)gcc
+OBJDUMP 		:= $(RISCV_PREFIX)objdump --disassemble-all --disassemble-zeroes --section=.text --section=.text.startup --section=.text.init --section=.data
+OBJCOPY 		:= $(RISCV_PREFIX)objcopy -O binary
+RM				:= rm -f
+MK				:= mkdir -p
+RMDIR			:= rmdir
 
-include $(src_dir)/rv32ui/Makefrag
+SRCDIR			:= ./src
+INCDIR			:= ./inc
+BINDIR			:= ./bin
+DUMPDIR			:= ./dump
+OBJDIR			:= ./obj
 
-default: all
+FLAGS			:= -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -march=rv32i -mabi=ilp32
 
-#--------------------------------------------------------------------
-# Build rules
-#--------------------------------------------------------------------
+TESTS = \
+simple \
+add addi \
+and andi \
+auipc \
+beq bge bgeu blt bltu bne \
+jal jalr \
+lb lbu lh lhu lw \
+lui \
+or ori \
+sb sh sw \
+sll slli \
+slt slti sltiu sltu \
+sra srai \
+srl srli \
+sub \
+xor xori \
 
-RISCV_PREFIX ?= riscv$(XLEN)-elf-
-RISCV_GCC ?= $(RISCV_PREFIX)gcc
-RISCV_GCC_OPTS ?= -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles
-RISCV_OBJDUMP ?= $(RISCV_PREFIX)objdump --disassemble-all --disassemble-zeroes --section=.text --section=.text.startup --section=.text.init --section=.data
-RISCV_OBJCOPY ?= $(RISCV_PREFIX)objcopy -O binary
+OBJ 			:= $(addprefix $(OBJDIR)/, $(addsuffix .o, $(TESTS)))
+BIN 			:= $(addprefix $(BINDIR)/, $(addsuffix .hex, $(TESTS)))
+DUMP 			:= $(addprefix $(DUMPDIR)/, $(addsuffix .dump, $(TESTS)))
 
-vpath %.S $(src_dir)
+##################################     All     #################################
 
-#------------------------------------------------------------
-# Build assembly tests
+.PHONEY: all
+all: 
+	@$(MAKE) -s banner
+	@$(MAKE) -s msg
+	@$(MAKE) -s compile
 
-%.dump: %
-	$(RISCV_OBJDUMP) $< > $@
+.PHONEY: fresh
+fresh:
+	@$(MAKE) -s banner
+	@$(MAKE) -s msg
+	@$(MAKE) -s realclean
+	@$(MAKE) -s compile
 
-%.hex: %
-	$(RISCV_OBJCOPY) $< $@
+.PHONEY: compile
+compile:
+	@$(MAKE) -s directories
+	@$(MAKE) -s obj
+	@$(MAKE) -s bin
+	@$(MAKE) -s dump
 
-define compile_template
+.PHONEY: directories
+directories:
+	@$(MK) $(OBJDIR)
+	@$(MK) $(DUMPDIR)
+	@$(MK) $(BINDIR)
 
-$$($(1)_p_tests): $(1)-p-%: $(1)/%.S
-	$$(RISCV_GCC) $(2) $$(RISCV_GCC_OPTS) -I$(src_dir)/inc -T$(src_dir)/link.ld $$< -o $$@
-$(1)_tests += $$($(1)_p_tests)
+##################################  Messages  ##################################
 
-$(1)_tests_dump = $$(addsuffix .dump, $$($(1)_tests))
+BANNER		:= "\033[38;5;88m ╔═╗ ╦═╗ ╔═╗  ╦ ╔═╗ ╔═╗ ╔╦╗     ╦═╗ ╦ ╔═╗ ╦╔═\n\
+\033[38;5;124m╠═╝ ╠╦╝ ║ ║  ║ ║╣  ║    ║  ─── ╠╦╝ ║ ╚═╗ ╠╩╗\n\
+\033[38;5;160m╩   ╩╚═ ╚═╝ ╚╝ ╚═╝ ╚═╝  ╩      ╩╚═ ╩ ╚═╝ ╩ ╩\033[m\n"
+PLATFORM	:= $(shell uname)
+ARCH 		:= $(shell $(CXX) -dumpmachine)
+CXX_M		:= $(shell $(CXX) -dumpfullversion)
 
-$(1): $$($(1)_tests_dump)
+.PHONY: banner
+banner:
+	@printf $(BANNER)
 
-.PHONY: $(1)
+.PHONY: msg
+msg:
+	@printf "\033[32;1mPLATFORM   \033[33;1m?| \033[m$(PLATFORM)\n"
+	@printf "\033[36;1mARCH       \033[33;1m?| \033[m$(ARCH)\n"
+	@printf "\033[33;1mCXX        \033[33;1m?| \033[m$(CXX)\n"
+	@printf "\033[34;1mFLAGS      \033[34;1m:| \033[m$(FLAGS)\n"
+	@printf "\n"
 
-COMPILER_SUPPORTS_$(1) := $$(shell $$(RISCV_GCC) $(2) -c -x c /dev/null -o /dev/null 2> /dev/null; echo $$$$?)
 
-ifeq ($$(COMPILER_SUPPORTS_$(1)),0)
-tests += $$($(1)_tests)
-endif
+##################################   Objects   #################################
 
-endef
+obj: $(OBJ)
 
-$(eval $(call compile_template,rv32ui,-march=rv32g -mabi=ilp32))
+$(OBJDIR)/%.o: $(SRCDIR)/%.S
+	@$(CXX) $(FLAGS) -I$(INCDIR) -T./$(INCDIR)/link.ld -o $@ $<
+	@printf "\033[s\033[32;1m-> \033[37;1m$@ "
+	@$(OBJDUMP) $@ > $(@:obj/%.o=dump/%.dump)
+	@printf "\033[u\033[s\033[16C\033[32;1m-> \033[37;1m$(@:obj/%.o=dump/%.dump) "
+	@$(OBJCOPY) $@ $(@:obj/%.o=bin/%.hex)
+	@printf "\033[u\033[36C\033[32;1m-> \033[37;1m$(@:obj/%.o=bin/%.hex)\n"
 
-tests_dump = $(addsuffix .dump, $(tests))
-tests_hex = $(addsuffix .hex, $(tests))
+##################################  Cleaning  ##################################
 
-run: $(tests) $(tests_out) $(tests32_out)
-
-junk += $(tests) $(tests_dump) $(tests_hex) $(tests_out) $(tests32_out)
-
-#------------------------------------------------------------
-# Default
-
-all: $(tests_dump) $(tests_hex)
-
-#------------------------------------------------------------
-# Clean up
-
+.PHONY: clean
 clean:
-	rm -rf $(junk)
+	@$(RM) ./$(OBJDIR)/*.o
+	@$(RM) ./$(DUMPDIR)/*
+
+.PHONY: realclean
+realclean: clean
+	@printf "\033[32;1mDeleting objects and directories\033[m...\n\n"
+	@$(RM) ./$(BINDIR)/*
+	@$(RMDIR) ./$(DUMPDIR)
+	@$(RMDIR) ./$(OBJDIR)
+	@$(RMDIR) ./$(BINDIR)

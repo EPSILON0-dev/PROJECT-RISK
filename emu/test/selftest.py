@@ -24,7 +24,7 @@ OPERATIONS = [
 
 
 def test(tst):
-    cmd = './bin/main -k 0x10000 -e -j ../tests/' + PREFIX + tst
+    cmd = './bin/main -k 0x10000 -e -j ../tests/bin/' + tst + '.hex'
     try:
         output = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, timeout=TIMEOUT)
     except subprocess.TimeoutExpired:

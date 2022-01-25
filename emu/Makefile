@@ -5,8 +5,8 @@ RM			= rm -f
 MK			= mkdir -p
 RMDIR		= rmdir
 
-SRCDIR		= src
-BINDIR		= bin
+SRCDIR		= ./src
+BINDIR		= ./bin
 OBJDIR		= ./obj
 OBJSUBDIR	= ./obj/main ./obj/common ./obj/cpu ./obj/memory
 

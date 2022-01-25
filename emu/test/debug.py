@@ -43,7 +43,7 @@ reg_updates = []
 
 # Test function
 def test():
-    cmd = './bin/main -l -j -k 0x10000 ' + sys.argv[1] + '.hex'
+    cmd = './bin/main -l -j -k 0x10000 ../tests/bin/' + sys.argv[1] + '.hex'
     try:
         output = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, timeout=TIMEOUT)
     except subprocess.TimeoutExpired:
@@ -69,7 +69,7 @@ def gen_reg_update_log(json_cycles):
 
 # Generate dump
 def gen_dump():
-    dump_file = open(sys.argv[1] + '.dump', 'r')
+    dump_file = open('../tests/dump/' + sys.argv[1] + '.dump', 'r')
     dump_string = dump_file.read()
     dump_lines = dump_string.splitlines()
     ret = []

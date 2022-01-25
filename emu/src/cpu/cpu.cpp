@@ -179,9 +179,6 @@ void CentralProcessingUnit::UpdateCombinational(void)
     // Use branch conditioner to check if branch should be taken
     ex_c_br_en = branch(ex_rd1, ex_rd2, ex_c1);
 
-    /*****************************  MEMORY ACCESS   **************************/
-
-    
     /****************************  HAZARD DETECTION  *************************/
 
     // Check for hazard on EX, MEM and WB stages
