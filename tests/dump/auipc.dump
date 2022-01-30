@@ -1,0 +1,85 @@
+
+obj/auipc.o:     file format elf32-littleriscv
+
+
+Disassembly of section .text.init:
+
+00000000 <_start>:
+   0:	0040006f          	j	4 <reset_vector>
+
+00000004 <reset_vector>:
+   4:	00000093          	li	ra,0
+   8:	00000113          	li	sp,0
+   c:	00000193          	li	gp,0
+  10:	00000213          	li	tp,0
+  14:	00000293          	li	t0,0
+  18:	00000313          	li	t1,0
+  1c:	00000393          	li	t2,0
+  20:	00000413          	li	s0,0
+  24:	00000493          	li	s1,0
+  28:	00000513          	li	a0,0
+  2c:	00000593          	li	a1,0
+  30:	00000613          	li	a2,0
+  34:	00000693          	li	a3,0
+  38:	00000713          	li	a4,0
+  3c:	00000793          	li	a5,0
+  40:	00000813          	li	a6,0
+  44:	00000893          	li	a7,0
+  48:	00000913          	li	s2,0
+  4c:	00000993          	li	s3,0
+  50:	00000a13          	li	s4,0
+  54:	00000a93          	li	s5,0
+  58:	00000b13          	li	s6,0
+  5c:	00000b93          	li	s7,0
+  60:	00000c13          	li	s8,0
+  64:	00000c93          	li	s9,0
+  68:	00000d13          	li	s10,0
+  6c:	00000d93          	li	s11,0
+  70:	00000e13          	li	t3,0
+  74:	00000e93          	li	t4,0
+  78:	00000f13          	li	t5,0
+  7c:	00000f93          	li	t6,0
+  80:	00000013          	nop
+  84:	00000013          	nop
+
+00000088 <test_2>:
+  88:	00002517          	auipc	a0,0x2
+  8c:	71c50513          	addi	a0,a0,1820 # 27a4 <_end+0x7a4>
+  90:	004005ef          	jal	a1,94 <test_2+0xc>
+  94:	40b50533          	sub	a0,a0,a1
+  98:	000023b7          	lui	t2,0x2
+  9c:	71038393          	addi	t2,t2,1808 # 2710 <_end+0x710>
+  a0:	00200193          	li	gp,2
+  a4:	02751463          	bne	a0,t2,cc <fail>
+
+000000a8 <test_3>:
+  a8:	ffffe517          	auipc	a0,0xffffe
+  ac:	8fc50513          	addi	a0,a0,-1796 # ffffd9a4 <_end+0xffffb9a4>
+  b0:	004005ef          	jal	a1,b4 <test_3+0xc>
+  b4:	40b50533          	sub	a0,a0,a1
+  b8:	ffffe3b7          	lui	t2,0xffffe
+  bc:	8f038393          	addi	t2,t2,-1808 # ffffd8f0 <_end+0xffffb8f0>
+  c0:	00300193          	li	gp,3
+  c4:	00751463          	bne	a0,t2,cc <fail>
+  c8:	00301863          	bne	zero,gp,d8 <pass>
+
+000000cc <fail>:
+  cc:	00018513          	mv	a0,gp
+  d0:	00010fb7          	lui	t6,0x10
+  d4:	000f8067          	jr	t6 # 10000 <_end+0xe000>
+
+000000d8 <pass>:
+  d8:	55500193          	li	gp,1365
+  dc:	00010fb7          	lui	t6,0x10
+  e0:	000f8067          	jr	t6 # 10000 <_end+0xe000>
+  e4:	00000063          	beqz	zero,e4 <pass+0xc>
+  e8:	0000                	unimp
+  ea:	0000                	unimp
+  ec:	0000                	unimp
+  ee:	0000                	unimp
+  f0:	0000                	unimp
+  f2:	0000                	unimp
+  f4:	0000                	unimp
+  f6:	0000                	unimp
+  f8:	0000                	unimp
+  fa:	0000                	unimp

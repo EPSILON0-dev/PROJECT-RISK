@@ -11,15 +11,16 @@ import json
 
 
 TIMEOUT = 1 # s
-PREFIX = 'rv32ui-p-'
 OPERATIONS = [
-    'add',  'addi', 'and',  'andi', 'auipc', 'beq', 
-    'bge',  'bgeu', 'blt',  'bltu', 'bne',   'jal', 
-    'jalr', 'lb',   'lbu',  'lh',   'lhu',   'lui',
-    'lw',   'or',   'ori',  'sb',   'sh',    'simple',
-    'sll',  'slli', 'slt',  'slti', 'sltiu', 'sra',
-    'srai', 'srl',  'srli', 'sub',  'sw',   'xor',
-    'xori'
+    'simple', 
+    'add', 'and', 'or', 'sll', 'slt', 'sltu', 'sra', 'srl', 'sub', 'xor',
+    'addi', 'andi', 'ori', 'slli', 'slti', 'sltiu', 'srai', 'srli', 'xori', 
+    'auipc', 'lui',
+    'jal', 'jalr',
+    'beq', 'bge', 'bgeu', 'blt', 'bltu', 'bne',   
+    'lw', 'lhu', 'lh', 'lbu', 'lb',
+    'sw', 'sh', 'sb',
+    'cache'
 ]
 
 

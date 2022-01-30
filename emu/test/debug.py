@@ -44,6 +44,8 @@ reg_updates = []
 # Test function
 def test():
     cmd = './bin/main -l -j -k 0x10000 ../tests/bin/' + sys.argv[1] + '.hex'
+    for i in range(2, len(sys.argv)):
+        cmd = cmd + ' ' + sys.argv[i]
     try:
         output = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, timeout=TIMEOUT)
     except subprocess.TimeoutExpired:

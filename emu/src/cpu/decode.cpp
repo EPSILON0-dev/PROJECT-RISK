@@ -88,7 +88,7 @@ unsigned getImmediate(unsigned op)
 
         case FormatJ:
         return ((op >> 31)? 0xFFF00000 : 0) | ((op >> 20) & 0x7FE) | 
-            ((op >> 9) & 0x100) | (op & 0xFF000); 
+            ((op >> 9) & 0x800) | (op & 0xFF000); 
 
     }
 }

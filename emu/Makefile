@@ -10,7 +10,7 @@ BINDIR		= ./bin
 OBJDIR		= ./obj
 OBJSUBDIR	= ./obj/main ./obj/common ./obj/cpu ./obj/memory
 
-OPTFLAGS	:= -O2
+OPTFLAGS	:= -O0 -g
 WARNFLAGS	:= -Wall -Wextra
 
 OBJ			:= $(OBJDIR)/common/log.o 	$(OBJDIR)/memory/dcache.o 	$(OBJDIR)/memory/ddr.o
@@ -39,6 +39,14 @@ compile:
 	@$(MAKE) -s directories
 	@$(MAKE) -s obj
 	@$(MAKE) -s main
+
+.PHONEY: fresh_tests
+fresh_tests:
+	@$(MAKE) -C ../tests -s fresh
+
+.PHONEY: compile_tests
+compile_tests:
+	@$(MAKE) -C ../tests -s
 
 .PHONY: test
 test: compile

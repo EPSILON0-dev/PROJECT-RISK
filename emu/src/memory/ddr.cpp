@@ -10,11 +10,12 @@
 
 #include "ddr.h"
 
-
 enum eOperation { read, write };
 enum eState { cIdle, cRow, cRowDel, cRd, cWr, cCL1, cCL2, cRdng, cWrng };
 static unsigned getRow(unsigned a) { return (a >> 11) & 0x1FFF; }
 static unsigned getCol(unsigned a) { return (a >> 1) & 0x3FF; }
+
+bool memoryDebug = 0;
 
 
 /**
@@ -89,9 +90,21 @@ void MainRam::Update(void)
         case cWrng:
         n_WAck = 0;
         n_CAdr = adr + (wInx << 2);
-        if (wInx >= 2) { ram[((n_CAdr & 0x3FFFFFF) >> 2) - 2] = i_CRDat; }
-        if (++wInx == 8) { n_CLA = 1; }
-        if (wInx == 9) { n_CLA = 0; st = cIdle; }
+         
+        if (wInx >= 2) { 
+            ram[((n_CAdr & 0x3FFFFFF) >> 2) - 2] = i_CRDat; 
+            if (memoryDebug) {
+                Log::logSrc(" DDR WRITE ");
+                Log::logHex(i_CRDat, COLOR_MAGENTA, 8);
+                Log::log(" to ");
+                Log::logHex(((n_CAdr & 0x3FFFFFF) >> 2) - 2, COLOR_MAGENTA, 8);
+                Log::log(" (");
+                Log::logHex((((n_CAdr & 0x3FFFFFF) >> 2) - 2) * 4, COLOR_MAGENTA, 8);
+                Log::log(")\n");
+            }
+        }
+        if (++wInx == 9) { n_CLA = 1; }
+        if (wInx == 10) { n_CLA = 0; st = cIdle; }
         break;
     }
 

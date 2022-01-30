@@ -31,8 +31,6 @@ private:
     unsigned* WAdrQueue;
     unsigned queuePtr = 0;
     unsigned char* lastSet;
-    bool fetchSet = 0;
-    unsigned Adr = 0;
 public:
     unsigned i_CAdr = 0;
     unsigned i_CWE = 0;

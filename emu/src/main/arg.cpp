@@ -26,7 +26,7 @@ bool* args;
 extern bool enableLog;
 extern bool enableJsonLog;
 extern bool enableExitStatus;
-extern bool hideMemoryInit;
+extern bool memoryDebug;
 extern unsigned cycleLimit;
 extern unsigned killAddress;
 extern char* ramFile;
@@ -199,7 +199,7 @@ void parseMemoryInit(int argc, char** argv)
         if (!strcmp(argv[i], "-m")) 
         {
             args[i] = 1;
-            hideMemoryInit = 1;
+            memoryDebug = 1;
             return;
         }
     }

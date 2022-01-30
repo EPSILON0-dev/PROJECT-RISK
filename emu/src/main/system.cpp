@@ -22,7 +22,6 @@ unsigned clockCycle = 0;
 bool enableLog = 0;
 bool enableJsonLog = 0;
 bool enableExitStatus = 0;
-bool hideMemoryInit = 0;
 unsigned cycleLimit = -1;
 unsigned killAddress = -1;
 char* ramFile;
@@ -71,11 +70,7 @@ void CPU::loop(void) {
 
     // Execute function until killed
     for (unsigned i = 0; i < cycleLimit; i++) {
-        if (hideMemoryInit && i < 27) {
-            CPU::cycle();
-        } else {
-            (*cycleFunction)();
-        }
+        (*cycleFunction)();
         if (if_pc == killAddress) { break; }
     }
 

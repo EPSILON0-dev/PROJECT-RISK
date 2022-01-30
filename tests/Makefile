@@ -6,6 +6,7 @@ RISCV_GCC 		:= $(RISCV_PREFIX)gcc
 CXX				:= $(RISCV_PREFIX)gcc
 OBJDUMP 		:= $(RISCV_PREFIX)objdump --disassemble-all --disassemble-zeroes --section=.text --section=.text.startup --section=.text.init --section=.data
 OBJCOPY 		:= $(RISCV_PREFIX)objcopy -O binary
+OBJSIZE 		:= $(RISCV_PREFIX)size
 RM				:= rm -f
 MK				:= mkdir -p
 RMDIR			:= rmdir
@@ -17,6 +18,7 @@ DUMPDIR			:= ./dump
 OBJDIR			:= ./obj
 
 FLAGS			:= -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -march=rv32i -mabi=ilp32
+CFLAGS			:= -Wall -O0 -march=rv32i -mabi=ilp32 -nostartfiles -lm -lc -lgcc
 
 TESTS = \
 simple \
@@ -35,6 +37,8 @@ sra srai \
 srl srli \
 sub \
 xor xori \
+cache \
+float \
 
 OBJ 			:= $(addprefix $(OBJDIR)/, $(addsuffix .o, $(TESTS)))
 BIN 			:= $(addprefix $(BINDIR)/, $(addsuffix .hex, $(TESTS)))
@@ -101,6 +105,16 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.S
 	@printf "\033[u\033[s\033[16C\033[32;1m-> \033[37;1m$(@:obj/%.o=dump/%.dump) "
 	@$(OBJCOPY) $@ $(@:obj/%.o=bin/%.hex)
 	@printf "\033[u\033[36C\033[32;1m-> \033[37;1m$(@:obj/%.o=bin/%.hex)\n"
+
+$(OBJDIR)/%.o: $(SRCDIR)/%.c
+	@$(CXX) $< $(CFLAGS) -T./$(INCDIR)/clink.ld -o $@
+	@$(CXX) -S $< $(CFLAGS) -o $(@:obj/%.o=dump/%.S)
+	@printf "\033[s\033[32;1m-> \033[37;1m$@ "
+	@$(OBJDUMP) $@ > $(@:obj/%.o=dump/%.dump)
+	@printf "\033[u\033[s\033[16C\033[32;1m-> \033[37;1m$(@:obj/%.o=dump/%.dump) "
+	@$(OBJCOPY) $@ $(@:obj/%.o=bin/%.hex)
+	@printf "\033[u\033[36C\033[32;1m-> \033[37;1m$(@:obj/%.o=bin/%.hex)\n"
+	$(OBJSIZE) $@
 
 ##################################  Cleaning  ##################################
 

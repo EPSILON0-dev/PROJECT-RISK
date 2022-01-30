@@ -9,15 +9,10 @@
  * Each block of cache contains 32
  * 
  * Address is constructed like this:
- *   26    14   13        5   4         2   1        0
+ *   26    13   12        5   4         2   1        0
  *  [========] [===========] [===========] [==========]
  *     tag         index         block         byte
  * 
- * Tag memory clock will be run 180 degrees out of phase from main clock,
- *  this will allow to read the cache in only 1 clock cycle
- * 
- * Main array: ____----____----____
- * Tag array:  __----____----____--
  */
 
 
@@ -47,9 +42,9 @@ InstructionCache::InstructionCache(void)
 }
 
 
-static unsigned getBlock(unsigned a) { return (a >> 2) & 0xFF; }
-static unsigned getIndex(unsigned a) { return (a >> 5) & 0x1FF; }
-static unsigned getTag(unsigned a) { return (a >> 14); }
+static unsigned getBlock(unsigned a) { return (a >> 2) & 0x7FF; }
+static unsigned getIndex(unsigned a) { return (a >> 5) & 0x0FF; }
+static unsigned getTag(unsigned a) { return (a >> 13); }
 bool InstructionCache::checkCache1(unsigned a) { return (tag1[getIndex(a)] == getTag(a) && valid1[getIndex(a)]); }
 bool InstructionCache::checkCache2(unsigned a) { return (tag2[getIndex(a)] == getTag(a) && valid2[getIndex(a)]); }
  
