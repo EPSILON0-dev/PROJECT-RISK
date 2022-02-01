@@ -4,20 +4,20 @@
  * @brief Data cache
  * @version 0.8
  * @date 2021-09-19
- * 
- * 
+ *
+ *
  * Each block of cache contains 32 bytes
- * 
+ *
  * Address is constructed like this:
  *   26    13   12        5   4         2   1        0
  *  [========] [===========] [===========] [==========]
  *     tag         index         block         byte
- * 
+ *
  * Possible errors:
  *  - read before write finishes
  *  - tripple index write
- * 
- * 
+ *
+ *
  */
 
 
@@ -57,7 +57,7 @@ bool     cpu_c_valid {};
 
 /**
  * @brief Construct the Data Cache object
- * 
+ *
  */
 DataCache::DataCache(void)
 {
@@ -88,21 +88,25 @@ DataCache::DataCache(void)
 static unsigned getBlock(unsigned a) { return (a >> 2) & 0x7; }
 static unsigned getIndex(unsigned a) { return (a >> 5) & 0x1FF; }
 static unsigned getTag(unsigned a) { return (a >> 13); }
-bool DataCache::checkCache1(unsigned a) { return (tag1[getIndex(a)] == getTag(a) && valid1[getIndex(a)]); }
-bool DataCache::checkCache2(unsigned a) { return (tag2[getIndex(a)] == getTag(a) && valid2[getIndex(a)]); }
+bool DataCache::checkCache1(unsigned a) {
+    return (tag1[getIndex(a)] == getTag(a) && valid1[getIndex(a)]);
+}
+bool DataCache::checkCache2(unsigned a) {
+    return (tag2[getIndex(a)] == getTag(a) && valid2[getIndex(a)]);
+}
 
 /**
  * @brief Push write to the write queue
- * 
+ *
  * @param a Write address
  */
-void DataCache::pushWrite(unsigned a) { 
-    WAdrQueue[queuePtr++] = a & 0xFFFFFE0; 
+void DataCache::pushWrite(unsigned a) {
+    WAdrQueue[queuePtr++] = a & 0xFFFFFE0;
 }
 
 /**
  * @brief Pull a write from write queue
- * 
+ *
  * @return Write address from queue
  */
 unsigned DataCache::pullWrite(void)
@@ -118,12 +122,12 @@ unsigned DataCache::pullWrite(void)
 
 /**
  * @brief Perform a single cycle of operation
- * 
+ *
  */
 void DataCache::Update(void)
 {
 
-    /********************** PRE-SEQUENTIAL COMBINATIONAL *********************/
+    /********************** PRE-SEQUENTIAL COMBINATIONAL **********************/
     cpu_c_block = getBlock(i_CAdr);
     cpu_c_index = getIndex(i_CAdr);
     cpu_c_tag   = getTag(i_CAdr);
@@ -132,16 +136,16 @@ void DataCache::Update(void)
     fsb_c_tag   = getTag(i_FAdr);
 
 
-    /******************************* SEQUENTIAL ******************************/
+    /******************************* SEQUENTIAL *******************************/
     if (n_FRReq)  // Fetch initialization
     {
         n_CFetch = 1;
         if (i_FRAck) n_FRReq = 0;
         fsb_fetch_set = !cpu_last_set_seq;
-    } 
-    else if (n_CFetch)  // Fetch 
+    }
+    else if (n_CFetch)  // Fetch
     {
-        if (i_FWE) 
+        if (i_FWE)
         {
             if (fsb_fetch_set)
             {
@@ -187,12 +191,16 @@ void DataCache::Update(void)
     }
 
 
-    /********************* POST-SEQUENTIAL COMBINATIONAL *********************/
+    /********************* POST-SEQUENTIAL COMBINATIONAL **********************/
     cpu_c_valid_1 = cpu_valid_seq_1 && (cpu_tag_seq_1 == cpu_c_tag);
     cpu_c_valid_2 = cpu_valid_seq_2 && (cpu_tag_seq_2 == cpu_c_tag);
     cpu_c_valid = cpu_c_valid_1 || cpu_c_valid_2;
 
-    n_CRDat = (cpu_c_valid_1)? cpu_data_seq_1 : (cpu_c_valid_2)? cpu_data_seq_2 : 0;
+    n_CRDat = (
+        (cpu_c_valid_1)? cpu_data_seq_1 :
+        (cpu_c_valid_2)? cpu_data_seq_2 :
+        0
+    );
 
     n_CVD = (cpu_c_valid && !fetch_end) || !i_CRE;
 
@@ -204,7 +212,7 @@ void DataCache::Update(void)
 
 /**
  * @brief Copy the data from internal outputs to output ports
- * 
+ *
  */
 void DataCache::UpdatePorts(void)
 {
@@ -223,7 +231,7 @@ void DataCache::UpdatePorts(void)
 
 /**
  * @brief Log the activity
- * 
+ *
  */
 void DataCache::log(void)
 {
@@ -280,13 +288,13 @@ void DataCache::log(void)
     }
 
     Log::log("\n");
-    
+
 }
 
 
 /**
  * @brief Log the activity
- * 
+ *
  */
 void DataCache::logJson(void)
 {
@@ -342,7 +350,7 @@ void DataCache::logJson(void)
       Log::log("]");
     }
     Log::log("\",");
-    
+
 }
 
 /*
@@ -395,7 +403,7 @@ unsigned block = getBlock(i_CAdr);
     }
 
     if (n_CFetch && i_FWE) {  // Handle fetching from RAM
-        
+
         if (fetchSet) {
             cache2[getBlock(i_FAdr)] = i_FWDat;
             if (memoryDebug) {
@@ -417,7 +425,7 @@ unsigned block = getBlock(i_CAdr);
                 Log::log(" to array 1\n");
             }
         }
-    
+
         if (i_FLA) {
             n_CFetch = 0;
             if (fetchSet) {

@@ -3,7 +3,7 @@
  * @author EPSILON0-dev (lforenc@wp.pl)
  * @brief Argument parser
  * @date 2021-11-27
- * 
+ *
  */
 
 
@@ -34,26 +34,30 @@ extern char* ramFile;
 
 /**
  * @brief Parse all switches
- * 
+ *
  * @return exit code
  */
-int parseArgs(int argc, char** argv) 
+int parseArgs(int argc, char** argv)
 {
 
-    if (argc == 1) 
+    if (argc == 1)
     {
-        std::cout << "No arguments given, use " << COLOR_YELLOW << "'-h'" << COLOR_NONE << " for help\n";
+        std::cout << "No arguments given, use "
+            << COLOR_YELLOW
+            << "'-h'"
+            << COLOR_NONE
+            << " for help\n";
         return -1;
     }
 
-    // The array is used for finding unknown arguments, if any of 
+    // The array is used for finding unknown arguments, if any of
     //   the bools stays at 0 it means that this argument is unknown
     args = new bool[argc - 1]; args[0] = 1;
     for (int i = 1; i < argc-1; i++) { args[i] = 0; }
 
     // -h
     if (parseHelp(argc, argv)) { return 1; }
-    
+
     // -l
     parseLog(argc, argv);
 
@@ -68,31 +72,36 @@ int parseArgs(int argc, char** argv)
 
     // -c
     parseCycles(argc, argv);
-    if (!valueOk) 
+    if (!valueOk)
     {
-        std::cout << "Invalid cycles value " << COLOR_YELLOW << "(-c)" << COLOR_NONE << "\n";
+        std::cout << "Invalid cycles value "
+            << COLOR_YELLOW << "(-c)"
+            << COLOR_NONE << "\n";
         return -1;
     }
 
     // -k
     parseKill(argc, argv);
-    if (!valueOk) 
+    if (!valueOk)
     {
-        std::cout << "Invalid kill address " << COLOR_YELLOW << "(-k)" << COLOR_NONE << "\n";
+        std::cout << "Invalid kill address "
+            << COLOR_YELLOW
+            << "(-k)"
+            << COLOR_NONE << "\n";
         return -1;
     }
 
     // RAM image file
-    if (!parseFile(argc, argv)) 
+    if (!parseFile(argc, argv))
     {
         std::cout << "RAM image not supplied\n";
         return -1;
     }
 
     // Check for invalid arguments
-    for (int i = 0; i < argc-1; i++) 
+    for (int i = 0; i < argc-1; i++)
     {
-        if (args[i] == 0) 
+        if (args[i] == 0)
         {
             std::cout << "Invalid argument: " << argv[i] << "\n";
             return -1;
@@ -106,16 +115,16 @@ int parseArgs(int argc, char** argv)
 
 /**
  * @brief Parse the '-h' switch
- * 
- * @param argc 
- * @param argv 
- * @return Switch found 
+ *
+ * @param argc
+ * @param argv
+ * @return Switch found
  */
-unsigned parseHelp(int argc, char** argv) 
+unsigned parseHelp(int argc, char** argv)
 {
-    for (int i = 1; i < argc; i++) 
+    for (int i = 1; i < argc; i++)
     {
-        if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) 
+        if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help"))
         {
             printHelp();
             return 1;
@@ -128,15 +137,15 @@ unsigned parseHelp(int argc, char** argv)
 
 /**
  * @brief Parse the '-l' switch
- * 
- * @param argc 
- * @param argv 
+ *
+ * @param argc
+ * @param argv
  */
-void parseLog(int argc, char** argv) 
+void parseLog(int argc, char** argv)
 {
-    for (int i = 1; i < argc; i++) 
+    for (int i = 1; i < argc; i++)
     {
-        if (!strcmp(argv[i], "-l")) 
+        if (!strcmp(argv[i], "-l"))
         {
             args[i] = 1;
             enableLog = 1;
@@ -148,15 +157,15 @@ void parseLog(int argc, char** argv)
 
 /**
  * @brief Parse the '-j' switch
- * 
- * @param argc 
- * @param argv 
+ *
+ * @param argc
+ * @param argv
  */
-void parseLogJson(int argc, char** argv) 
+void parseLogJson(int argc, char** argv)
 {
-    for (int i = 1; i < argc; i++) 
+    for (int i = 1; i < argc; i++)
     {
-        if (!strcmp(argv[i], "-j")) 
+        if (!strcmp(argv[i], "-j"))
         {
             args[i] = 1;
             enableJsonLog = 1;
@@ -168,15 +177,15 @@ void parseLogJson(int argc, char** argv)
 
 /**
  * @brief Parse the '-e' switch
- * 
- * @param argc 
- * @param argv 
+ *
+ * @param argc
+ * @param argv
  */
-void parseExit(int argc, char** argv) 
+void parseExit(int argc, char** argv)
 {
-    for (int i = 1; i < argc; i++) 
+    for (int i = 1; i < argc; i++)
     {
-        if (!strcmp(argv[i], "-e")) 
+        if (!strcmp(argv[i], "-e"))
         {
             args[i] = 1;
             enableExitStatus = 1;
@@ -188,15 +197,15 @@ void parseExit(int argc, char** argv)
 
 /**
  * @brief Parse the '-m' switch
- * 
- * @param argc 
- * @param argv 
+ *
+ * @param argc
+ * @param argv
  */
-void parseMemoryInit(int argc, char** argv) 
+void parseMemoryInit(int argc, char** argv)
 {
-    for (int i = 1; i < argc; i++) 
+    for (int i = 1; i < argc; i++)
     {
-        if (!strcmp(argv[i], "-m")) 
+        if (!strcmp(argv[i], "-m"))
         {
             args[i] = 1;
             memoryDebug = 1;
@@ -208,23 +217,23 @@ void parseMemoryInit(int argc, char** argv)
 
 /**
  * @brief Parse the '-c' switch
- * 
- * @param argc 
- * @param argv 
+ *
+ * @param argc
+ * @param argv
  */
-void parseCycles(int argc, char** argv) 
+void parseCycles(int argc, char** argv)
 {
-    for (int i = 1; i < argc; i++) 
+    for (int i = 1; i < argc; i++)
     {
-        if (!strncmp(argv[i], "-c", 2)) 
+        if (!strncmp(argv[i], "-c", 2))
         {
-            if (!strcmp(argv[i], "-c")) 
+            if (!strcmp(argv[i], "-c"))
             {
                 cycleLimit = parseValue(argv[i+1]);
                 args[i] = 1; args[i+1] = 1;
                 return;
-            } 
-            else 
+            }
+            else
             {
                 cycleLimit = parseValue(argv[i]+2);
                 args[i] = 1;
@@ -237,23 +246,23 @@ void parseCycles(int argc, char** argv)
 
 /**
  * @brief Parse the '-k' switch
- * 
- * @param argc 
- * @param argv 
+ *
+ * @param argc
+ * @param argv
  */
-void parseKill(int argc, char** argv) 
+void parseKill(int argc, char** argv)
 {
-    for (int i = 1; i < argc; i++) 
+    for (int i = 1; i < argc; i++)
     {
-        if (!strncmp(argv[i], "-k", 2)) 
+        if (!strncmp(argv[i], "-k", 2))
         {
-            if (!strcmp(argv[i], "-k")) 
+            if (!strcmp(argv[i], "-k"))
             {
                 killAddress = parseValue(argv[i+1]);
                 args[i] = 1; args[i+1] = 1;
                 return;
-            } 
-            else 
+            }
+            else
             {
                 killAddress = parseValue(argv[i]+2);
                 args[i] = 1;
@@ -266,16 +275,16 @@ void parseKill(int argc, char** argv)
 
 /**
  * @brief Parse the RAM image file
- * 
- * @param argc 
- * @param argv 
+ *
+ * @param argc
+ * @param argv
  * @return File name found
  */
-unsigned parseFile(int argc, char** argv) 
+unsigned parseFile(int argc, char** argv)
 {
-    for (int i = 1; i < argc; i++) 
+    for (int i = 1; i < argc; i++)
     {
-        if (!args[i] && argv[i][0] != '-') 
+        if (!args[i] && argv[i][0] != '-')
         {
             ramFile = argv[i];
             args[i] = 1;
@@ -289,21 +298,21 @@ unsigned parseFile(int argc, char** argv)
 
 /**
  * @brief Parse char DEC/HEX/BIN value into unsigned
- * 
- * @param str 
- * @return Value 
+ *
+ * @param str
+ * @return Value
  */
-unsigned parseValue(char* str) 
+unsigned parseValue(char* str)
 {
-    try 
+    try
     {
         if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X'))
             return std::stoul(str+2, nullptr, 16);
         if (str[0] == '0' && (str[1] == 'b' || str[1] == 'B'))
             return std::stoul(str+2, nullptr, 2);
         return std::stoul(str, nullptr, 10);
-    } 
-    catch (std::exception const&) 
+    }
+    catch (std::exception const&)
     {
         valueOk = 0;
         return 0;

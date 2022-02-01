@@ -5,3 +5,5 @@ emu/bin/
 .vscode/
 *.bak
 TODO
+.ccls-cache
+.ccls-cache/

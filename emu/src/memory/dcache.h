@@ -4,7 +4,7 @@
  * @brief Data cache
  * @version 0.8
  * @date 2021-09-19
- * 
+ *
  */
 
 #ifndef DCACHE_H
@@ -12,7 +12,6 @@
 
 #include "../common/config.h"
 #include "../common/log.h"
-#include "fsb.h"
 #include <iostream>
 
 

@@ -4,7 +4,7 @@
  * @brief LPDDR memory emulator
  * @version 0.9
  * @date 2021-09-19
- * 
+ *
  */
 
 
@@ -20,22 +20,22 @@ bool memoryDebug = 0;
 
 /**
  * @brief Construct the Main Ram object
- * 
+ *
  */
 MainRam::MainRam(void)
 {
     ram = new unsigned[16 * 1024 * 1024];
-    for (unsigned i = 0; i < 16 * 1024 * 1024; i++) ram[i] = (i << 2) | 0x55000000;
+    for (unsigned i = 0; i < 16 * 1024 * 1024; i++) ram[i] = (i << 2);
 }
 
 
 /**
  * @brief Perform a single cycle of operation
- * 
+ *
  */
-void MainRam::Update(void) 
+void MainRam::Update(void)
 {
-    
+
     switch (st) {
         case cIdle:
         n_CWE = 0;
@@ -90,16 +90,16 @@ void MainRam::Update(void)
         case cWrng:
         n_WAck = 0;
         n_CAdr = adr + (wInx << 2);
-         
-        if (wInx >= 2) { 
-            ram[((n_CAdr & 0x3FFFFFF) >> 2) - 2] = i_CRDat; 
+
+        if (wInx >= 2) {
+            ram[((n_CAdr & 0x3FFFFFF) >> 2) - 2] = i_CRDat;
             if (memoryDebug) {
                 Log::logSrc(" DDR WRITE ");
                 Log::logHex(i_CRDat, COLOR_MAGENTA, 8);
                 Log::log(" to ");
                 Log::logHex(((n_CAdr & 0x3FFFFFF) >> 2) - 2, COLOR_MAGENTA, 8);
                 Log::log(" (");
-                Log::logHex((((n_CAdr & 0x3FFFFFF) >> 2) - 2) * 4, COLOR_MAGENTA, 8);
+                Log::logHex(((n_CAdr & 0x3FFFFFF) - 8), COLOR_MAGENTA, 8);
                 Log::log(")\n");
             }
         }
@@ -113,9 +113,9 @@ void MainRam::Update(void)
 
 /**
  * @brief Copy the data from internal outputs to output ports
- * 
+ *
  */
-void MainRam::UpdatePorts(void) 
+void MainRam::UpdatePorts(void)
 {
     o_CAdr  = n_CAdr;
     o_CWDat = n_CWDat;
@@ -129,12 +129,12 @@ void MainRam::UpdatePorts(void)
 
 /**
  * @brief Log the activity
- * 
+ *
  */
 void MainRam::log(void)
 {
     Log::logSrc("   DDR   ", COLOR_BLUE);
-    
+
     switch (st) {
 
         case cRow:
@@ -190,12 +190,12 @@ void MainRam::log(void)
 
 /**
  * @brief Log the activity
- * 
+ *
  */
 void MainRam::logJson(void)
 {
     Log::log("\"mr\":\"");
-    
+
     switch (st) {
 
         case cRow:

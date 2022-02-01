@@ -4,15 +4,15 @@
  * @brief Instruction cache
  * @version 0.7
  * @date 2021-09-19
- * 
- * 
+ *
+ *
  * Each block of cache contains 32
- * 
+ *
  * Address is constructed like this:
  *   26    13   12        5   4         2   1        0
  *  [========] [===========] [===========] [==========]
  *     tag         index         block         byte
- * 
+ *
  */
 
 
@@ -21,7 +21,7 @@
 
 /**
  * @brief Construct the Instruction Cache object
- * 
+ *
  */
 InstructionCache::InstructionCache(void)
 {
@@ -47,11 +47,11 @@ static unsigned getIndex(unsigned a) { return (a >> 5) & 0x0FF; }
 static unsigned getTag(unsigned a) { return (a >> 13); }
 bool InstructionCache::checkCache1(unsigned a) { return (tag1[getIndex(a)] == getTag(a) && valid1[getIndex(a)]); }
 bool InstructionCache::checkCache2(unsigned a) { return (tag2[getIndex(a)] == getTag(a) && valid2[getIndex(a)]); }
- 
+
 
 /**
  * @brief Perform a single cycle of operation
- * 
+ *
  */
 void InstructionCache::Update(void)
 {
@@ -63,7 +63,7 @@ void InstructionCache::Update(void)
         unsigned fsb_block = getBlock(i_FAdr);
         unsigned fsb_index = getIndex(i_FAdr);
         unsigned fsb_tag   = getTag(i_FAdr);
-        
+
         if (fetchSet) {
             cache2[fsb_block] = i_FWDat;
             tag2[fsb_index] = fsb_tag;
@@ -75,9 +75,9 @@ void InstructionCache::Update(void)
             valid1[fsb_index] = 1;
             lastSet[fsb_index] = 0;
         }
-    
+
         if (i_FLA) { n_CFetch = 0; }  // On last access exit fetching state
- 
+
         goto endUpdate;
 
     }
@@ -122,7 +122,7 @@ void InstructionCache::Update(void)
 
 /**
  * @brief Copy the data from internal outputs to output ports
- * 
+ *
  */
 void InstructionCache::UpdatePorts(void)
 {
@@ -136,7 +136,7 @@ void InstructionCache::UpdatePorts(void)
 
 /**
  * @brief Log the activity
- * 
+ *
  */
 void InstructionCache::log(void)
 {
@@ -158,7 +158,7 @@ void InstructionCache::log(void)
         }
         Log::log("\n");
         return;
-    } 
+    }
 
     Log::log("Idle cycle\n");
 
@@ -167,7 +167,7 @@ void InstructionCache::log(void)
 
 /**
  * @brief Log the activity
- * 
+ *
  */
 void InstructionCache::logJson(void)
 {
@@ -189,7 +189,7 @@ void InstructionCache::logJson(void)
         }
         Log::log("\",");
         return;
-    } 
+    }
 
     Log::log("Idle cycle\",");
 

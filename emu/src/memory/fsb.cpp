@@ -4,18 +4,18 @@
  * @brief Front Side Bus
  * @version 0.7
  * @date 2021-09-19
- * 
- * 
+ *
+ *
  * In the final system 3 read callers and 1 write caller are expected
  * On chip access will be performed ommiting the cache and thus the FSB
- * 
+ *
  * Final priority will be:
  *  1. Write queue when full
  *  2. VGA controller
  *  3. CPU D cache
  *  4. CPU I cache
  *  5. Write queue when not full
- * 
+ *
  */
 
 
@@ -36,7 +36,7 @@ FrontSideBus::FrontSideBus(void)
 
 /**
  * @brief Load the memory class pointers
- * 
+ *
  * @param instructionCache Instruction Cache pointer
  * @param dataCache Data Cache pointer
  * @param mainRam Main LPDDR RAM pointer
@@ -51,13 +51,13 @@ void FrontSideBus::loadPointers(void* instructionCache, void* dataCache, void* m
 
 /**
  * @brief Perform a single cycle of operation
- * 
+ *
  */
 void FrontSideBus::Update(void)
 {
 
     if (req) {  // Continue currently serviced request
-        
+
         request:
 
         if (dCache) {
@@ -90,7 +90,7 @@ void FrontSideBus::Update(void)
                 dCache->i_FWAck = 0;
             }
 
-            
+
         }
 
         if (iCache) {
@@ -118,7 +118,7 @@ void FrontSideBus::Update(void)
     }
 
     // Handle new D cache write request (on full queue)
-    if (dCache && dCache->o_FWReq && dCache->o_FQFull) {  
+    if (dCache && dCache->o_FWReq && dCache->o_FQFull) {
         reqAdr = dCache->o_FWAdr;
         ddr->i_Adr = reqAdr;
         req = cDWrite;
@@ -151,7 +151,7 @@ void FrontSideBus::Update(void)
 
 /**
  * @brief Log the activity
- * 
+ *
  */
 void FrontSideBus::log(void)
 {
@@ -181,7 +181,7 @@ void FrontSideBus::log(void)
 
 /**
  * @brief Log the activity
- * 
+ *
  */
 void FrontSideBus::logJson(void)
 {

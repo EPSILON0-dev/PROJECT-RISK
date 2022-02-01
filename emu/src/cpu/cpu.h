@@ -3,7 +3,7 @@
  * @author EPSILON0-dev (lforenc@wp.pl)
  * @brief Main CPU File
  * @date 2021-10-08
- * 
+ *
  */
 
 #ifndef CPU_H
@@ -20,7 +20,6 @@
 #include "../memory/icache.h"
 #include "../memory/dcache.h"
 
-
 class CentralProcessingUnit
 {
 
@@ -31,7 +30,7 @@ public:
     void UpdateSequential(void);
     void log(void);
     void logJson(void);
-    
+
 };
 
 #endif

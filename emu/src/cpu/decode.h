@@ -3,7 +3,7 @@
  * @author EPSILON0-dev (lforenc@wp.pl)
  * @brief Instruction decoder
  * @date 2021-10-03
- * 
+ *
  */
 
 #ifndef DECODE_H
