@@ -4,7 +4,7 @@
  * @brief LPDDR memory emulator
  * @version 0.9
  * @date 2021-09-19
- * 
+ *
  */
 
 #ifndef DDR_H
@@ -14,7 +14,7 @@
 #include "../common/log.h"
 
 
-class MainRam 
+class MainRam
 {
 
 public:

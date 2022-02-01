@@ -3,7 +3,7 @@
  * @author EPSILON0-dev (lforenc@wp.pl)
  * @brief Memory read and write functions
  * @date 2021-11-11
- * 
+ *
  */
 
 #ifndef MEM_H

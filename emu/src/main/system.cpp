@@ -3,7 +3,7 @@
  * @author EPSILON0-dev (lforenc@wp.pl)
  * @brief Main system file
  * @date 2021-11-27
- * 
+ *
  */
 
 
@@ -29,11 +29,11 @@ char* ramFile;
 
 /**
  * @brief Initialize the CPU, load pointers and preload the RAM
- * 
+ *
  * @param ramFile Name of the RAM image file
  * @return Exit code
  */
-int CPU::start() 
+int CPU::start()
 {
 
     fsb.loadPointers(&iCache, &dCache, &ddr);
@@ -57,12 +57,12 @@ int CPU::start()
 
 
 /**
- * @brief Loop until the CPU performs maximum amount of cycles, 
+ * @brief Loop until the CPU performs maximum amount of cycles,
  *   reaches killaddress or executes HALT (1: beqz zero 1)
- * 
+ *
  */
 void CPU::loop(void) {
-    
+
     // Get the correct function
     unsigned (*cycleFunction)(void) = &CPU::cycle;
     if (enableLog) cycleFunction = &CPU::cycleLog;
@@ -76,7 +76,7 @@ void CPU::loop(void) {
 
     // Show exit code
     if (enableExitStatus) {
-        
+
         if (enableJsonLog) { Log::log("{"); cpu.logJson(); Log::log("}"); }
         else { Log::log("\nEXIT STATUS:\n"); cpu.log(); }
     }
@@ -86,8 +86,8 @@ void CPU::loop(void) {
 
 /**
  * @brief Do a single CPU cycle (without logging)
- * 
- * @return Program counter after finishing the cycle 
+ *
+ * @return Program counter after finishing the cycle
  */
 unsigned CPU::cycle(void) {
 
@@ -105,7 +105,7 @@ unsigned CPU::cycle(void) {
 
     fsb.Update();
 
-    cpu.UpdateSequential(); 
+    cpu.UpdateSequential();
 
     return if_pc;
 
@@ -114,8 +114,8 @@ unsigned CPU::cycle(void) {
 
 /**
  * @brief Do a single CPU cycle (with logging)
- * 
- * @return Program counter after finishing the cycle 
+ *
+ * @return Program counter after finishing the cycle
  */
 unsigned CPU::cycleLog(void) {
 
@@ -140,10 +140,10 @@ unsigned CPU::cycleLog(void) {
 
     fsb.Update();
 
-    cpu.UpdateSequential(); 
+    cpu.UpdateSequential();
 
     Log::log("\n");
-    cpu.log();       
+    cpu.log();
     Log::log("\n");
 
     return if_pc;
@@ -153,13 +153,13 @@ unsigned CPU::cycleLog(void) {
 
 /**
  * @brief Do a single CPU cycle (with logging in json format)
- * 
- * @return Program counter after finishing the cycle 
+ *
+ * @return Program counter after finishing the cycle
  */
 unsigned CPU::cycleLogJson(void) {
 
     Log::log("{");
-    
+
     cpu.UpdateCombinational();
 
     iCache.Update();
@@ -177,9 +177,9 @@ unsigned CPU::cycleLogJson(void) {
     ddr.logJson();
     fsb.logJson();
 
-    cpu.UpdateSequential(); 
+    cpu.UpdateSequential();
 
-    cpu.logJson();       
+    cpu.logJson();
 
     Log::log("}\n");
 

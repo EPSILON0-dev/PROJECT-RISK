@@ -47,7 +47,7 @@ DUMP 			:= $(addprefix $(DUMPDIR)/, $(addsuffix .dump, $(TESTS)))
 ##################################     All     #################################
 
 .PHONEY: all
-all: 
+all:
 	@$(MAKE) -s banner
 	@$(MAKE) -s msg
 	@$(MAKE) -s compile

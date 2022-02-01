@@ -27,10 +27,10 @@ REG_NAMES = [
 ]
 
 ALU_OPS = [
-    'DEF', 'DEF', 'DEF', 'DEF', 'DEF', 'DEF', 'DEF', 'DEF', 
-    'DEF', 'DEF', 'DEF', 'DEF', 'DEF', 'DEF', 'DEF', 'DEF', 
-    'DEF', 'DEF', 'DEF', 'DEF', 'DEF', 'DEF', 'DEF', 'DEF', 
-    'DEF', 'DEF', 'DEF', 'DEF', 'DEF', 'DEF', 'DEF', 'DEF', 
+    'DEF', 'DEF', 'DEF', 'DEF', 'DEF', 'DEF', 'DEF', 'DEF',
+    'DEF', 'DEF', 'DEF', 'DEF', 'DEF', 'DEF', 'DEF', 'DEF',
+    'DEF', 'DEF', 'DEF', 'DEF', 'DEF', 'DEF', 'DEF', 'DEF',
+    'DEF', 'DEF', 'DEF', 'DEF', 'DEF', 'DEF', 'DEF', 'DEF',
     'ADD', 'SLL', 'SLT', 'SLU', 'XOR', 'SRL', ' OR', 'AND',
     'SUB', 'SLL', 'SLT', 'SLU', 'XOR', 'SRA', ' OR', 'AND',
     'ADD', 'SLL', 'SLT', 'SLU', 'XOR', 'SRL', ' OR', 'AND',
@@ -57,7 +57,7 @@ def test():
 # Generate reg update log based on json_cycles
 def gen_reg_update_log(json_cycles):
     reg_updates = []
-    
+
     # For every cycle if wb was enabled create log entry
     for cycle in range(len(json_cycles)):
         json_cycle = json.loads(json_cycles[cycle])
@@ -109,14 +109,14 @@ def print_hex(win, val):
 
 # Render cycle clounter
 def render_cycle(cyc_win, json_cycles, cur_cycle):
-    
+
     # Get the status value
     cycle = json.loads(json_cycles[cur_cycle])
 
     # Print the status
     cyc_win.clear()
     cyc_win.addstr('CYCLE: ' + str(cur_cycle), curses.A_BOLD)
-    ok = 1 
+    ok = 1
     if cycle['hz_dat'] == 1:
         cyc_win.addstr(', ')
         cyc_win.addstr('Data', curses.color_pair(4))
@@ -141,7 +141,7 @@ def render_cycle(cyc_win, json_cycles, cur_cycle):
 
 # Render cycle clounter
 def get_status(json_cycles, cur_cycle):
-    
+
     # Get the status value
     cycle = json.loads(json_cycles[cur_cycle])
 
@@ -154,12 +154,12 @@ def get_status(json_cycles, cur_cycle):
     if cycle['d_fetch'] != 1:
         return 0
     return 1
-    
+
 
 
 # Render registers as 8 rows of 4 32-bit regs
 def render_registers(reg_win, json_cycles, cur_cycle):
-    
+
     # Window stuff
     reg_win.clear()
 
@@ -168,7 +168,7 @@ def render_registers(reg_win, json_cycles, cur_cycle):
     cycle = json.loads(json_cycles[cur_cycle])
     for reg in range(32):
         print_hex(reg_win, cycle['x' + str(reg)])
-    
+
     # Render PC
     reg_win.addstr('─'*36)
     reg_win.addstr('PC: ', curses.A_BOLD)
@@ -203,7 +203,7 @@ def render_registers(reg_win, json_cycles, cur_cycle):
 
 # Render log
 def render_reg_update_log(reg_log_win, reg_updates, cur_cycle):
-    
+
     # Window stuff
     reg_log_win.clear()
 
@@ -249,7 +249,7 @@ def render_reg_update_log(reg_log_win, reg_updates, cur_cycle):
 
 # Render pipeline register status
 def render_status(stat_win, json_cycles, cur_cycle):
-    
+
     # Window stuff
     stat_win.clear()
 
@@ -283,7 +283,7 @@ def render_status(stat_win, json_cycles, cur_cycle):
     print_hex(stat_win, cycle['mem_alu'])
     stat_win.addstr(' |  MA_RET -> ', curses.A_BOLD)
     print_hex(stat_win, cycle['mem_ret'])
-    
+
     # Print WB registers
     stat_win.addstr(' |  WB_WB  -> ', curses.A_BOLD)
     print_hex(stat_win, cycle['wb_wb'])
@@ -302,7 +302,7 @@ def render_status(stat_win, json_cycles, cur_cycle):
     stat_win.addstr(['NOP', ' WR', ' RD', 'WTF'][((cycle['ex_c6']>0)<<1)+(cycle['ex_c5']>0)])
     stat_win.addstr('  |  EX_WB -> ', curses.A_BOLD)
     stat_win.addstr(['NOP', 'NOP', 'NOP', 'NOP', 'ALU', ' RD', 'RET', 'WTF'][cycle['ex_c7']+(cycle['ex_c9']<<2)])
-    
+
 
     # Print MA control flow
     stat_win.addstr('  |  MA_RW -> ', curses.A_BOLD)
@@ -347,7 +347,7 @@ def render_raw(raw_win, json_cycles, cur_cycle):
 
 
 def render_dump(dump_win, lines, dump, json_cycles, cur_cycle):
-    
+
     # Window stuff
     dump_win.clear()
 
@@ -401,7 +401,7 @@ def main(stdscr):
     stat_win = curses.newwin(14, 65, 3, 40)
     raw_win = curses.newwin(14, curses.COLS-107, 3, 106)
     dump_win = curses.newwin(curses.LINES - 21, curses.COLS - 41, 20, 40)
-    
+
     # Clear, print the background and refresh the main screen
     stdscr.clear()
     stdscr.addstr('╔'  + '═'*37 + '╦'  + '═'*66 + '╦' + '═'*(curses.COLS-107) + '╗')
@@ -425,7 +425,7 @@ def main(stdscr):
     stdscr.addstr('║'  + ' '*37 + '║'  + ' '*66 + '║' + ' '*(curses.COLS-107) + '║')
     stdscr.addstr('╚'  + '═'*37 + '╩'  + '═'*66 + '═' + '═'*(curses.COLS-107))
     stdscr.refresh()
-    
+
     while 1:
         # Render result
         render_registers(reg_win, json_cycles, cur_cycle)

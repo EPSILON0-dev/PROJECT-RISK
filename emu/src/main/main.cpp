@@ -3,7 +3,7 @@
  * @author EPSILON0-dev (lforenc@wp.pl)
  * @brief Main emulator file
  * @date 2021-11-28
- * 
+ *
  */
 
 

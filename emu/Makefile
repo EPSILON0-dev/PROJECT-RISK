@@ -22,7 +22,7 @@ OBJ			+= $(OBJDIR)/main/arg.o		$(OBJDIR)/main/help.o		$(OBJDIR)/main/main.o
 ##################################     All     #################################
 
 .PHONEY: all
-all: 
+all:
 	@$(MAKE) -s banner
 	@$(MAKE) -s msg
 	@$(MAKE) -s compile

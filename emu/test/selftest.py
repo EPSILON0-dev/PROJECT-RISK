@@ -12,12 +12,12 @@ import json
 
 TIMEOUT = 1 # s
 OPERATIONS = [
-    'simple', 
+    'simple',
     'add', 'and', 'or', 'sll', 'slt', 'sltu', 'sra', 'srl', 'sub', 'xor',
     'addi', 'andi', 'ori', 'slli', 'slti', 'sltiu', 'srai', 'srli', 'xori', 
     'auipc', 'lui',
     'jal', 'jalr',
-    'beq', 'bge', 'bgeu', 'blt', 'bltu', 'bne',   
+    'beq', 'bge', 'bgeu', 'blt', 'bltu', 'bne',
     'lw', 'lhu', 'lh', 'lbu', 'lb',
     'sw', 'sh', 'sb',
     'cache'
@@ -32,7 +32,7 @@ def test(tst):
         return -1
     jsonOut = json.loads(output)
     return jsonOut["x3"]
-        
+
 
 
 def main():

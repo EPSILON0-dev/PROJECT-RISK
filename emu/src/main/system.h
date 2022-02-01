@@ -3,7 +3,7 @@
  * @author EPSILON0-dev (lforenc@wp.pl)
  * @brief Main system file
  * @date 2021-11-27
- * 
+ *
  */
 
 #ifndef SYSTEM_H

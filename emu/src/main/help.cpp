@@ -3,13 +3,13 @@
  * @author EPSILON0-dev (lforenc@wp.pl)
  * @brief Help message
  * @date 2021-11-28
- * 
+ *
  */
 
 #include "help.h"
 
 
-void printHelp(void) 
+void printHelp(void)
 {
 
     std::cout << BANNER;

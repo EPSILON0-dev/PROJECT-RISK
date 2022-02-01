@@ -1,7 +1,7 @@
 ##################################     All     #################################
 
 .PHONEY: all
-all: 
+all:
 	@make -s -C emu -j12
 	@printf "\n"
 	@make -s -C tests directories obj
