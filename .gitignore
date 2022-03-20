@@ -1,9 +1,12 @@
 idea/
 emu/obj/
 emu/bin/
+tests/obj/
+tests/bin/
+tests/dump/
 *.o
-.vscode/
+*.hex
+*.dump
 *.bak
 TODO
-.ccls-cache
 .ccls-cache/

@@ -170,12 +170,16 @@ void MainRam::log(void)
         case cRdng:
         Log::log("Reading word ");
         Log::logDec(wInx);
+        Log::log(": ");
+        Log::logHex(n_CWDat, 8);
         Log::log("\n");
         break;
 
         case cWrng:
         Log::log("Writing word ");
         Log::logDec(wInx - 1);
+        Log::log(": ");
+        Log::logHex(i_CRDat, 8);
         Log::log("\n");
         break;
 
@@ -228,11 +232,15 @@ void MainRam::logJson(void)
         case cRdng:
         Log::log("Reading word ");
         Log::logDec(wInx);
+        Log::log(": ");
+        Log::logHex(n_CWDat, 8);
         break;
 
         case cWrng:
         Log::log("Writing word ");
         Log::logDec(wInx - 1);
+        Log::log(": ");
+        Log::logHex(i_CRDat, 8);
         break;
 
         default:

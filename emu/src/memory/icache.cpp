@@ -19,6 +19,33 @@
 #include "icache.h"
 
 
+/* State signals */
+static bool     fetch_end {};
+
+/* Pre-sequential combinational signals */
+static unsigned cpu_c_block {};
+static unsigned cpu_c_index {};
+static unsigned cpu_c_tag {};
+static unsigned fsb_c_block {};
+static unsigned fsb_c_index {};
+static unsigned fsb_c_tag {};
+
+/* Sequential signals */
+static unsigned cpu_data_seq_1 {};
+static unsigned cpu_data_seq_2 {};
+static bool     cpu_valid_seq_1 {};
+static bool     cpu_valid_seq_2 {};
+static unsigned cpu_tag_seq_1 {};
+static unsigned cpu_tag_seq_2 {};
+static bool     cpu_last_set_seq {};
+static bool     fsb_fetch_set {};
+
+/* Post-sequential combinational signals */
+static bool     cpu_c_valid_1 {};
+static bool     cpu_c_valid_2 {};
+static bool     cpu_c_valid {};
+
+
 /**
  * @brief Construct the Instruction Cache object
  *
@@ -56,66 +83,84 @@ bool InstructionCache::checkCache2(unsigned a) { return (tag2[getIndex(a)] == ge
 void InstructionCache::Update(void)
 {
 
-    if (i_FRAck) { n_FRReq = 0; }  // Stop requesting on ACK
+    /********************** PRE-SEQUENTIAL COMBINATIONAL **********************/
+    cpu_c_block = getBlock(i_CAdr);
+    cpu_c_index = getIndex(i_CAdr);
+    cpu_c_tag   = getTag(i_CAdr);
+    fsb_c_block = getBlock(i_FAdr);
+    fsb_c_index = getIndex(i_FAdr);
+    fsb_c_tag   = getTag(i_FAdr);
 
-    if (n_CFetch && i_FWE) {  // Handle FSB writes
 
-        unsigned fsb_block = getBlock(i_FAdr);
-        unsigned fsb_index = getIndex(i_FAdr);
-        unsigned fsb_tag   = getTag(i_FAdr);
-
-        if (fetchSet) {
-            cache2[fsb_block] = i_FWDat;
-            tag2[fsb_index] = fsb_tag;
-            valid2[fsb_index] = 1;
-            lastSet[fsb_index] = 1;
-        } else {
-            cache1[fsb_block] = i_FWDat;
-            tag1[fsb_index] = fsb_tag;
-            valid1[fsb_index] = 1;
-            lastSet[fsb_index] = 0;
+    /******************************* SEQUENTIAL *******************************/
+    if (n_FRReq)  // Fetch initialization
+    {
+        if (i_FRAck) n_CFetch = 1;
+        fsb_fetch_set = !cpu_last_set_seq;
+    }
+    else if (n_CFetch)  // Fetch
+    {
+        if (i_FWE)
+        {
+            if (fsb_fetch_set)
+            {
+                cache2[fsb_c_block] = i_FWDat;
+            }
+            else
+            {
+                cache1[fsb_c_block] = i_FWDat;
+            }
         }
-
-        if (i_FLA) { n_CFetch = 0; }  // On last access exit fetching state
-
-        goto endUpdate;
-
+        if (i_FLA)
+        {
+            n_CFetch = 0;
+            fetch_end = 1;
+            if (fsb_fetch_set)
+            {
+                tag2[fsb_c_index] = fsb_c_tag;
+                valid2[fsb_c_index] = 1;
+                lastSet[fsb_c_index] = 1;
+                cpu_tag_seq_2 = fsb_c_tag;
+                cpu_valid_seq_2 = 1;
+            }
+            else
+            {
+                tag1[fsb_c_index] = fsb_c_tag;
+                valid1[fsb_c_index] = 1;
+                lastSet[fsb_c_index] = 0;
+                cpu_tag_seq_1 = fsb_c_tag;
+                cpu_valid_seq_1 = 1;
+            }
+        }
+    }
+    else  // CPU read
+    {
+        fetch_end = 0;
+        cpu_data_seq_1   = cache1[cpu_c_block];
+        cpu_data_seq_2   = cache2[cpu_c_block];
+        cpu_valid_seq_1  = valid1[cpu_c_index];
+        cpu_valid_seq_2  = valid2[cpu_c_index];
+        cpu_tag_seq_1    = tag1[cpu_c_index];
+        cpu_tag_seq_2    = tag2[cpu_c_index];
+        cpu_last_set_seq = lastSet[cpu_c_index];
     }
 
-    if (i_CRE&& !n_CFetch) {  // Handle the CPU reads
 
-        unsigned cpu_block = getBlock(i_CAdr);
-        unsigned cpu_index = getIndex(i_CAdr);
+    /********************* POST-SEQUENTIAL COMBINATIONAL **********************/
+    cpu_c_valid_1 = cpu_valid_seq_1 && (cpu_tag_seq_1 == cpu_c_tag);
+    cpu_c_valid_2 = cpu_valid_seq_2 && (cpu_tag_seq_2 == cpu_c_tag);
+    cpu_c_valid = cpu_c_valid_1 || cpu_c_valid_2;
 
-        // If address missed fetch from RAM
-        if (!(checkCache1(i_CAdr) || checkCache2(i_CAdr))) { goto fetchFromRam; }
+    n_CRDat = (
+        (cpu_c_valid_1)? cpu_data_seq_1 :
+        (cpu_c_valid_2)? cpu_data_seq_2 :
+        0
+    );
 
-        if (checkCache1(i_CAdr)) {
-            n_CRDat = cache1[cpu_block];
-            n_CVD = 1;
-            lastSet[cpu_index] = 0;
-            goto endUpdate;
-        }
+    n_CVD = (cpu_c_valid && !fetch_end);
 
-        if (checkCache2(i_CAdr)) {
-            n_CRDat = cache2[cpu_block];
-            n_CVD = 1;
-            lastSet[cpu_index] = 1;
-            goto endUpdate;
-        }
-
-        fetchFromRam:
-        fetchSet = !lastSet[cpu_index];
-        n_FRAdr = i_CAdr & 0xFFFFFE0;
-        n_FRReq = 1;
-        n_CVD = 0;
-        n_CFetch = 1;
-
-    }
-
-    endUpdate:
-    n_CVD |= !i_CRE && !n_CFetch;
-    return;
+    n_FRAdr = i_CAdr & 0xFFFFFE0;
+    n_FRReq = !cpu_c_valid && !n_CFetch;
 
 }
 

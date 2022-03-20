@@ -117,14 +117,6 @@ void FrontSideBus::Update(void)
         return;
     }
 
-    // Handle new D cache write request (on full queue)
-    if (dCache && dCache->o_FWReq && dCache->o_FQFull) {
-        reqAdr = dCache->o_FWAdr;
-        ddr->i_Adr = reqAdr;
-        req = cDWrite;
-        goto request;
-    }
-
     if (dCache && dCache->o_FRReq) {  // Handle new D cache request
         reqAdr = dCache->o_FRAdr;
         ddr->i_Adr = reqAdr;

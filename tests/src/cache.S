@@ -21,7 +21,7 @@ RVTEST_CODE_BEGIN
 
   # Test 2 cache arrays
 
-  TEST_CASE( 2, x4, 0xdeadbeef, \
+  TEST_CASE( 2115, x4, 0xdeadbeef, \
     li  x1, 0x00002000; \
     li  x2, 0xdeadbeef; \
     sw  x2, 0(x1); \
@@ -33,7 +33,7 @@ RVTEST_CODE_BEGIN
 
   # Test 2 indexes within the same tag
 
-  TEST_CASE( 3, x4, 0x33333333, \
+  TEST_CASE( 1312, x4, 0x33333333, \
     li  x1, 0x00002000; \
     li  x2, 0x11111111; \
     sw  x2, 0x00(x1); \
@@ -45,9 +45,23 @@ RVTEST_CODE_BEGIN
     add x4, x4, x3; \
   )
 
+  # Test writes to main array
+
+  TEST_CASE( 1337, x4, 0x13371337, \
+    li  x1, 0x00002000; \
+    li  x2, 0x13371337; \
+    sw  x2, 0x00(x1); \
+    li  x1, 0x00004000; \
+    lw  x3, 0x00(x1); \
+    li  x1, 0x00006000; \
+    lw  x3, 0x00(x1); \
+    li  x1, 0x00002000; \
+    lw  x3, 0x00(x1); \
+  )
+
   # Test writing back to main array (test all fields in the block)
 
-  TEST_CASE( 4, x3, 0xFFFFFFFF, \
+  TEST_CASE( 2137, x3, 0xFFFFFFFF, \
     li   x16, 0x00010001; \
     li   x4, 0x00002000; \
     slli x17, x16, 1; \

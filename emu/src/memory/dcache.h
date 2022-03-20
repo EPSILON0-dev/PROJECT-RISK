@@ -27,8 +27,6 @@ private:
     unsigned short* tag2;
     unsigned char* valid2;
     unsigned char* queue2;
-    unsigned* WAdrQueue;
-    unsigned queuePtr = 0;
     unsigned char* lastSet;
 public:
     unsigned i_CAdr = 0;
