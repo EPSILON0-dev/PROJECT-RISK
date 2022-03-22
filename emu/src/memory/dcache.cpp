@@ -27,6 +27,7 @@ typedef unsigned char byte;
 
 /* State signals */
 static bool     fetch_end {};
+static bool     write_end {};
 
 /* Pre-sequential combinational signals */
 static unsigned cpu_c_block {};
@@ -86,7 +87,7 @@ DataCache::DataCache(void)
 }
 
 
-static unsigned getBlock(unsigned a) { return (a >> 2) & 0x7; }
+static unsigned getBlock(unsigned a) { return (a >> 2) & 0xFFF; }
 static unsigned getIndex(unsigned a) { return (a >> 5) & 0x1FF; }
 static unsigned getTag(unsigned a) { return (a >> 13); }
 bool DataCache::checkCache1(unsigned a) {
@@ -123,6 +124,7 @@ void DataCache::Update(void)
             if (wr_en & 0x4) ((byte*)cache1)[wr_base+2] = ((byte*)&wr_data)[2];
             if (wr_en & 0x8) ((byte*)cache1)[wr_base+3] = ((byte*)&wr_data)[3];
             lastSet[getIndex(wr_addr)] = 0;
+            wb_wr_en = 1;
             wb_index = wr_addr;
             wb_set = 0;
         }
@@ -132,8 +134,34 @@ void DataCache::Update(void)
             if (wr_en & 0x4) ((byte*)cache2)[wr_base+2] = ((byte*)&wr_data)[2];
             if (wr_en & 0x8) ((byte*)cache2)[wr_base+3] = ((byte*)&wr_data)[3];
             lastSet[getIndex(wr_addr)] = 1;
+            wb_wr_en = 1;
             wb_index = wr_addr;
             wb_set = 1;
+        }
+    }
+
+    if (wb_wr_en)  // Write back initialization
+    {
+        if (i_FWAck) {
+            wb_wr = 1;
+            wb_wr_en = 0;
+        }
+    }
+
+    else if (wb_wr)  // Write back
+    {
+        if (i_FRE) {
+            if (wb_set) {
+                n_FWDat = cache2[i_FAdr >> 2];
+            } else {
+                n_FWDat = cache1[i_FAdr >> 2];
+            }
+        }
+
+        if (i_FLA) {
+            wb_wr = 0;
+            fetch_end = 1;
+            write_end = 1;
         }
     }
 
@@ -201,10 +229,14 @@ void DataCache::Update(void)
         0
     );
 
-    n_CVD = ((cpu_c_valid && !fetch_end) || !(i_CRE || !!i_CWE));
+    bool no_acc = !(i_CRE || !!i_CWE);
+    bool fetch = (!cpu_c_valid || n_CFetch || fetch_end);
+    bool write = (wb_wr);
+    n_CVD = !(fetch || write) || no_acc;
 
     n_FRAdr = i_CAdr & 0xFFFFFE0;
     n_FRReq = (i_CRE || !!i_CWE) && !cpu_c_valid && !n_CFetch;
+    n_FWReq = wb_wr_en && !wb_wr;
 
 }
 
@@ -219,7 +251,7 @@ void DataCache::UpdatePorts(void)
     o_CVD    = n_CVD;
     o_CFetch = n_CFetch;
     o_FRAdr  = n_FRAdr;
-    o_FWAdr  = n_FWAdr;
+    o_FWAdr  = wb_index;
     o_FWDat  = n_FWDat;
     o_FRReq  = n_FRReq;
     o_FWReq  = n_FWReq;

@@ -9,13 +9,6 @@
  * In the final system 3 read callers and 1 write caller are expected
  * On chip access will be performed ommiting the cache and thus the FSB
  *
- * Final priority will be:
- *  1. Write queue when full
- *  2. VGA controller
- *  3. CPU D cache
- *  4. CPU I cache
- *  5. Write queue when not full
- *
  */
 
 
@@ -117,6 +110,13 @@ void FrontSideBus::Update(void)
         return;
     }
 
+    if (dCache && dCache->o_FWReq) {  // Handle new D cache write request
+        reqAdr = dCache->o_FWAdr;
+        ddr->i_Adr = reqAdr;
+        req = cDWrite;
+        goto request;
+    }
+
     if (dCache && dCache->o_FRReq) {  // Handle new D cache request
         reqAdr = dCache->o_FRAdr;
         ddr->i_Adr = reqAdr;
@@ -128,13 +128,6 @@ void FrontSideBus::Update(void)
         reqAdr = iCache->o_FRAdr;
         ddr->i_Adr = reqAdr;
         req = cICache;
-        goto request;
-    }
-
-    if (dCache && dCache->o_FWReq) {  // Handle new D cache write request
-        reqAdr = dCache->o_FWAdr;
-        ddr->i_Adr = reqAdr;
-        req = cDWrite;
         goto request;
     }
 
