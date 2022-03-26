@@ -39,11 +39,14 @@ static unsigned cpu_tag_seq_1 {};
 static unsigned cpu_tag_seq_2 {};
 static bool     cpu_last_set_seq {};
 static bool     fsb_fetch_set {};
+static unsigned read_index {};
 
 /* Post-sequential combinational signals */
 static bool     cpu_c_valid_1 {};
 static bool     cpu_c_valid_2 {};
 static bool     cpu_c_valid {};
+static bool     c_update_set {};
+static bool     c_new_set {};
 
 
 /**
@@ -93,6 +96,11 @@ void InstructionCache::Update(void)
 
 
     /******************************* SEQUENTIAL *******************************/
+    if (c_update_set) {  // Update lastSet
+        lastSet[read_index] = c_new_set;
+    }
+    read_index = cpu_c_index;
+
     if (n_FRReq)  // Fetch initialization
     {
         if (i_FRAck) n_CFetch = 1;
@@ -162,6 +170,8 @@ void InstructionCache::Update(void)
     n_FRAdr = i_CAdr & 0xFFFFFE0;
     n_FRReq = !cpu_c_valid && !n_CFetch;
 
+    c_update_set = cpu_c_valid;
+    c_new_set = cpu_c_valid_2;
 }
 
 

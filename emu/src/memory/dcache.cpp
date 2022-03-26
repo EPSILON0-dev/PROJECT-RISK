@@ -54,11 +54,14 @@ static bool     wb_set {};
 static unsigned wb_index {};
 static bool     wb_wr {};
 static bool     wb_wr_en {};
+static unsigned read_index {};
 
 /* Post-sequential combinational signals */
 static bool     cpu_c_valid_1 {};
 static bool     cpu_c_valid_2 {};
 static bool     cpu_c_valid {};
+static bool     c_update_set {};
+static bool     c_new_set {};
 
 
 /**
@@ -88,8 +91,8 @@ DataCache::DataCache(void)
 }
 
 
-static unsigned getBlock(unsigned a) { return (a >> 2) & 0xFFF; }
-static unsigned getIndex(unsigned a) { return (a >> 5) & 0x1FF; }
+static unsigned getBlock(unsigned a) { return (a >> 2) & 0x7FF; }
+static unsigned getIndex(unsigned a) { return (a >> 5) & 0x0FF; }
 static unsigned getTag(unsigned a) { return (a >> 13); }
 bool DataCache::checkCache1(unsigned a) {
     return (tag1[getIndex(a)] == getTag(a) && valid1[getIndex(a)]);
@@ -115,6 +118,10 @@ void DataCache::Update(void)
 
 
     /******************************* SEQUENTIAL *******************************/
+    if (c_update_set) {  // Update lastSet
+        lastSet[read_index] = c_new_set;
+    }
+    read_index = cpu_c_index;
 
     if (wr_en)  // CPU write
     {
@@ -166,7 +173,7 @@ void DataCache::Update(void)
         }
 
         if (i_FLA) {
-            lastSet[fsb_c_index] = wb_set;
+            lastSet[getIndex(wr_addr)] = wb_set;
             wb_wr = 0;
             fetch_end = 1;
             write_lock = 0;
@@ -244,12 +251,12 @@ void DataCache::Update(void)
     bool write = (write_lock && !write_end);
     n_CVD = !(fetch || write) || no_acc;
 
-    // std::cout << n_CVD << write_lock << write_end;
-    // std::cout << wr_en << wb_wr << wb_wr_en;
-
     n_FRAdr = ((wb_wr || wb_wr_en)? wr_addr : i_CAdr) & 0xFFFFFE0;
     n_FRReq = (i_CRE || !!i_CWE) && !cpu_c_valid && !n_CFetch;
     n_FWReq = wb_wr_en && !wb_wr;
+
+    c_update_set = cpu_c_valid && i_CRE;
+    c_new_set = cpu_c_valid_2;
 
 }
 
