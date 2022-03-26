@@ -125,14 +125,14 @@ unsigned CPU::cycleLog(void) {
 
     cpu.UpdateCombinational();
 
+    iCache.Update();
+    dCache.Update();
+    ddr.Update();
+
     iCache.log();
     dCache.log();
     ddr.log();
     fsb.log();
-
-    iCache.Update();
-    dCache.Update();
-    ddr.Update();
 
     iCache.UpdatePorts();
     dCache.UpdatePorts();

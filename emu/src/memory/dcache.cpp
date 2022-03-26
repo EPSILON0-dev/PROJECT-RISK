@@ -27,6 +27,7 @@ typedef unsigned char byte;
 
 /* State signals */
 static bool     fetch_end {};
+static bool     write_lock {};
 static bool     write_end {};
 
 /* Pre-sequential combinational signals */
@@ -140,8 +141,14 @@ void DataCache::Update(void)
         }
     }
 
+    if (write_end)  // Clear write_end
+    {
+        write_end = 0;
+    }
+
     if (wb_wr_en)  // Write back initialization
     {
+        write_lock = 1;
         if (i_FWAck) {
             wb_wr = 1;
             wb_wr_en = 0;
@@ -152,18 +159,21 @@ void DataCache::Update(void)
     {
         if (i_FRE) {
             if (wb_set) {
-                n_FWDat = cache2[i_FAdr >> 2];
+                n_FWDat = cache2[fsb_c_block];
             } else {
-                n_FWDat = cache1[i_FAdr >> 2];
+                n_FWDat = cache1[fsb_c_block];
             }
         }
 
         if (i_FLA) {
+            lastSet[fsb_c_index] = wb_set;
             wb_wr = 0;
             fetch_end = 1;
+            write_lock = 0;
             write_end = 1;
         }
     }
+
 
     if (n_FRReq)  // Fetch initialization
     {
@@ -215,7 +225,7 @@ void DataCache::Update(void)
     // Store write parameters
     wr_addr = i_CAdr;
     wr_data = i_CWDat;
-    wr_en = (!!wr_en) ? 0 : i_CWE;
+    wr_en = (!!wr_en || write_lock) ? 0 : i_CWE;
 
 
     /********************* POST-SEQUENTIAL COMBINATIONAL **********************/
@@ -231,10 +241,13 @@ void DataCache::Update(void)
 
     bool no_acc = !(i_CRE || !!i_CWE);
     bool fetch = (!cpu_c_valid || n_CFetch || fetch_end);
-    bool write = (wb_wr);
+    bool write = (write_lock && !write_end);
     n_CVD = !(fetch || write) || no_acc;
 
-    n_FRAdr = i_CAdr & 0xFFFFFE0;
+    // std::cout << n_CVD << write_lock << write_end;
+    // std::cout << wr_en << wb_wr << wb_wr_en;
+
+    n_FRAdr = ((wb_wr || wb_wr_en)? wr_addr : i_CAdr) & 0xFFFFFE0;
     n_FRReq = (i_CRE || !!i_CWE) && !cpu_c_valid && !n_CFetch;
     n_FWReq = wb_wr_en && !wb_wr;
 

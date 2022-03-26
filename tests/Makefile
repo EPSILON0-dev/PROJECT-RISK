@@ -37,7 +37,7 @@ sra srai \
 srl srli \
 sub \
 xor xori \
-cache \
+dcache \
 float \
 
 OBJ 			:= $(addprefix $(OBJDIR)/, $(addsuffix .o, $(TESTS)))

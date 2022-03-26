@@ -20,7 +20,7 @@ OPERATIONS = [
     'beq', 'bge', 'bgeu', 'blt', 'bltu', 'bne',
     'lw', 'lhu', 'lh', 'lbu', 'lb',
     'sw', 'sh', 'sb',
-    'cache'
+    'dcache'
 ]
 
 

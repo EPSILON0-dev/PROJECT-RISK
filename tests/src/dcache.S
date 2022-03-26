@@ -21,20 +21,20 @@ RVTEST_CODE_BEGIN
 
   # Test 2 cache arrays
 
-  TEST_CASE( 2115, x4, 0xdeadbeef, \
-    li  x1, 0x00002000; \
+  TEST_CASE( 2, x4, 0xdeadbeef, \
+    li  x1, 0x00022000; \
     li  x2, 0xdeadbeef; \
     sw  x2, 0(x1); \
     lw  x3, 0(x1); \
-    li  x1, 0x00006000; \
+    li  x1, 0x00026000; \
     sw  x3, 0(x1); \
     lw  x4, 0(x1); \
   )
 
   # Test 2 indexes within the same tag
 
-  TEST_CASE( 1312, x4, 0x33333333, \
-    li  x1, 0x00002000; \
+  TEST_CASE( 3, x4, 0x33333333, \
+    li  x1, 0x00032000; \
     li  x2, 0x11111111; \
     sw  x2, 0x00(x1); \
     lw  x3, 0x00(x1); \
@@ -47,23 +47,37 @@ RVTEST_CODE_BEGIN
 
   # Test writes to main array
 
-  TEST_CASE( 1337, x4, 0x13371337, \
-    li  x1, 0x00002000; \
-    li  x2, 0x13371337; \
-    sw  x2, 0x00(x1); \
-    li  x1, 0x00004000; \
-    lw  x3, 0x00(x1); \
-    li  x1, 0x00006000; \
-    lw  x3, 0x00(x1); \
-    li  x1, 0x00002000; \
-    lw  x3, 0x00(x1); \
+  TEST_CASE( 4, x8, 0x13121312, \
+    li  x6, 0x00042000; \
+    li  x7, 0x13121312; \
+    li  x8, 0x21152115; \
+    sw  x7, 0x00(x6); \
+    li  x6, 0x00044000; \
+    lw  x7, 0x00(x6); \
+    li  x6, 0x00046000; \
+    lw  x7, 0x00(x6); \
+    li  x6, 0x00042000; \
+    lw  x8, 0x00(x6); \
+  )
+
+  TEST_CASE( 5, x9, 0x13371337, \
+    li  x6, 0x00052000; \
+    li  x7, 0x13371337; \
+    li  x8, 0x21152115; \
+    sw  x7, 0x00(x6); \
+    li  x6, 0x00054000; \
+    sw  x8, 0x00(x6); \
+    li  x6, 0x00056000; \
+    sw  x8, 0x00(x6); \
+    li  x6, 0x00052000; \
+    lw  x9, 0x00(x6); \
   )
 
   # Test writing back to main array (test all fields in the block)
 
-  TEST_CASE( 2137, x3, 0xFFFFFFFF, \
+  TEST_CASE( 6, x4, 0xFFFFFFFF, \
     li   x16, 0x00010001; \
-    li   x4, 0x00002000; \
+    li   x4, 0x00062000; \
     slli x17, x16, 1; \
     slli x18, x17, 1; \
     slli x19, x18, 1; \
@@ -97,13 +111,13 @@ RVTEST_CODE_BEGIN
     sw   x30, 0x38(x4); \
     sw   x31, 0x3c(x4); \
     \
-    li  x4, 0x00004000; \
+    li  x4, 0x00064000; \
     lw  x5, 0x00(x4); \
     lw  x5, 0x20(x4); \
-    li  x4, 0x00006000; \
+    li  x4, 0x00066000; \
     lw  x5, 0x00(x4); \
     lw  x5, 0x20(x4); \
-    li  x4, 0x00002000; \
+    li  x4, 0x00062000; \
     \
     lw   x31, 0x00(x4); \
     lw   x30, 0x04(x4); \

@@ -64,7 +64,7 @@ void MainRam::Update(void)
         break;
 
         case cWr:
-        wInx = 1;
+        wInx = 0;
         n_WAck = 1;
         n_CRE = 1;
         n_CAdr = adr;
@@ -176,8 +176,9 @@ void MainRam::log(void)
         break;
 
         case cWrng:
+        if (wInx < 2) break;
         Log::log("Writing word ");
-        Log::logDec(wInx - 1);
+        Log::logDec(wInx - 2);
         Log::log(": ");
         Log::logHex(i_CRDat, 8);
         Log::log("\n");
@@ -237,8 +238,9 @@ void MainRam::logJson(void)
         break;
 
         case cWrng:
+        if (wInx < 2) break;
         Log::log("Writing word ");
-        Log::logDec(wInx - 1);
+        Log::logDec(wInx - 2);
         Log::log(": ");
         Log::logHex(i_CRDat, 8);
         break;

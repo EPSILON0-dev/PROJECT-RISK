@@ -1,0 +1,7 @@
+wb_wr_en <-- jak jest 
+wb_wr <-- odpala się jak potwierdzony zostanie zapis
+
+
+wb_wr <-- wyłącza n_CVD
+
+n_FWReq <-- jak jeste wb_wr_en i nie wb_wr
