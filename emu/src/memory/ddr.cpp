@@ -176,7 +176,7 @@ void MainRam::log(void)
         break;
 
         case cWrng:
-        if (wInx < 2) break;
+        if (wInx < 2) { Log::log("\n"); break; }
         Log::log("Writing word ");
         Log::logDec(wInx - 2);
         Log::log(": ");
@@ -238,7 +238,7 @@ void MainRam::logJson(void)
         break;
 
         case cWrng:
-        if (wInx < 2) break;
+        if (wInx < 2) { Log::log("\n"); break; }
         Log::log("Writing word ");
         Log::logDec(wInx - 2);
         Log::log(": ");

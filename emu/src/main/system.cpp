@@ -69,16 +69,24 @@ void CPU::loop(void) {
     if (enableLog && enableJsonLog) cycleFunction = &CPU::cycleLogJson;
 
     // Execute function until killed
-    for (unsigned i = 0; i < cycleLimit; i++) {
+    unsigned cycle {};
+    for (cycle = 0; cycle < cycleLimit; cycle++) {
         (*cycleFunction)();
         if (if_pc == killAddress) { break; }
     }
 
     // Show exit code
     if (enableExitStatus) {
-
-        if (enableJsonLog) { Log::log("{"); cpu.logJson(); Log::log("}"); }
-        else { Log::log("\nEXIT STATUS:\n"); cpu.log(); }
+        if (enableJsonLog) {
+            Log::log("{");
+            cpu.logJson();
+            Log::log("}");
+        } else {
+            Log::log("\nEXIT STATUS: ");
+            Log::logDec(cycle);
+            Log::log(" cycles\n");
+            cpu.log();
+        }
     }
 
 }
