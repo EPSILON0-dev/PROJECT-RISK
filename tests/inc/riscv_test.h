@@ -1,10 +1,3 @@
-// See LICENSE for license details.
-
-#ifndef _ENV_PHYSICAL_SINGLE_CORE_H
-#define _ENV_PHYSICAL_SINGLE_CORE_H
-
-#include "encoding.h"
-
 //-----------------------------------------------------------------------
 // Begin Macro
 //-----------------------------------------------------------------------
@@ -74,12 +67,14 @@ reset_vector:                                                           \
 #define RVTEST_PASS                                                     \
         li TESTNUM, 0x555;                                              \
         lui x31, 0x10;                                                  \
+        sw TESTNUM, 0x0(x31);                                           \
         jalr zero, x31, 0
 
 #define TESTNUM gp
 #define RVTEST_FAIL                                                     \
         addi a0, TESTNUM, 0;                                            \
         lui x31, 0x10;                                                  \
+        sw TESTNUM, 0x0(x31);                                           \
         jalr zero, x31, 0
 
 //-----------------------------------------------------------------------
@@ -97,5 +92,3 @@ reset_vector:                                                           \
         .align 4; .global begin_signature; begin_signature:
 
 #define RVTEST_DATA_END .align 4; .global end_signature; end_signature:
-
-#endif

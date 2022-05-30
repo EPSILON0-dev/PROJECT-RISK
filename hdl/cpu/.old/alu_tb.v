@@ -1,29 +1,19 @@
-/**
- * @file alu_tb.v
- * @author EPSILON0-dev (lforenc@wp.pl)
- * @brief TB for alu.v
- * @date 2022-04-30
- *
- * "7 - 2 = 4" ~ GIGACHAD
- *
- */
-
-`include "alu.v"
+`include "../alu.v"
 //`define DUMP
 
 module alu_tb;
 
-    /**
-     * Test Array
-     */
+    /////////////////////////////////////////////////////////////////////////
+    // Test Array
+    /////////////////////////////////////////////////////////////////////////
     parameter arr_sizes = 48;
     reg  [31:0] lut_in_a[0:arr_sizes-1];
     reg  [31:0] lut_in_b[0:arr_sizes-1];
     reg  [31:0] lut_result[0:arr_sizes-1];
 
-    /**
-     * Enable dump file if defined
-     */
+    /////////////////////////////////////////////////////////////////////////
+    // Enable dump file if defined
+    /////////////////////////////////////////////////////////////////////////
     `ifdef DUMP
     initial begin
         $dumpfile("alu.vcd");
@@ -31,9 +21,19 @@ module alu_tb;
     end
     `endif
 
-    /**
-     * Device under test
-     */
+
+    /////////////////////////////////////////////////////////////////////////
+    // Enable monitoring
+    /////////////////////////////////////////////////////////////////////////
+    initial begin
+        $monitor("%d,\t%h,\t%h,\t%h,\t%b",
+            $time, in_a, in_b, alu_out, test_res);
+    end
+
+
+    /////////////////////////////////////////////////////////////////////////
+    // Device under test
+    /////////////////////////////////////////////////////////////////////////
     reg  [31:0] in_a;
     reg  [31:0] in_b;
     reg  [ 2:0] funct3;
@@ -44,13 +44,13 @@ module alu_tb;
     wire test_res;
 
     alu DUT (
-        .in_a     (in_a),
-        .in_b     (in_b),
-        .funct3   (funct3),
-        .funct7_4 (funct7_4),
-        .alu_en   (alu_en),
-        .alu_imm  (alu_imm),
-        .alu_out  (alu_out)
+        .i_in_a     (in_a),
+        .i_in_b     (in_b),
+        .i_funct3   (funct3),
+        .i_funct7_4 (funct7_4),
+        .i_alu_en   (alu_en),
+        .i_alu_imm  (alu_imm),
+        .o_alu_out  (alu_out)
     );
 
     // verilator lint_off WIDTH
@@ -59,23 +59,23 @@ module alu_tb;
     always begin
         in_a = lut_in_a[$time];
         in_b = lut_in_b[$time];
-        $monitor("%d,\t%h,\t%h,\t%h,\t%b", $time, in_a, in_b, alu_out, test_res);
         #1;
     end
     // verilator lint_on WIDTH
 
     // This fixes undefined state at time 0
     initial begin
+        $monitor("%d,\t%h,\t%h,\t%h,\t%b", $time, in_a, in_b, alu_out, test_res);
         in_a = 0;
         in_b = 0;
     end
 
-    /**
-     * Test Cases
-     */
+    /////////////////////////////////////////////////////////////////////////
+    // Test Cases
+    /////////////////////////////////////////////////////////////////////////
     initial begin
         $display("\n\n\t\t\t\t----==== ADD ====----");
-        $display("\t\ttime\tin_a,\t\tin_b,\t\tout,\t\tresult");
+        $display("\t\ttime\tin_a,\t\tin_b,\t\tout,\t\tResult");
         funct3 = 0;
         funct7_4 = 0;
         alu_en = 1;
@@ -116,7 +116,7 @@ module alu_tb;
         #8;
 
         $display("\n\n\t\t\t\t----==== SUB ====----");
-        $display("\t\ttime\tin_a,\t\tin_b,\t\tout,\t\tresult");
+        $display("\t\ttime\tin_a,\t\tin_b,\t\tout,\t\tResult");
         funct3 = 0;
         funct7_4 = 1;
         alu_en = 1;
@@ -141,7 +141,7 @@ module alu_tb;
         #4;
 
         $display("\n\n\t\t\t\t----==== SLL ====----");
-        $display("\t\ttime\tin_a,\t\tin_b,\t\tout,\t\tresult");
+        $display("\t\ttime\tin_a,\t\tin_b,\t\tout,\t\tResult");
         funct3 = 1;
         funct7_4 = 0;
         alu_en = 1;
@@ -166,7 +166,7 @@ module alu_tb;
         #4;
 
         $display("\n\n\t\t\t\t----==== SLT ====----");
-        $display("\t\ttime\tin_a,\t\tin_b,\t\tout,\t\tresult");
+        $display("\t\ttime\tin_a,\t\tin_b,\t\tout,\t\tResult");
         funct3 = 2;
         funct7_4 = 0;
         alu_en = 1;
@@ -191,7 +191,7 @@ module alu_tb;
         #4;
 
         $display("\n\n\t\t\t\t----==== SLTU ====----");
-        $display("\t\ttime\tin_a,\t\tin_b,\t\tout,\t\tresult");
+        $display("\t\ttime\tin_a,\t\tin_b,\t\tout,\t\tResult");
         funct3 = 3;
         funct7_4 = 0;
         alu_en = 1;
@@ -216,7 +216,7 @@ module alu_tb;
         #4;
 
         $display("\n\n\t\t\t\t----==== XOR ====----");
-        $display("\t\ttime\tin_a,\t\tin_b,\t\tout,\t\tresult");
+        $display("\t\ttime\tin_a,\t\tin_b,\t\tout,\t\tResult");
         funct3 = 4;
         funct7_4 = 0;
         alu_en = 1;
@@ -241,7 +241,7 @@ module alu_tb;
         #4;
 
         $display("\n\n\t\t\t\t----==== SRL ====----");
-        $display("\t\ttime\tin_a,\t\tin_b,\t\tout,\t\tresult");
+        $display("\t\ttime\tin_a,\t\tin_b,\t\tout,\t\tResult");
         funct3 = 5;
         funct7_4 = 0;
         alu_en = 1;
@@ -266,7 +266,7 @@ module alu_tb;
         #4;
 
         $display("\n\n\t\t\t\t----==== SRA ====----");
-        $display("\t\ttime\tin_a,\t\tin_b,\t\tout,\t\tresult");
+        $display("\t\ttime\tin_a,\t\tin_b,\t\tout,\t\tResult");
         funct3 = 5;
         funct7_4 = 1;
         alu_en = 1;
@@ -291,7 +291,7 @@ module alu_tb;
         #4;
 
         $display("\n\n\t\t\t\t----==== OR ====----");
-        $display("\t\ttime\tin_a,\t\tin_b,\t\tout,\t\tresult");
+        $display("\t\ttime\tin_a,\t\tin_b,\t\tout,\t\tResult");
         funct3 = 6;
         funct7_4 = 0;
         alu_en = 1;
@@ -316,7 +316,7 @@ module alu_tb;
         #4;
 
         $display("\n\n\t\t\t\t----==== AND ====----");
-        $display("\t\ttime\tin_a,\t\tin_b,\t\tout,\t\tresult");
+        $display("\t\ttime\tin_a,\t\tin_b,\t\tout,\t\tResult");
         funct3 = 7;
         funct7_4 = 0;
         alu_en = 1;
@@ -341,7 +341,7 @@ module alu_tb;
         #4;
 
         $display("\n\n\t\t\t\t----==== NONE ====----");
-        $display("\t\ttime\tin_a,\t\tin_b,\t\tout,\t\tresult");
+        $display("\t\ttime\tin_a,\t\tin_b,\t\tout,\t\tResult");
         funct3 = 7;
         funct7_4 = 1;
         alu_en = 0;

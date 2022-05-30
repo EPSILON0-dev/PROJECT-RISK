@@ -1,21 +1,11 @@
-/**
- * @file alu.v
- * @author EPSILON0-dev (lforenc@wp.pl)
- * @brief ALU + Barrel Shifter
- * @date 2022-04-30
- *
- * "7 - 2 = 4" ~ GIGACHAD
- *
- */
-
 module alu (
-    input  [31:0] in_a,
-    input  [31:0] in_b,
-    input  [ 2:0] funct3,
-    input         funct7_4,
-    input         alu_en,
-    input         alu_imm,
-    output [31:0] alu_out);
+    input  [31:0] i_in_a,
+    input  [31:0] i_in_b,
+    input  [ 2:0] i_funct3,
+    input         i_funct7_4,
+    input         i_alu_en,
+    input         i_alu_imm,
+    output [31:0] o_alu_out);
 
 
     /////////////////////////////////////////////////////////////////////////
@@ -25,52 +15,118 @@ module alu (
     wire [31:0] adder_in_b;
     wire [31:0] adder_out;
 
-    assign op_subtract = alu_en && !alu_imm && funct7_4;
-    assign adder_in_b = (op_subtract) ? ~in_b : in_b;
-    assign adder_out = in_a + adder_in_b + {31'd0, op_subtract};
+    assign op_subtract = i_alu_en && !i_alu_imm && i_funct7_4;
+    assign adder_in_b = (op_subtract) ? ~i_in_b : i_in_b;
+    assign adder_out = i_in_a + adder_in_b + {31'd0, op_subtract};
 
 
     /////////////////////////////////////////////////////////////////////////
     // Barrel shifter
     /////////////////////////////////////////////////////////////////////////
+    // Barrel shifter works in two stages:
+    //  Stage 1: value is rotated (not shifted) by given amount of bits
+    //  Stage 2: rotated value is masked to form final value
     wire op_sll;
     wire op_srl;
     wire op_sra;
     wire [ 4:0] shift_amount;
-    wire [31:0] shift_mask;
-    wire [31:0] shift_out;
+    reg  [31:0] shift_mask;
+    reg  [31:0] shift_out;
     wire [31:0] shift_sll;
     wire [31:0] shift_srl;
     wire [31:0] shift_sra;
     wire [31:0] shift_combined;
 
     // Shifter
-    alu_shifter shifter (
-        .shift   (shift_amount),
-        .in_val  (in_a),
-        .out_val (shift_out)
-    );
+    always @* begin
+        case (shift_amount)
+            default: shift_out = i_in_a;
+            5'h01:   shift_out = { i_in_a[30:0], i_in_a[31] };
+            5'h02:   shift_out = { i_in_a[29:0], i_in_a[31:30] };
+            5'h03:   shift_out = { i_in_a[28:0], i_in_a[31:29] };
+            5'h04:   shift_out = { i_in_a[27:0], i_in_a[31:28] };
+            5'h05:   shift_out = { i_in_a[26:0], i_in_a[31:27] };
+            5'h06:   shift_out = { i_in_a[25:0], i_in_a[31:26] };
+            5'h07:   shift_out = { i_in_a[24:0], i_in_a[31:25] };
+            5'h08:   shift_out = { i_in_a[23:0], i_in_a[31:24] };
+            5'h09:   shift_out = { i_in_a[22:0], i_in_a[31:23] };
+            5'h0A:   shift_out = { i_in_a[21:0], i_in_a[31:22] };
+            5'h0B:   shift_out = { i_in_a[20:0], i_in_a[31:21] };
+            5'h0C:   shift_out = { i_in_a[19:0], i_in_a[31:20] };
+            5'h0D:   shift_out = { i_in_a[18:0], i_in_a[31:19] };
+            5'h0E:   shift_out = { i_in_a[17:0], i_in_a[31:18] };
+            5'h0F:   shift_out = { i_in_a[16:0], i_in_a[31:17] };
+            5'h10:   shift_out = { i_in_a[15:0], i_in_a[31:16] };
+            5'h11:   shift_out = { i_in_a[14:0], i_in_a[31:15] };
+            5'h12:   shift_out = { i_in_a[13:0], i_in_a[31:14] };
+            5'h13:   shift_out = { i_in_a[12:0], i_in_a[31:13] };
+            5'h14:   shift_out = { i_in_a[11:0], i_in_a[31:12] };
+            5'h15:   shift_out = { i_in_a[10:0], i_in_a[31:11] };
+            5'h16:   shift_out = { i_in_a[9:0], i_in_a[31:10] };
+            5'h17:   shift_out = { i_in_a[8:0], i_in_a[31:9] };
+            5'h18:   shift_out = { i_in_a[7:0], i_in_a[31:8] };
+            5'h19:   shift_out = { i_in_a[6:0], i_in_a[31:7] };
+            5'h1A:   shift_out = { i_in_a[5:0], i_in_a[31:6] };
+            5'h1B:   shift_out = { i_in_a[4:0], i_in_a[31:5] };
+            5'h1C:   shift_out = { i_in_a[3:0], i_in_a[31:4] };
+            5'h1D:   shift_out = { i_in_a[2:0], i_in_a[31:3] };
+            5'h1E:   shift_out = { i_in_a[1:0], i_in_a[31:2] };
+            5'h1F:   shift_out = { i_in_a[0], i_in_a[31:1] };
+        endcase
+    end
 
     // Mask
-    alu_mask_lut mask_lut (
-        .shift (shift_amount),
-        .mask  (shift_mask)
-    );
+    always @* begin
+        case (shift_amount)
+            default: shift_mask = 32'h00000000;
+            5'h01:   shift_mask = 32'h00000001;
+            5'h02:   shift_mask = 32'h00000003;
+            5'h03:   shift_mask = 32'h00000007;
+            5'h04:   shift_mask = 32'h0000000F;
+            5'h05:   shift_mask = 32'h0000001F;
+            5'h06:   shift_mask = 32'h0000003F;
+            5'h07:   shift_mask = 32'h0000007F;
+            5'h08:   shift_mask = 32'h000001FF;
+            5'h09:   shift_mask = 32'h000001FF;
+            5'h0A:   shift_mask = 32'h000003FF;
+            5'h0B:   shift_mask = 32'h000007FF;
+            5'h0C:   shift_mask = 32'h00000FFF;
+            5'h0D:   shift_mask = 32'h00001FFF;
+            5'h0E:   shift_mask = 32'h00003FFF;
+            5'h0F:   shift_mask = 32'h00007FFF;
+            5'h10:   shift_mask = 32'h0000FFFF;
+            5'h11:   shift_mask = 32'h0001FFFF;
+            5'h12:   shift_mask = 32'h0003FFFF;
+            5'h13:   shift_mask = 32'h0007FFFF;
+            5'h14:   shift_mask = 32'h000FFFFF;
+            5'h15:   shift_mask = 32'h001FFFFF;
+            5'h16:   shift_mask = 32'h003FFFFF;
+            5'h17:   shift_mask = 32'h007FFFFF;
+            5'h18:   shift_mask = 32'h00FFFFFF;
+            5'h19:   shift_mask = 32'h01FFFFFF;
+            5'h1A:   shift_mask = 32'h03FFFFFF;
+            5'h1B:   shift_mask = 32'h07FFFFFF;
+            5'h1C:   shift_mask = 32'h0FFFFFFF;
+            5'h1D:   shift_mask = 32'h1FFFFFFF;
+            5'h1E:   shift_mask = 32'h3FFFFFFF;
+            5'h1F:   shift_mask = 32'h7FFFFFFF;
+        endcase
+    end
 
     // Operation decoder
-    assign op_sll = alu_en && (funct3 == 3'b001);
-    assign op_srl = alu_en && (funct3 == 3'b101) && !funct7_4;
-    assign op_sra = alu_en && (funct3 == 3'b101) &&  funct7_4;
-    assign shift_amount = (op_sll) ? in_b[4:0] : (5'd0 - in_b[4:0]);
+    assign op_sll = i_alu_en && (i_funct3 == 3'b001);
+    assign op_srl = i_alu_en && (i_funct3 == 3'b101) && !i_funct7_4;
+    assign op_sra = i_alu_en && (i_funct3 == 3'b101) &&  i_funct7_4;
+    assign shift_amount = (op_sll) ? i_in_b[4:0] : (5'd0 - i_in_b[4:0]);
 
     // Shift "postprocessing"
     assign shift_sll = shift_out & ~shift_mask;
     assign shift_srl = shift_out & shift_mask;
-    assign shift_sra = shift_srl | (~shift_mask & {32{in_a[31]}});
+    assign shift_sra = shift_srl | (~shift_mask & {32{i_in_a[31]}});
 
     // Final shift mux
     assign shift_combined = (|shift_amount)?
-        ((op_sra)? shift_sra : (op_srl)? shift_srl : shift_sll) : in_a;
+        ((op_sra)? shift_sra : (op_srl)? shift_srl : shift_sll) : i_in_a;
 
 
     /////////////////////////////////////////////////////////////////////////
@@ -80,9 +136,9 @@ module alu (
     wire [31:0] logic_or;
     wire [31:0] logic_and;
 
-    assign logic_xor = in_a ^ in_b;
-    assign logic_or  = in_a | in_b;
-    assign logic_and = in_a & in_b;
+    assign logic_xor = i_in_a ^ i_in_b;
+    assign logic_or  = i_in_a | i_in_b;
+    assign logic_and = i_in_a & i_in_b;
 
 
     /////////////////////////////////////////////////////////////////////////
@@ -91,8 +147,8 @@ module alu (
     wire [31:0] comp_signed;
     wire [31:0] comp_unsigned;
 
-    assign comp_signed   = {31'd0, (  $signed(in_a) <   $signed(in_b))};
-    assign comp_unsigned = {31'd0, ($unsigned(in_a) < $unsigned(in_b))};
+    assign comp_signed   = {31'd0, (  $signed(i_in_a) <   $signed(i_in_b))};
+    assign comp_unsigned = {31'd0, ($unsigned(i_in_a) < $unsigned(i_in_b))};
 
 
     /////////////////////////////////////////////////////////////////////////
@@ -102,117 +158,20 @@ module alu (
     wire [31:0] mux_03, mux_47;
     wire [31:0] mux_07;
 
-    assign mux_01 = (funct3[0] && alu_en) ? shift_combined : adder_out;
-    assign mux_23 = (funct3[0] && alu_en) ? comp_unsigned  : comp_signed;
-    assign mux_45 = (funct3[0] && alu_en) ? shift_combined : logic_xor;
-    assign mux_67 = (funct3[0] && alu_en) ? logic_and      : logic_or;
+    assign mux_01 = (i_funct3[0] && i_alu_en) ? shift_combined : adder_out;
+    assign mux_23 = (i_funct3[0] && i_alu_en) ? comp_unsigned  : comp_signed;
+    assign mux_45 = (i_funct3[0] && i_alu_en) ? shift_combined : logic_xor;
+    assign mux_67 = (i_funct3[0] && i_alu_en) ? logic_and      : logic_or;
 
-    assign mux_03 = (funct3[1] && alu_en) ? mux_23 : mux_01;
-    assign mux_47 = (funct3[1] && alu_en) ? mux_67 : mux_45;
+    assign mux_03 = (i_funct3[1] && i_alu_en) ? mux_23 : mux_01;
+    assign mux_47 = (i_funct3[1] && i_alu_en) ? mux_67 : mux_45;
 
-    assign mux_07 = (funct3[2] && alu_en) ? mux_47 : mux_03;
+    assign mux_07 = (i_funct3[2] && i_alu_en) ? mux_47 : mux_03;
 
 
     /////////////////////////////////////////////////////////////////////////
     // Output assignment
     /////////////////////////////////////////////////////////////////////////
-    assign alu_out = mux_07;
-
-endmodule
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-// This module is the actual barrel shifter implemented with "case"
-/////////////////////////////////////////////////////////////////////////////
-module alu_shifter (
-    input      [ 4:0] shift,
-    input      [31:0] in_val,
-    output reg [31:0] out_val);
-
-    always @* begin
-        case (shift)
-            default: out_val = in_val;
-            5'h01:   out_val = {in_val[30:0], in_val[31]};
-            5'h02:   out_val = {in_val[29:0], in_val[31:30]};
-            5'h03:   out_val = {in_val[28:0], in_val[31:29]};
-            5'h04:   out_val = {in_val[27:0], in_val[31:28]};
-            5'h05:   out_val = {in_val[26:0], in_val[31:27]};
-            5'h06:   out_val = {in_val[25:0], in_val[31:26]};
-            5'h07:   out_val = {in_val[24:0], in_val[31:25]};
-            5'h08:   out_val = {in_val[23:0], in_val[31:24]};
-            5'h09:   out_val = {in_val[22:0], in_val[31:23]};
-            5'h0A:   out_val = {in_val[21:0], in_val[31:22]};
-            5'h0B:   out_val = {in_val[20:0], in_val[31:21]};
-            5'h0C:   out_val = {in_val[19:0], in_val[31:20]};
-            5'h0D:   out_val = {in_val[18:0], in_val[31:19]};
-            5'h0E:   out_val = {in_val[17:0], in_val[31:18]};
-            5'h0F:   out_val = {in_val[16:0], in_val[31:17]};
-            5'h10:   out_val = {in_val[15:0], in_val[31:16]};
-            5'h11:   out_val = {in_val[14:0], in_val[31:15]};
-            5'h12:   out_val = {in_val[13:0], in_val[31:14]};
-            5'h13:   out_val = {in_val[12:0], in_val[31:13]};
-            5'h14:   out_val = {in_val[11:0], in_val[31:12]};
-            5'h15:   out_val = {in_val[10:0], in_val[31:11]};
-            5'h16:   out_val = {in_val[9:0], in_val[31:10]};
-            5'h17:   out_val = {in_val[8:0], in_val[31:9]};
-            5'h18:   out_val = {in_val[7:0], in_val[31:8]};
-            5'h19:   out_val = {in_val[6:0], in_val[31:7]};
-            5'h1A:   out_val = {in_val[5:0], in_val[31:6]};
-            5'h1B:   out_val = {in_val[4:0], in_val[31:5]};
-            5'h1C:   out_val = {in_val[3:0], in_val[31:4]};
-            5'h1D:   out_val = {in_val[2:0], in_val[31:3]};
-            5'h1E:   out_val = {in_val[1:0], in_val[31:2]};
-            5'h1F:   out_val = {in_val[0], in_val[31:1]};
-        endcase
-    end
-
-endmodule
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-// This module contains the LUT for the shift mask
-/////////////////////////////////////////////////////////////////////////////
-module alu_mask_lut (
-    input      [ 4:0] shift,
-    output reg [31:0] mask);
-
-    always @* begin
-        case (shift)
-            default: mask = 32'h00000000;
-            5'h01:   mask = 32'h00000001;
-            5'h02:   mask = 32'h00000003;
-            5'h03:   mask = 32'h00000007;
-            5'h04:   mask = 32'h0000000F;
-            5'h05:   mask = 32'h0000001F;
-            5'h06:   mask = 32'h0000003F;
-            5'h07:   mask = 32'h0000007F;
-            5'h08:   mask = 32'h000001FF;
-            5'h09:   mask = 32'h000001FF;
-            5'h0A:   mask = 32'h000003FF;
-            5'h0B:   mask = 32'h000007FF;
-            5'h0C:   mask = 32'h00000FFF;
-            5'h0D:   mask = 32'h00001FFF;
-            5'h0E:   mask = 32'h00003FFF;
-            5'h0F:   mask = 32'h00007FFF;
-            5'h10:   mask = 32'h0000FFFF;
-            5'h11:   mask = 32'h0001FFFF;
-            5'h12:   mask = 32'h0003FFFF;
-            5'h13:   mask = 32'h0007FFFF;
-            5'h14:   mask = 32'h000FFFFF;
-            5'h15:   mask = 32'h001FFFFF;
-            5'h16:   mask = 32'h003FFFFF;
-            5'h17:   mask = 32'h007FFFFF;
-            5'h18:   mask = 32'h00FFFFFF;
-            5'h19:   mask = 32'h01FFFFFF;
-            5'h1A:   mask = 32'h03FFFFFF;
-            5'h1B:   mask = 32'h07FFFFFF;
-            5'h1C:   mask = 32'h0FFFFFFF;
-            5'h1D:   mask = 32'h1FFFFFFF;
-            5'h1E:   mask = 32'h3FFFFFFF;
-            5'h1F:   mask = 32'h7FFFFFFF;
-        endcase
-    end
+    assign o_alu_out = mux_07;
 
 endmodule
