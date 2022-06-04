@@ -65,7 +65,7 @@ module cpu_tb;
     /////////////////////////////////////////////////////////////////////////
     // Program memory
     /////////////////////////////////////////////////////////////////////////
-    reg  [31:0] i_cache_array [0:32767];
+    reg  [31:0] i_cache_array [0:8191];
     initial begin
         $readmemh("obj/cpu.mem", i_cache_array);
     end
@@ -78,22 +78,22 @@ module cpu_tb;
     /////////////////////////////////////////////////////////////////////////
     // Data memory
     /////////////////////////////////////////////////////////////////////////
-    reg  [31:0] d_cache_array [0:32767];
+    reg  [31:0] d_cache_array [0:8191];
     wire [31:0] d_write_data;
     wire [31:0] d_read_data;
     initial begin
-        for (integer i = 0; i < 32768; i = i + 1) begin
-            d_cache_array[i] = 0;
-        end
+        $readmemh("obj/cpu.mem", d_cache_array);
     end
 
     always @(negedge i_clk) begin
         if (o_rd_d) begin
             i_data_in_d <= d_read_data;
+            $display("R %h (%h)", d_write_data, o_addr_d);
         end else begin
             i_data_in_d <= 0;
         end
         if (|o_we_d) begin
+            $display("W %h (%h)", d_write_data, o_addr_d);
             d_cache_array[o_addr_d[16:2]] <= d_write_data;
         end
     end

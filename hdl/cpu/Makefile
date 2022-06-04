@@ -22,8 +22,11 @@ obj/%.obj: tb/%.v
 
 fresh_test_cpu: clean test_cpu
 
+selftest:
+	@python3 tb/selftest.py
+
 test_cpu: $(CPUTSTOBJ)
-	@python3 tb/test.py $(TEST)
+	@python3 tb/test.py ../../tests/bin/$(TEST).hex
 	@vvp obj/cpu_tb.obj
 
 watch_tst:

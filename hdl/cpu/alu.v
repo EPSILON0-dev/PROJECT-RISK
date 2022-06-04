@@ -2,7 +2,7 @@ module alu (
     input  [31:0] i_in_a,
     input  [31:0] i_in_b,
     input  [ 2:0] i_funct3,
-    input         i_funct7_4,
+    input         i_funct7_5,
     input         i_alu_en,
     input         i_alu_imm,
     output [31:0] o_alu_out);
@@ -15,7 +15,7 @@ module alu (
     wire [31:0] adder_in_b;
     wire [31:0] adder_out;
 
-    assign op_subtract = i_alu_en && !i_alu_imm && i_funct7_4;
+    assign op_subtract = i_alu_en && !i_alu_imm && i_funct7_5;
     assign adder_in_b = (op_subtract) ? ~i_in_b : i_in_b;
     assign adder_out = i_in_a + adder_in_b + {31'd0, op_subtract};
 
@@ -115,8 +115,8 @@ module alu (
 
     // Operation decoder
     assign op_sll = i_alu_en && (i_funct3 == 3'b001);
-    assign op_srl = i_alu_en && (i_funct3 == 3'b101) && !i_funct7_4;
-    assign op_sra = i_alu_en && (i_funct3 == 3'b101) &&  i_funct7_4;
+    assign op_srl = i_alu_en && (i_funct3 == 3'b101) && !i_funct7_5;
+    assign op_sra = i_alu_en && (i_funct3 == 3'b101) &&  i_funct7_5;
     assign shift_amount = (op_sll) ? i_in_b[4:0] : (5'd0 - i_in_b[4:0]);
 
     // Shift "postprocessing"

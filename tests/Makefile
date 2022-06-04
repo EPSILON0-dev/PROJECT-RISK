@@ -17,7 +17,7 @@ BINDIR			:= ./bin
 DUMPDIR			:= ./dump
 OBJDIR			:= ./obj
 
-FLAGS			:= -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -march=rv32i -mabi=ilp32
+FLAGS			:= -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -march=rv32g -mabi=ilp32
 CFLAGS			:= -Wall -O0 -march=rv32i -mabi=ilp32 -nostartfiles -lm -lc -lgcc
 
 TESTS = \
@@ -37,8 +37,9 @@ sra srai \
 srl srli \
 sub \
 xor xori \
-dcache \
-float \
+csr \
+# dcache \
+# float \
 
 OBJ 			:= $(addprefix $(OBJDIR)/, $(addsuffix .o, $(TESTS)))
 BIN 			:= $(addprefix $(BINDIR)/, $(addsuffix .hex, $(TESTS)))

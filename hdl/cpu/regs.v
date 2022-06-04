@@ -1,4 +1,4 @@
-`define PASS_THROUGH
+`include "config.v"
 
 module regs (
     input         i_clk,
@@ -32,11 +32,11 @@ module regs (
         dat_rd_a <= registers[i_addr_rd_a];
         dat_rd_b <= registers[i_addr_rd_b];
 
-`ifdef PASS_THROUGH
-        if (i_addr_rd_a == i_addr_wr && i_we) begin
+`ifdef REGS_PASS_THROUGH
+        if (i_addr_rd_a == i_addr_wr && i_addr_wr != 5'b00000 && i_we) begin
             dat_rd_a <= i_dat_wr;
         end
-        if (i_addr_rd_b == i_addr_wr && i_we) begin
+        if (i_addr_rd_b == i_addr_wr && i_addr_wr != 5'b00000 && i_we) begin
             dat_rd_b <= i_dat_wr;
         end
 `endif

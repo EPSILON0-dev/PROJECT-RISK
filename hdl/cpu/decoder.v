@@ -1,3 +1,5 @@
+`include "config.v"
+
 module decoder (
     input  [31:0] i_opcode_in,
     output [31:0] o_immediate,
@@ -7,6 +9,9 @@ module decoder (
     output [ 4:0] o_rsa,
     output [ 4:0] o_rsb,
     output [ 4:0] o_rd,
+`ifdef DECODE_SYSTEM
+    output        o_system,
+`endif
     output        o_hz_rsa,
     output        o_hz_rsb,
     output        o_alu_pc,
@@ -48,6 +53,9 @@ module decoder (
     wire op_branch;
     wire op_jalr;
     wire op_jal;
+`ifdef DECODE_SYSTEM
+    wire op_system;
+`endif
 
     assign op_load   = (opcode == 5'b00000);
     assign op_op_imm = (opcode == 5'b00100);
@@ -58,6 +66,9 @@ module decoder (
     assign op_branch = (opcode == 5'b11000);
     assign op_jalr   = (opcode == 5'b11001);
     assign op_jal    = (opcode == 5'b11011);
+`ifdef DECODE_SYSTEM
+    assign op_system = (opcode == 5'b11100);
+`endif
 
 
     /////////////////////////////////////////////////////////////////////////
@@ -73,9 +84,13 @@ module decoder (
     assign format_u = op_auipc || op_lui;
     assign format_j = op_jal;
     assign format_b = op_branch;
-    assign format_i = op_load || op_op_imm || op_jalr;
     assign format_s = op_store;
     assign format_r = op_op;
+`ifdef DECODE_SYSTEM
+    assign format_i = op_load || op_op_imm || op_jalr || op_system;
+`else
+    assign format_i = op_load || op_op_imm || op_jalr;
+`endif
 
 
     /////////////////////////////////////////////////////////////////////////
@@ -205,6 +220,9 @@ module decoder (
     assign o_rsa          = rsa;
     assign o_rsb          = rsb;
     assign o_rd           = rd;
+`ifdef DECODE_SYSTEM
+    assign o_system       = op_system;
+`endif
     assign o_hz_rsa       = hz_rsa;
     assign o_hz_rsb       = hz_rsb;
     assign o_alu_pc       = alu_pc;
