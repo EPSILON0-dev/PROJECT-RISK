@@ -2,6 +2,7 @@
 
 module regs (
   input         i_clk,
+  input         i_ce,
 
   input  [ 4:0] i_addr_rd_a,
   input  [ 4:0] i_addr_rd_b,
@@ -29,7 +30,7 @@ module regs (
 
   // verilator lint_off BLKSEQ
   always @(posedge i_clk) begin
-    if (i_we && (i_addr_wr != 5'b00000)) begin
+    if (i_ce && i_we && (i_addr_wr != 5'b00000)) begin
       registers[i_addr_wr] <= i_dat_wr;
     end
 

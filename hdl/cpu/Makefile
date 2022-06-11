@@ -7,7 +7,7 @@ TSTOBJ		:= $(patsubst %, obj/%_tb.obj, $(MODULES))
 CPUTSTOBJ	:= obj/cpu_tb.obj
 TEST		?= NONE
 
-default: compile_tst
+all: compile_tst
 
 #############################  Test Compilation  ##############################
 
@@ -22,7 +22,7 @@ obj/%.obj: tb/%.v
 
 fresh_test_cpu: clean test_cpu
 
-selftest:
+selftest: fresh_tst
 	@python3 tb/selftest.py
 
 test_cpu: $(CPUTSTOBJ)

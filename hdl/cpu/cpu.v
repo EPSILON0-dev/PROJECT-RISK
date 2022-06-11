@@ -41,14 +41,14 @@ module cpu (
   ///////////////////////////////////////////////////////////////////////////
   // Clock Enable
   ///////////////////////////////////////////////////////////////////////////
-  wire clk_ce = i_valid_i && i_valid_d;
+  wire clk_ce = i_valid_i && i_valid_d && !alu_busy;
 
 
 
   ///////////////////////////////////////////////////////////////////////////
   // Negative Clock
   ///////////////////////////////////////////////////////////////////////////
-  wire i_clk_n = !i_clk;
+  wire clk_n = !i_clk;
 
 
   ///////////////////////////////////////////////////////////////////////////
@@ -71,7 +71,7 @@ module cpu (
       hz_branch <= 0;
     end else begin
       // Clear branch hazard if set
-      if (hz_branch) begin
+      if (clk_ce && hz_branch) begin
         hz_branch <= 0;
       end
       // Update the pc
@@ -104,7 +104,7 @@ module cpu (
       id_pc  <= if_pc;
       id_ir  <= i_data_in_i;
     end
-    if (branch_en) begin
+    if (clk_ce && branch_en) begin
       id_ir <= 0;
     end
   end
@@ -168,7 +168,8 @@ module cpu (
   wire [31:0] rsb_d;
 
   regs regs_i (
-    .i_clk       (i_clk_n),
+    .i_clk       (clk_n),
+    .i_ce        (clk_ce),
     .i_we        (wb_wb_en),
     .i_addr_rd_a (rsa),
     .i_addr_rd_b (rsb),
@@ -209,7 +210,7 @@ module cpu (
 `endif
 
   always @(posedge i_clk) begin
-    if (i_rst || hz_branch || hz_data || branch_en) begin
+    if (i_rst || (clk_ce && (hz_branch || hz_data || branch_en))) begin
       ex_rsa_d    <= 0;
       ex_rsb_d    <= 0;
       ex_imm      <= 0;
@@ -283,14 +284,17 @@ module cpu (
   // Arythmetic and Logic Unit
   ///////////////////////////////////////////////////////////////////////////
   wire [31:0] alu_out;
+  wire        alu_busy;
 
   alu alu_i (
+    .i_clk_n   (clk_n),
     .i_in_a    (alu_a_mux),
     .i_in_b    (alu_b_mux),
     .i_funct3  (ex_funct3),
     .i_funct7  (ex_funct7),
     .i_alu_en  (ex_alu_en),
     .i_alu_imm (ex_alu_imm),
+    .o_busy    (alu_busy),
     .o_alu_out (alu_out)
   );
 
@@ -319,10 +323,10 @@ module cpu (
   wire [31:0] csr_wr_data = ex_funct3[2] ? { 27'h0, ex_rsa} : ex_rsa_d;
 
   wire csr_wr_en = ex_system && (ex_rsa != 5'b00000);
-  wire csr_rd  = ex_system && (ex_wb_reg != 5'b00000);
-  wire csr_wr  = csr_wr_en && (ex_funct3[1:0] == 2'b01);
-  wire csr_set = csr_wr_en && (ex_funct3[1:0] == 2'b10);
-  wire csr_clr = csr_wr_en && (ex_funct3[1:0] == 2'b11);
+  wire csr_rd    = ex_system && (ex_wb_reg != 5'b00000);
+  wire csr_wr    = csr_wr_en && (ex_funct3[1:0] == 2'b01);
+  wire csr_set   = csr_wr_en && (ex_funct3[1:0] == 2'b10);
+  wire csr_clr   = csr_wr_en && (ex_funct3[1:0] == 2'b11);
 `endif
 
 
@@ -390,8 +394,8 @@ module cpu (
     .o_we        (ma_we)
   );
 
-  wire [3:0] ma_wr_en = ma_we & {4{ma_wr && clk_ce}};
-  wire       ma_rd_en = ma_rd && clk_ce;
+  wire [3:0] ma_wr_en = ma_we & {4{ma_wr}};
+  wire       ma_rd_en = ma_rd;
 
 
 

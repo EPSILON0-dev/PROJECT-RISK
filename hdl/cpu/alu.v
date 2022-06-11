@@ -1,4 +1,8 @@
+`include "config.v"
+
 module alu (
+  input         i_clk_n,
+
   input  [31:0] i_in_a,
   input  [31:0] i_in_b,
 
@@ -7,20 +11,30 @@ module alu (
   input         i_alu_en,
   input         i_alu_imm,
 
+  output        o_busy,
   output [31:0] o_alu_out
 );
 
 
   ///////////////////////////////////////////////////////////////////////////
+  // Funct7 decoding
+  ///////////////////////////////////////////////////////////////////////////
+  wire funct7_5 = (i_funct7 == 7'b0100000);
+
+
+  ///////////////////////////////////////////////////////////////////////////
   // Adder/subtractor
   ///////////////////////////////////////////////////////////////////////////
-  wire op_subtract = i_alu_en && !i_alu_imm && (i_funct7 == 7'b0100000);
+  wire op_subtract = i_alu_en && !i_alu_imm && funct7_5;
   wire [31:0] adder_in_b = (op_subtract) ? ~i_in_b : i_in_b;
   wire [31:0] adder_out = i_in_a + adder_in_b + {31'd0, op_subtract};
 
 
+
+`ifdef BARREL_SHIFTER
+
   ///////////////////////////////////////////////////////////////////////////
-  // Barrel shifter
+  // Barrel Shifter
   ///////////////////////////////////////////////////////////////////////////
   // Barrel shifter works in two stages:
   //  Stage 1: value is rotated (not shifted) by given amount of bits
@@ -104,10 +118,13 @@ module alu (
     endcase
   end
 
+  // Busy signal
+  wire shift_busy = 0;
+
   // Operation decoder
   wire op_sll = i_alu_en && (i_funct3 == 3'b001);
-  wire op_srl = i_alu_en && (i_funct3 == 3'b101) && (i_funct7 != 7'h20);
-  wire op_sra = i_alu_en && (i_funct3 == 3'b101) && (i_funct7 == 7'h20);
+  wire op_srl = i_alu_en && (i_funct3 == 3'b101) && !funct7_5;
+  wire op_sra = i_alu_en && (i_funct3 == 3'b101) &&  funct7_5;
   wire [4:0] shift_amount = (op_sll) ? i_in_b[4:0] : (5'd0 - i_in_b[4:0]);
 
   // Shift "postprocessing"
@@ -116,8 +133,48 @@ module alu (
   wire [31:0] shift_sra = shift_srl | (~shift_mask & {32{i_in_a[31]}});
 
   // Final shift mux
-  wire [31:0] shift_mux = (|shift_amount)?
+  wire [31:0] shift_result = (|shift_amount)?
     ((op_sra)? shift_sra : (op_srl)? shift_srl : shift_sll) : i_in_a;
+
+`else
+
+  ///////////////////////////////////////////////////////////////////////////
+  // Bit Shifter
+  ///////////////////////////////////////////////////////////////////////////
+  reg [31:0] shift_result = 0;
+  reg [ 4:0] shift_amount = 0;
+  reg        shift_dir_left = 0;
+
+  always @(posedge i_clk_n) begin
+
+    if (op_shift && shift_amount == 0) begin
+      shift_amount   <= i_in_b[4:0];
+      shift_result   <= i_in_a;
+      shift_dir_left <= op_sll;
+    end
+
+    if (shift_amount != 0) begin
+      shift_result <= (shift_dir_left) ? shift_left : shift_right;
+      shift_amount <= shift_amount - 5'h1;
+    end
+
+  end
+
+  // Operation decoder
+  wire op_sll   = i_alu_en && (i_funct3 == 3'b001);
+  wire op_srl   = i_alu_en && (i_funct3 == 3'b101) && !funct7_5;
+  wire op_sra   = i_alu_en && (i_funct3 == 3'b101) &&  funct7_5;
+  wire op_shift = op_sll || op_srl || op_sra;
+
+  // Shift signals
+  wire [31:0] shift_right = {shift_result[31] && op_sra, shift_result[31:1]};
+  wire [31:0] shift_left  = {shift_result[30:0], 1'b0};
+
+  // Busy signal
+  wire shift_busy = (shift_amount != 0);
+
+`endif
+
 
 
   ///////////////////////////////////////////////////////////////////////////
@@ -138,10 +195,10 @@ module alu (
   ///////////////////////////////////////////////////////////////////////////
   // Final mux
   ///////////////////////////////////////////////////////////////////////////
-  wire [31:0] mux_01 = (i_funct3[0] && i_alu_en) ? shift_mux : adder_out;
-  wire [31:0] mux_23 = (i_funct3[0] && i_alu_en) ? comp_u    : comp;
-  wire [31:0] mux_45 = (i_funct3[0] && i_alu_en) ? shift_mux : logic_xor;
-  wire [31:0] mux_67 = (i_funct3[0] && i_alu_en) ? logic_and : logic_or;
+  wire [31:0] mux_01 = (i_funct3[0] && i_alu_en) ? shift_result : adder_out;
+  wire [31:0] mux_23 = (i_funct3[0] && i_alu_en) ? comp_u       : comp;
+  wire [31:0] mux_45 = (i_funct3[0] && i_alu_en) ? shift_result : logic_xor;
+  wire [31:0] mux_67 = (i_funct3[0] && i_alu_en) ? logic_and    : logic_or;
 
   wire [31:0] mux_03 = (i_funct3[1] && i_alu_en) ? mux_23 : mux_01;
   wire [31:0] mux_47 = (i_funct3[1] && i_alu_en) ? mux_67 : mux_45;
@@ -153,5 +210,6 @@ module alu (
   // Output assignment
   ///////////////////////////////////////////////////////////////////////////
   assign o_alu_out = mux_07;
+  assign o_busy = shift_busy;
 
 endmodule

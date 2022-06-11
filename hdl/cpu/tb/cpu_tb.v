@@ -46,6 +46,7 @@ module cpu_tb;
   ///////////////////////////////////////////////////////////////////////////
   initial   i_clk = 0;
   always #1 i_clk = !i_clk;
+  // always #2 i_valid_i = !i_valid_i;
 
 
   ///////////////////////////////////////////////////////////////////////////
@@ -110,7 +111,7 @@ module cpu_tb;
   /////////////////////////////////////////////////////////////////////////
   always @(posedge i_clk) begin
     if (o_addr_i == 32'h00010000) begin
-      $display("Killed by reaching kill address"); $finish;
+      $display("Killed by reaching kill address %d", $time); $finish;
     end
   end
 

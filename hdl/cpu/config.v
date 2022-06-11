@@ -1,6 +1,7 @@
 `define REGS_PASS_THROUGH
 `define CLEAN_DATA
 `define INCLUDE_CSR
+`define BARREL_SHIFTER
 
 `ifdef INCLUDE_CSR
 `define DECODE_SYSTEM
