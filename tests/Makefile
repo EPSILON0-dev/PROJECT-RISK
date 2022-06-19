@@ -37,7 +37,10 @@ sra srai \
 srl srli \
 sub \
 xor xori \
-csr \
+mul mulh mulhsu mulhu \
+div divu \
+rem remu \
+# csr \
 # dcache \
 # float \
 

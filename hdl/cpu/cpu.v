@@ -1,5 +1,5 @@
 `include "config.v"
-`include "alu.v"
+`include "alu/alu.v"
 `include "branch.v"
 `include "decoder.v"
 `include "memory.v"
@@ -55,7 +55,7 @@ module cpu (
   // Program Counter
   ///////////////////////////////////////////////////////////////////////////
   wire [31:0] pc_next = if_pc + 32'h4;
-  wire [31:0] pc_mux = (branch_en)? alu_out : pc_next;
+  wire [31:0] pc_mux = (branch_en) ? alu_out : pc_next;
 
 
 
@@ -418,8 +418,8 @@ module cpu (
     end
   end
 
-  wire [31:0] wb_dat_mux = (ma_wb_mux == 2'b10)? ma_ret :
-    (ma_wb_mux == 2'b01)? ma_rd_dat : ma_res;
+  wire [31:0] wb_dat_mux = (ma_wb_mux == 2'b10) ? ma_ret :
+    (ma_wb_mux == 2'b01) ? ma_rd_dat : ma_res;
 
 
 
