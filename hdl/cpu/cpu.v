@@ -114,7 +114,6 @@ module cpu (
   ///////////////////////////////////////////////////////////////////////////
   // Instruction Decoder
   ///////////////////////////////////////////////////////////////////////////
-  // verilator lint_off unused
   wire [31:0] immediate;
   wire [ 4:0] opcode;
   wire [ 2:0] funct3;
@@ -131,10 +130,7 @@ module cpu (
   wire        d_rd;
   wire [ 1:0] wb_mux;
   wire        wb_en;
-`ifdef DECODE_SYSTEM
   wire        system;
-`endif
-  // verilator lint_on unused
 
   decoder decoder_i (
     .i_opcode_in (id_ir),
@@ -145,9 +141,7 @@ module cpu (
     .o_rsa       (rsa),
     .o_rsb       (rsb),
     .o_rd        (rd),
-`ifdef DECODE_SYSTEM
     .o_system    (system),
-`endif
     .o_hz_rsa    (hz_rsa),
     .o_hz_rsb    (hz_rsb),
     .o_alu_pc    (alu_pc),
@@ -192,6 +186,7 @@ module cpu (
   reg  [ 4:0] ex_opcode;
   reg  [ 2:0] ex_funct3;
   reg  [ 6:0] ex_funct7;
+  reg  [ 4:0] ex_rsa;
   reg         ex_alu_pc;
   reg         ex_alu_imm;
   reg         ex_alu_en;
@@ -200,14 +195,8 @@ module cpu (
   reg  [ 1:0] ex_wb_mux;
   reg  [ 4:0] ex_wb_reg;
   reg         ex_wb_en;
-
-`ifdef DECODE_SYSTEM
   reg         ex_system;
-`endif
 
-`ifdef INCLUDE_CSR
-  reg  [ 4:0] ex_rsa;
-`endif
 
   always @(posedge i_clk) begin
     if (i_rst || (clk_ce && (hz_branch || hz_data || branch_en))) begin
@@ -219,6 +208,7 @@ module cpu (
       ex_opcode   <= 0;
       ex_funct3   <= 0;
       ex_funct7   <= 0;
+      ex_rsa      <= 0;
       ex_alu_pc   <= 0;
       ex_alu_imm  <= 0;
       ex_alu_en   <= 0;
@@ -227,15 +217,7 @@ module cpu (
       ex_wb_reg   <= 0;
       ex_wb_mux   <= 0;
       ex_wb_en    <= 0;
-
-`ifdef DECODE_SYSTEM
       ex_system   <= 0;
-`endif
-
-`ifdef INCLUDE_CSR
-      ex_rsa      <= 0;
-`endif
-
     end else if (clk_ce) begin
       ex_rsa_d    <= rsa_d;
       ex_rsb_d    <= rsb_d;
@@ -245,6 +227,7 @@ module cpu (
       ex_opcode   <= opcode;
       ex_funct3   <= funct3;
       ex_funct7   <= funct7;
+      ex_rsa      <= rsa;
       ex_alu_pc   <= alu_pc;
       ex_alu_imm  <= alu_imm;
       ex_alu_en   <= alu_en;
@@ -253,14 +236,7 @@ module cpu (
       ex_wb_reg   <= rd;
       ex_wb_mux   <= wb_mux;
       ex_wb_en    <= wb_en;
-
-`ifdef DECODE_SYSTEM
       ex_system   <= system;
-`endif
-
-`ifdef INCLUDE_CSR
-      ex_rsa      <= rsa;
-`endif
     end
   end
 
@@ -278,6 +254,7 @@ module cpu (
     .i_opcode    (ex_opcode),
     .o_branch_en (branch_en)
   );
+
 
 
   ///////////////////////////////////////////////////////////////////////////
