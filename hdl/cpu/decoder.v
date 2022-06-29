@@ -8,9 +8,7 @@ module decoder (
   output [ 2:0] o_funct3,
   output [ 6:0] o_funct7,
 
-`ifdef DECODE_SYSTEM
   output        o_system,
-`endif
 
   output [ 4:0] o_rsa,
   output [ 4:0] o_rsb,
@@ -54,10 +52,7 @@ module decoder (
   wire op_branch = (opcode == 5'b11000);
   wire op_jalr   = (opcode == 5'b11001);
   wire op_jal    = (opcode == 5'b11011);
-
-`ifdef DECODE_SYSTEM
   wire op_system = (opcode == 5'b11100);
-`endif
 
 
   ///////////////////////////////////////////////////////////////////////////
@@ -68,12 +63,7 @@ module decoder (
   wire format_b = op_branch;
   wire format_s = op_store;
   wire format_r = op_op;
-
-`ifdef DECODE_SYSTEM
   wire format_i = op_load || op_op_imm || op_jalr || op_system;
-`else
-  wire format_i = op_load || op_op_imm || op_jalr;
-`endif
 
 
   ///////////////////////////////////////////////////////////////////////////
@@ -183,9 +173,7 @@ module decoder (
   assign o_funct3     = funct3;
   assign o_funct7     = funct7;
 
-`ifdef DECODE_SYSTEM
   assign o_system     = op_system;
-`endif
 
   assign o_rsa        = rsa;
   assign o_rsb        = rsb;

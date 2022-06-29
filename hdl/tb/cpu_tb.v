@@ -1,4 +1,4 @@
-`include "../cpu.v"
+`include "../cpu/cpu.v"
 
 module cpu_tb;
 
@@ -87,12 +87,12 @@ module cpu_tb;
   always @(negedge i_clk) begin
     if (o_rd_d) begin
       i_data_in_d <= d_read_data;
-      $display("R %h (%h)", d_write_data, o_addr_d);
+      $display("%d (%h)", d_write_data, o_addr_d);
     end else begin
       i_data_in_d <= 0;
     end
     if (|o_we_d) begin
-      $display("W %h (%h)", d_write_data, o_addr_d);
+      $display("%d (%h)", d_write_data, o_addr_d);
       d_cache_array[o_addr_d[16:2]] <= d_write_data;
     end
   end

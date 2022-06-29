@@ -1,10 +1,6 @@
 `define REGS_PASS_THROUGH
 `define CLEAN_DATA
 `define INCLUDE_CSR
-`define BARREL_SHIFTER
+//`define BARREL_SHIFTER
 `define MULDIV_EXTENSION
-`define FAST_MULTIPLIER
-
-`ifdef INCLUDE_CSR
-`define DECODE_SYSTEM
-`endif
+//`define FAST_MULTIPLIER
