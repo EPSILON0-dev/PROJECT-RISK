@@ -1,4 +1,4 @@
-`include "../config.v"
+`include "config.v"
 `include "shifter.v"
 
 `ifdef MULDIV_EXTENSION
@@ -25,7 +25,6 @@ module alu (
   // Funct7 decoding
   ///////////////////////////////////////////////////////////////////////////
   wire funct7_5 = (i_funct7 == 7'b0100000);
-
 `ifdef MULDIV_EXTENSION
   wire funct7_0 = (i_funct7 == 7'b0000001);
 `endif
@@ -75,22 +74,25 @@ module alu (
   ///////////////////////////////////////////////////////////////////////////
   // Final alu mux
   ///////////////////////////////////////////////////////////////////////////
-  wire [31:0] mux_01 = (i_funct3[0] && i_alu_en) ? shift_result : adder_out;
-  wire [31:0] mux_23 = (i_funct3[0] && i_alu_en) ? comp_u       : comp;
-  wire [31:0] mux_45 = (i_funct3[0] && i_alu_en) ? shift_result : logic_xor;
-  wire [31:0] mux_67 = (i_funct3[0] && i_alu_en) ? logic_and    : logic_or;
+  reg [31:0] mux;
+  always @* begin
+    case (i_funct3 & {3{i_alu_en}})
+      3'b000: mux = adder_out;
+      3'b001: mux = shift_result;
+      3'b010: mux = comp;
+      3'b011: mux = comp_u;
+      3'b100: mux = logic_xor;
+      3'b101: mux = shift_result;
+      3'b110: mux = logic_or;
+      3'b111: mux = logic_and;
+    endcase
+  end
 
-  wire [31:0] mux_03 = (i_funct3[1] && i_alu_en) ? mux_23 : mux_01;
-  wire [31:0] mux_47 = (i_funct3[1] && i_alu_en) ? mux_67 : mux_45;
-
-  wire [31:0] mux_07 = (i_funct3[2] && i_alu_en) ? mux_47 : mux_03;
-
-
-`ifdef MULDIV_EXTENSION
 
   ///////////////////////////////////////////////////////////////////////////
   // Multiplier and divider
   ///////////////////////////////////////////////////////////////////////////
+`ifdef MULDIV_EXTENSION
   wire [31:0] md_result;
   wire        md_enable;
   wire        md_busy;
@@ -114,14 +116,12 @@ module alu (
   ///////////////////////////////////////////////////////////////////////////
   // Output assignment
   ///////////////////////////////////////////////////////////////////////////
-
 `ifdef MULDIV_EXTENSION
   assign o_busy = shift_busy || md_busy;
-  assign o_alu_out = (md_enable) ? md_result : mux_07;
+  assign o_alu_out = (md_enable) ? md_result : mux;
 `else
   assign o_busy = shift_busy;
-  assign o_alu_out = mux_07;
+  assign o_alu_out = mux;
 `endif
-
 
 endmodule

@@ -1,7 +1,8 @@
 `include "config.v"
-`include "alu/alu.v"
+`include "alu.v"
 `include "branch.v"
 `include "decoder.v"
+`include "fetch.v"
 `include "memory.v"
 `include "regs.v"
 
@@ -20,96 +21,58 @@ module cpu (
   output [31:0] o_addr_d,
   output  [3:0] o_we_d,
   output        o_rd_d,
-  output [31:0] o_data_out_d);
-
+  output [31:0] o_data_out_d
+);
 
 
   ///////////////////////////////////////////////////////////////////////////
   // Hazard Detection
   ///////////////////////////////////////////////////////////////////////////
-  reg  hz_branch;
-
+`ifdef REGS_PASS_THROUGH
+  wire hz_dat_rsa = hz_rsa && (rsa != 5'b0000) &&
+    ((rsa == ex_wb_reg) || (rsa == ma_wb_reg));
+  wire hz_dat_rsb = hz_rsb && (rsb != 5'b0000) &&
+    ((rsb == ex_wb_reg) || (rsb == ma_wb_reg));
+`else
   wire hz_dat_rsa = hz_rsa && (rsa != 5'b0000) &&
     ((rsa == ex_wb_reg) || (rsa == ma_wb_reg) || (rsa == wb_wb_reg));
   wire hz_dat_rsb = hz_rsb && (rsb != 5'b0000) &&
     ((rsb == ex_wb_reg) || (rsb == ma_wb_reg) || (rsb == wb_wb_reg));
+`endif
 
   wire hz_data = hz_dat_rsa || hz_dat_rsb;
 
 
-
   ///////////////////////////////////////////////////////////////////////////
-  // Clock Enable
+  // Clock Signals
   ///////////////////////////////////////////////////////////////////////////
   wire clk_ce = i_valid_i && i_valid_d && !alu_busy;
-
-
-
-  ///////////////////////////////////////////////////////////////////////////
-  // Negative Clock
-  ///////////////////////////////////////////////////////////////////////////
   wire clk_n = !i_clk;
 
 
   ///////////////////////////////////////////////////////////////////////////
-  // Program Counter
+  // Instruction fetch circuitry
   ///////////////////////////////////////////////////////////////////////////
-  wire [31:0] pc_next = if_pc + 32'h4;
-  wire [31:0] pc_mux = (branch_en) ? alu_out : pc_next;
+  wire [31:0] if_pc;
+  wire [31:0] id_pc;
+  wire [31:0] id_ir;
+  wire [31:0] id_ret;
+  wire hz_br;
 
-
-
-  ///////////////////////////////////////////////////////////////////////////
-  // Instruction Fetch Registers
-  ///////////////////////////////////////////////////////////////////////////
-  reg [31:0] if_pc;
-
-  always @(posedge i_clk) begin
-    if (i_rst) begin
-      // Clear on reset
-      if_pc <= 32'h0;
-      hz_branch <= 0;
-    end else begin
-      // Clear branch hazard if set
-      if (clk_ce && hz_branch) begin
-        hz_branch <= 0;
-      end
-      // Update the pc
-      if (clk_ce && (!hz_data || branch_en)) begin
-        if_pc <= pc_mux;
-        // Set hazard if branch taken
-        if (branch_en) begin
-          hz_branch <= 1'b1;
-        end
-      end
-    end
-  end
-
-
-
-  ///////////////////////////////////////////////////////////////////////////
-  // Instruction Decode Registers
-  ///////////////////////////////////////////////////////////////////////////
-  reg [31:0] id_ret;
-  reg [31:0] id_pc;
-  reg [31:0] id_ir;
-
-  always @(posedge i_clk) begin
-    if (i_rst) begin
-      id_ret <= 0;
-      id_pc  <= 0;
-      id_ir  <= 0;
-    end else if (clk_ce && !hz_data) begin
-      id_ret <= pc_next;
-      id_pc  <= if_pc;
-      id_ir  <= i_data_in_i;
-    end
-    if (clk_ce && branch_en) begin
-      id_ir <= 0;
-    end
-  end
-
-
+  fetch fetch_i (
+    .i_clk      (i_clk),
+    .i_clk_ce   (clk_ce),
+    .i_rst      (i_rst),
+    .i_data_in  (i_data_in_i),
+    .i_hz_data  (hz_data),
+    .i_br_en    (br_en),
+    .i_br_addr  (alu_out),
+    .o_if_pc    (if_pc),
+    .o_id_pc    (id_pc),
+    .o_id_ret   (id_ret),
+    .o_id_ir    (id_ir),
+    .o_hz_br    (hz_br)
+  );
 
   ///////////////////////////////////////////////////////////////////////////
   // Instruction Decoder
@@ -154,7 +117,6 @@ module cpu (
   );
 
 
-
   ///////////////////////////////////////////////////////////////////////////
   // Register set
   ///////////////////////////////////////////////////////////////////////////
@@ -172,7 +134,6 @@ module cpu (
     .o_dat_rd_a  (rsa_d),
     .o_dat_rd_b  (rsb_d)
   );
-
 
 
   ///////////////////////////////////////////////////////////////////////////
@@ -197,9 +158,8 @@ module cpu (
   reg         ex_wb_en;
   reg         ex_system;
 
-
   always @(posedge i_clk) begin
-    if (i_rst || (clk_ce && (hz_branch || hz_data || branch_en))) begin
+    if (i_rst || (clk_ce && (hz_br || hz_data || br_en))) begin
       ex_rsa_d    <= 0;
       ex_rsb_d    <= 0;
       ex_imm      <= 0;
@@ -241,20 +201,18 @@ module cpu (
   end
 
 
-
   ///////////////////////////////////////////////////////////////////////////
   // Branch Conditioner
   ///////////////////////////////////////////////////////////////////////////
-  wire branch_en;
+  wire br_en;
 
   branch branch_i (
-    .i_dat_a     (ex_rsa_d),
-    .i_dat_b     (ex_rsb_d),
-    .i_funct3    (ex_funct3),
-    .i_opcode    (ex_opcode),
-    .o_branch_en (branch_en)
+    .i_dat_a  (ex_rsa_d),
+    .i_dat_b  (ex_rsb_d),
+    .i_funct3 (ex_funct3),
+    .i_opcode (ex_opcode),
+    .o_br_en  (br_en)
   );
-
 
 
   ///////////////////////////////////////////////////////////////////////////
@@ -277,7 +235,6 @@ module cpu (
 
   wire [31:0] alu_a_mux = (ex_alu_pc)  ? ex_pc  : ex_rsa_d;
   wire [31:0] alu_b_mux = (ex_alu_imm) ? ex_imm : ex_rsb_d;
-
 
 
   ///////////////////////////////////////////////////////////////////////////
@@ -305,7 +262,6 @@ module cpu (
   wire csr_set   = csr_wr_en && (ex_funct3[1:0] == 2'b10);
   wire csr_clr   = csr_wr_en && (ex_funct3[1:0] == 2'b11);
 `endif
-
 
 
   ///////////////////////////////////////////////////////////////////////////
@@ -352,7 +308,6 @@ module cpu (
 `endif
 
 
-
   ///////////////////////////////////////////////////////////////////////////
   // Data Cache
   ///////////////////////////////////////////////////////////////////////////
@@ -373,7 +328,6 @@ module cpu (
 
   wire [3:0] ma_wr_en = ma_we & {4{ma_wr}};
   wire       ma_rd_en = ma_rd;
-
 
 
   ///////////////////////////////////////////////////////////////////////////
@@ -399,7 +353,6 @@ module cpu (
     (ma_wb_mux == 2'b01) ? ma_rd_dat : ma_res;
 
 
-
   ///////////////////////////////////////////////////////////////////////////
   // Output assignment
   ///////////////////////////////////////////////////////////////////////////
@@ -414,6 +367,5 @@ module cpu (
   assign o_addr_d     = ma_res;
   assign o_data_out_d = ma_wr_dat;
 `endif
-
 
 endmodule

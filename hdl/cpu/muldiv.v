@@ -1,4 +1,4 @@
-`include "../config.v"
+`include "config.v"
 
 module muldiv (
   input         i_clk_n,

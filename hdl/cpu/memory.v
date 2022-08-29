@@ -31,22 +31,18 @@ module memory (
   ///////////////////////////////////////////////////////////////////////////
   // Write data processing
   ///////////////////////////////////////////////////////////////////////////
-  // Write data is processed in two stages:
-  //  Stage 1: Data is length masked
-  //  Stage 2: Data is shifted to the given byte offset
+  // We only need to shift the data to prepare it, masking is unecessary as
+  //  it will be done in the memory based on write enable signals
   reg [31:0] data_wr_shift;
 
   always @* begin
     case (i_shift)
-      2'b01:   data_wr_shift = { data_wr_s[23:0], data_wr_s[31:24] };
-      2'b10:   data_wr_shift = { data_wr_s[15:0], data_wr_s[31:16] };
-      2'b11:   data_wr_shift = { data_wr_s[ 7:0], data_wr_s[31:8 ] };
-      default: data_wr_shift = data_wr_s;
+      2'b01:   data_wr_shift = { i_data_wr[23:0], i_data_wr[31:24] };
+      2'b10:   data_wr_shift = { i_data_wr[15:0], i_data_wr[31:16] };
+      2'b11:   data_wr_shift = { i_data_wr[ 7:0], i_data_wr[31:8 ] };
+      default: data_wr_shift = i_data_wr;
     endcase
   end
-
-  wire [31:0] data_wr_s = i_data_wr & length_mask;
-
 
 
   ///////////////////////////////////////////////////////////////////////////
@@ -78,7 +74,7 @@ module memory (
   ///////////////////////////////////////////////////////////////////////////
   // Write enable generation
   ///////////////////////////////////////////////////////////////////////////
-  // Write data is processed in three stages:
+  // Write enable is generated in two stages:
   //  Stage 1: Length is calculated
   //  Stage 2: Length is offset by the address
   reg  [3:0] we_lenght;
