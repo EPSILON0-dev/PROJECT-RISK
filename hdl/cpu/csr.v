@@ -12,9 +12,9 @@ module csr (
 );
 
 
-  ///////////////////////////////////////////////////////////////////////////
-  // Temporary registers for testing
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Temporary registers for testing
+   */
   reg [31:0] reg_200;
   reg [31:0] reg_800;
   reg [31:0] reg_F00;
@@ -26,9 +26,9 @@ module csr (
   end
 
 
-  ///////////////////////////////////////////////////////////////////////////
-  // Read from currently selected CSR
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Read from currently selected CSR
+   */
   reg  [31:0] read_data;
 
   always @* begin
@@ -41,9 +41,9 @@ module csr (
   end
 
 
-  ///////////////////////////////////////////////////////////////////////////
-  // Generate the write data
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Generate the write data
+   */
   wire write_enable = i_wr | i_set | i_clr;
 
   wire [31:0] set_data = read_data |  i_wr_data;
@@ -54,24 +54,24 @@ module csr (
     (i_clr) ? clr_data : 0;
 
 
-  ///////////////////////////////////////////////////////////////////////////
-  // Write to the selected register
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Write to the selected register
+   */
   always @(posedge i_clk) begin
     if (write_enable) begin
       case (i_adr)
         12'h200: reg_200 <= write_data;
         12'h800: reg_800 <= write_data;
         12'hF00: reg_F00 <= write_data;
-        default: begin end // Empty expression
+        default: begin end  // Empty expression
       endcase
     end
   end
 
 
-  ///////////////////////////////////////////////////////////////////////////
-  // Output assignment
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Output assignment
+   */
   assign o_rd_data = read_data;
 
 

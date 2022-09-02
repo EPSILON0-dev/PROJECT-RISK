@@ -17,10 +17,15 @@ module fetch (
   output        o_hz_br
 );
 
+  ///////////////////////////////////////////////////////////////////////////
+  // C extension fetch unit
+  //  This version supports both 16bit and 32bit opcodes, 32bit opcodes
+  //  don't have to be aligned to 4-byte boundries.
+  ///////////////////////////////////////////////////////////////////////////
 `ifdef C_EXTENSION
-  ///////////////////////////////////////////////////////////////////////////
-  // Program counter and branch hazard
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Program counter and branch hazard
+   */
   reg [31:0] if_pc;
   always @(posedge i_clk) begin
     if (i_rst) begin
@@ -49,9 +54,17 @@ module fetch (
   wire pc_next_c = (data_t0_cl && !pc_t0[1]) || (pc_t0[1] && data_t0_ch);
   wire [31:0] pc_next = pc_t0 + ((pc_next_c) ? 32'h2 : 32'h4);
 
-  ///////////////////////////////////////////////////////////////////////////
-  // Data registers
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Data registers
+   *  These registers can work in two modes: t1 mode and t2 mode.
+   *  After branch or reset fetch unit enters t1 mode in which opcode passes
+   *  through only one register before going to ir output, in this mode it's
+   *  impossible to read unaligned 32bit opcodes. To read 32bit opcodes fetch
+   *  unit enters t2 mode (it's automatically detected with unaligned_32
+   *  signal), in this mode fetch unit has access to the current word and the
+   *  next one so that unaligned opcodes can be read. To save a few cycles
+   *  fetch unit doesn't enter t1 mode until branch or reset occurs.
+   */
   reg [31:0] data_t1;
   reg [31:0] data_t2;
   reg [31:0] pc_t1;
@@ -82,7 +95,7 @@ module fetch (
         pc_t2    <= pc_t1;
         ret_t1   <= pc_next;
         ret_t2   <= ret_t1;
-        t2_en    <= unaligned_n || t2_en;
+        t2_en    <= unaligned_32 || t2_en;
       end
     end
     if (i_clk_ce && i_br_en) begin
@@ -92,24 +105,30 @@ module fetch (
       valid_t2 <= 0;
     end
   end
-  wire unaligned_n = pc_t1[1] && !c_data_t1_1;
 
+  // This signal tells the fetch unit to switch to t2 mode
+  wire unaligned_32 = pc_t1[1] && !c_data_t1_1;
+
+  // This signal determines if unaligned instructions in t1 is compressed
   wire c_data_t1_1 = (data_t1[17:16] != 2'b11);
 
+  // These signals are the multiplexers that align the unaligned opcodes
   wire [31:0] data_o_t1 = (pc_t1[1])? { 16'h0000, data_t1[31:16] } : data_t1;
-  wire valid_o_t1 = valid_t1 && !unaligned_n;
-
   wire [31:0] data_o_t2 = (pc_t2[1])? { data_t1[15:0], data_t2[31:16] } : data_t2;
+
+  // This signals tell if opcodes are already valid or if the cpu should wait
+  wire valid_o_t1 = valid_t1 && !unaligned_32;
   wire valid_o_t2 = valid_t2;
 
+  // These are output multiplexers that switch between t2 and t1 registers
   wire [31:0] data_out = (t2_en)? data_o_t2 : data_o_t1;
   wire [31:0] pc_out = (t2_en)? pc_t2 : pc_t1;
   wire [31:0] ret_out = (t2_en)? ret_t2 : ret_t1;
   wire valid_out = (t2_en)? valid_o_t2 : valid_o_t1;
 
-  ///////////////////////////////////////////////////////////////////////////
-  // Output assignments
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Output assignments
+   */
   assign o_if_pc  = if_pc;
   assign o_id_pc  = pc_out;
   assign o_id_ir  = data_out;
@@ -117,10 +136,15 @@ module fetch (
 
   assign o_hz_br = !valid_out;
 
+  ///////////////////////////////////////////////////////////////////////////
+  // Base I fetch unit
+  //  This version only supports both 32bit opcodes which have to be aligned
+  //  to 4-byte boundries.
+  ///////////////////////////////////////////////////////////////////////////
 `else
-  ///////////////////////////////////////////////////////////////////////////
-  // Program counter and branch hazard
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Program counter and branch hazard
+   */
   reg        hz_br;
   reg [31:0] if_pc;
 
@@ -149,9 +173,12 @@ module fetch (
   wire [31:0] pc_mux = (i_br_en) ? i_br_addr : pc_next;
 
 
-  ///////////////////////////////////////////////////////////////////////////
-  // Instruction Decode Registers
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Instruction Decode Registers
+   *  These registers are as simple as it gets, they just take the current
+   *  address, return address and the instruction from memory and keep them
+   *  in register for the cpu to read
+   */
   reg [31:0] id_ret;
   reg [31:0] id_pc;
   reg [31:0] id_ir;
@@ -172,9 +199,9 @@ module fetch (
   end
 
 
-  ///////////////////////////////////////////////////////////////////////////
-  // Output assignments
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Output assignments
+   */
   assign o_if_pc  = if_pc;
   assign o_id_pc  = id_pc;
   assign o_id_ir  = id_ir;

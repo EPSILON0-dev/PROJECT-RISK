@@ -1,7 +1,9 @@
 `include "config.v"
 
 module shifter (
+  // verilator lint_off unused
   input         i_clk_n,
+  // verilator lint_on unused
 
   input  [31:0] i_in_a,
   input  [ 4:0] i_in_b,
@@ -14,23 +16,21 @@ module shifter (
   output        o_busy
 );
 
-  ///////////////////////////////////////////////////////////////////////////
-  // Common signals
-  ///////////////////////////////////////////////////////////////////////////
 
-  // Operation decoder
+  /**
+   * Common signals
+   */
   wire op_sll   = i_shift_en && (i_funct3 == 3'b001);
   wire op_srl   = i_shift_en && (i_funct3 == 3'b101) && !i_op_alt;
   wire op_sra   = i_shift_en && (i_funct3 == 3'b101) &&  i_op_alt;
 
-
+  /**
+   * Barrel Shifter
+   *  Barrel shifter works in two stages:
+   *  Stage 1: value is rotated (not shifted) by given amount of bits
+   *  Stage 2: rotated value is masked to form final value
+   */
 `ifdef BARREL_SHIFTER
-  ///////////////////////////////////////////////////////////////////////////
-  // Barrel Shifter
-  ///////////////////////////////////////////////////////////////////////////
-  // Barrel shifter works in two stages:
-  //  Stage 1: value is rotated (not shifted) by given amount of bits
-  //  Stage 2: rotated value is masked to form final value
 
   // Shift mask ROM (propably will be implemented in LUT5s)
   wire [31:0] shift_mask_array [0:31];
@@ -63,14 +63,13 @@ module shifter (
   // Busy signal
   assign o_busy = 0;
 
-
 `else
-  ///////////////////////////////////////////////////////////////////////////
-  // Bit Shifter
-  ///////////////////////////////////////////////////////////////////////////
-  // In bit shifter we set shift_amount register to shift amount and decrease
-  //  it by one while shifting one bit, we repeat this until shift_amount
-  //  reaches zero, then we are left with the shift result.
+  /**
+   * Bit Shifter
+   *  In bit shifter we set shift_amount register to shift amount and
+   *  decrease it by one while shifting one bit, we repeat this until
+   *  shift_amount reaches zero, then we are left with the shift result.
+   */
   reg [31:0] shift_result = 0;
   reg [ 4:0] shift_amount = 0;
   reg        shift_dir_left = 0;

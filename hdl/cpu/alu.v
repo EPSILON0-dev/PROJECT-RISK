@@ -7,6 +7,7 @@
 
 module alu (
   input         i_clk_n,
+  input         i_rst,
 
   input  [31:0] i_in_a,
   input  [31:0] i_in_b,
@@ -21,41 +22,42 @@ module alu (
 );
 
 
-  ///////////////////////////////////////////////////////////////////////////
-  // Funct7 decoding
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Funct7 decoding
+   *  funct7_5 is alternative ALU operation
+   *  funct7_0 is M extension operation
+   */
   wire funct7_5 = (i_funct7 == 7'b0100000);
 `ifdef M_EXTENSION
   wire funct7_0 = (i_funct7 == 7'b0000001);
 `endif
 
-
-  ///////////////////////////////////////////////////////////////////////////
-  // Adder/subtractor
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Adder/subtractor
+   */
   wire op_subtract = i_alu_en && !i_alu_imm && funct7_5;
   wire [31:0] adder_in_b = (op_subtract) ? ~i_in_b : i_in_b;
   wire [31:0] adder_out = i_in_a + adder_in_b + {31'd0, op_subtract};
 
-
-  ///////////////////////////////////////////////////////////////////////////
-  // Logic operators
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Logic operators
+   */
   wire [31:0] logic_xor = i_in_a ^ i_in_b;
   wire [31:0] logic_or  = i_in_a | i_in_b;
   wire [31:0] logic_and = i_in_a & i_in_b;
 
-
-  ///////////////////////////////////////////////////////////////////////////
-  // Signed/unsigned comparator
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Signed/unsigned comparator
+   *  comp is signed comparison result
+   *  comp_u is unsigned comparison result
+   *  comparison results are zero-extended to 32 bits to fit final MUX
+   */
   wire [31:0] comp   = {31'd0, (  $signed(i_in_a) <   $signed(i_in_b))};
   wire [31:0] comp_u = {31'd0, ($unsigned(i_in_a) < $unsigned(i_in_b))};
 
-
-  ///////////////////////////////////////////////////////////////////////////
-  // Shifter
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Shifter circuitry
+   */
   wire [31:0] shift_result;
   wire        shift_busy;
 
@@ -76,10 +78,9 @@ module alu (
   wire shift_en = i_alu_en;
 `endif
 
-
-  ///////////////////////////////////////////////////////////////////////////
-  // Final alu mux
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Final ALU MUX
+   */
   reg [31:0] mux;
   always @* begin
     case (i_funct3 & {3{i_alu_en}})
@@ -94,16 +95,16 @@ module alu (
     endcase
   end
 
-
-  ///////////////////////////////////////////////////////////////////////////
-  // Multiplier and divider
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * M extension circuitry
+   */
 `ifdef M_EXTENSION
   wire [31:0] md_result;
   wire        md_busy;
 
   muldiv muldiv_i (
     .i_clk_n   (i_clk_n),
+    .i_rst     (i_rst),
     .i_in_a    (i_in_a),
     .i_in_b    (i_in_b),
     .i_funct3  (i_funct3),
@@ -113,13 +114,12 @@ module alu (
   );
 
   wire md_en = funct7_0 && i_alu_en && !i_alu_imm;
-
 `endif
 
-
-  ///////////////////////////////////////////////////////////////////////////
-  // Output assignment
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Output assignment
+   *  Here ALU MUX output and M extension output is combined
+   */
 `ifdef M_EXTENSION
   assign o_busy = shift_busy || md_busy;
   assign o_alu_out = (md_en) ? md_result : mux;

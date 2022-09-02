@@ -13,9 +13,9 @@ module memory (
 );
 
 
-  ///////////////////////////////////////////////////////////////////////////
-  // Length mask
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Length mask
+   */
   reg [31:0] length_mask;
 
   always @* begin
@@ -27,12 +27,11 @@ module memory (
     endcase
   end
 
-
-  ///////////////////////////////////////////////////////////////////////////
-  // Write data processing
-  ///////////////////////////////////////////////////////////////////////////
-  // We only need to shift the data to prepare it, masking is unecessary as
-  //  it will be done in the memory based on write enable signals
+  /**
+   * Write data processing
+   *  We only need to shift the data to prepare it, masking is unecessary as
+   *  it will be done in the memory based on write enable signals.
+   */
   reg [31:0] data_wr_shift;
 
   always @* begin
@@ -44,14 +43,13 @@ module memory (
     endcase
   end
 
-
-  ///////////////////////////////////////////////////////////////////////////
-  // Read data processing
-  ///////////////////////////////////////////////////////////////////////////
-  // Write data is processed in three stages:
-  //  Stage 1: Data is shifted to the given byte offset
-  //  Stage 2: Data is length masked
-  //  Stage 3: Inverted length mask is used to sign extend the value
+  /**
+   * Read data processing
+   *  Write data is processed in three stages:
+   *  Stage 1: Data is shifted to the given byte offset
+   *  Stage 2: Data is length masked
+   *  Stage 3: Inverted length mask is used to sign extend the value
+   */
   reg [31:0] data_rd_shift;
 
   always @* begin
@@ -64,19 +62,16 @@ module memory (
   end
 
   wire [31:0] data_rd_short = data_rd_shift & length_mask;
-
   wire        sign_bit = (i_length[0])? data_rd_shift[15] : data_rd_shift[7];
   wire [31:0] sign_extension = (sign_bit && i_signed_rd) ? ~length_mask : 0;
   wire [31:0] data_rd_signed = data_rd_short | sign_extension;
 
-
-
-  ///////////////////////////////////////////////////////////////////////////
-  // Write enable generation
-  ///////////////////////////////////////////////////////////////////////////
-  // Write enable is generated in two stages:
-  //  Stage 1: Length is calculated
-  //  Stage 2: Length is offset by the address
+  /**
+   * Write enable generation
+   *  Write enable is generated in two stages:
+   *  Stage 1: Length is calculated
+   *  Stage 2: Length is offset by the address
+   */
   reg  [3:0] we_lenght;
   reg  [3:0] we_shifted;
 
@@ -98,11 +93,9 @@ module memory (
     endcase
   end
 
-
-
-  ///////////////////////////////////////////////////////////////////////////
-  // Output assignment
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Output assignment
+   */
   assign o_data_wr = data_wr_shift;
   assign o_data_rd = data_rd_signed;
   assign o_we      = we_shifted;

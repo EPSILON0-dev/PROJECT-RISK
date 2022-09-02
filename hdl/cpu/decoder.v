@@ -273,9 +273,9 @@ module decoder (
   wire [31:0] opcode_in = i_opcode_in;
 `endif
 
-  ///////////////////////////////////////////////////////////////////////////
-  // Opcode bit extraction
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Opcode elements extraction
+   */
   wire [4:0] opcode = opcode_in[6:2];
   wire [4:0] rs1    = opcode_in[19:15] & {5{!op_lui}};
   wire [4:0] rs2    = opcode_in[24:20];
@@ -283,10 +283,9 @@ module decoder (
   wire [2:0] funct3 = opcode_in[14:12];
   wire [6:0] funct7 = opcode_in[31:25];
 
-
-  ///////////////////////////////////////////////////////////////////////////
-  // Operation decoding
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Operation decoding
+   */
   wire op_load   = (opcode == 5'b00000);
   wire op_op_imm = (opcode == 5'b00100);
   wire op_auipc  = (opcode == 5'b00101);
@@ -298,10 +297,9 @@ module decoder (
   wire op_jal    = (opcode == 5'b11011);
   wire op_system = (opcode == 5'b11100);
 
-
-  ///////////////////////////////////////////////////////////////////////////
-  // Format decoding
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Format decoding
+   */
   wire format_u = op_auipc || op_lui;
   wire format_j = op_jal;
   wire format_b = op_branch;
@@ -309,10 +307,9 @@ module decoder (
   wire format_r = op_op;
   wire format_i = op_load || op_op_imm || op_jalr || op_system;
 
-
-  ///////////////////////////////////////////////////////////////////////////
-  // Opcode validation
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Opcode validation
+   */
   wire opcode_valid = (opcode_in[1:0] == 2'b11) && (
     format_u ||
     format_j ||
@@ -322,18 +319,19 @@ module decoder (
     format_r
   );
 
-
-  ///////////////////////////////////////////////////////////////////////////
-  // Immediate decoding
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Immediate decoding
+   */
 
   // Upper immediate
+  //  LUI AUIPC
   wire [31:0] immediate_u = {
     opcode_in[31:12],
     12'h000
   };
 
   // Jump immediate
+  //  JAL
   wire [31:0] immediate_j = {
     {12{opcode_in[31]}},
     opcode_in[19:12],
@@ -343,6 +341,7 @@ module decoder (
   };
 
   // Branch immediate
+  //  BEQ BNE BLT BGE BLTU BGEU
   wire [31:0] immediate_b = {
     {20{opcode_in[31]}},
     opcode_in[7],
@@ -352,6 +351,7 @@ module decoder (
   };
 
   // Store immediate
+  //  SB SH SW
   wire [31:0] immediate_s = {
     {21{opcode_in[31]}},
     opcode_in[30:25],
@@ -359,6 +359,7 @@ module decoder (
   };
 
   // Normal immediate
+  //  LB LH LW LBU LHU ADDI SLTI SLTIU XORI ORI ANDI
   wire [31:0] immediate_i = {
     {21{opcode_in[31]}},
     opcode_in[30:20]
@@ -373,11 +374,9 @@ module decoder (
     (format_s) ? immediate_s :
     32'h00000000;
 
-
-  ///////////////////////////////////////////////////////////////////////////
-  // Internal CPU signals
-  ///////////////////////////////////////////////////////////////////////////
-
+  /**
+   * Internal CPU signals
+   */
   // Only branches, JAL and AUIPC use ALU to generate address from pc.
   // JALR uses rs1 as address base so it isn't here.
   wire alu_pc = op_jal || op_auipc || op_branch;
@@ -408,10 +407,9 @@ module decoder (
   // Only branches, stores and normal ops use RSB so they do generate hazard
   wire hz_rs2 = op_branch || op_store || op_op;
 
-
-  ///////////////////////////////////////////////////////////////////////////
-  // Output assignments
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Output assignments
+   */
   assign o_immediate  = immediate_mux;
   assign o_opcode     = opcode;
   assign o_funct3     = funct3;

@@ -3,6 +3,7 @@
 `include "branch.v"
 `include "decoder.v"
 `include "fetch.v"
+`include "hazard.v"
 `include "memory.v"
 `include "regs.v"
 
@@ -25,34 +26,35 @@ module cpu (
 );
 
 
-  ///////////////////////////////////////////////////////////////////////////
-  // Hazard Detection
-  ///////////////////////////////////////////////////////////////////////////
-`ifdef REGS_PASS_THROUGH
-  wire hz_dat_rs1 = hz_rs1 && (rs1 != 5'b0000) &&
-    ((rs1 == ex_wb_reg) || (rs1 == ma_wb_reg));
-  wire hz_dat_rs2 = hz_rs2 && (rs2 != 5'b0000) &&
-    ((rs2 == ex_wb_reg) || (rs2 == ma_wb_reg));
-`else
-  wire hz_dat_rs1 = hz_rs1 && (rs1 != 5'b0000) &&
-    ((rs1 == ex_wb_reg) || (rs1 == ma_wb_reg) || (rs1 == wb_wb_reg));
-  wire hz_dat_rs2 = hz_rs2 && (rs2 != 5'b0000) &&
-    ((rs2 == ex_wb_reg) || (rs2 == ma_wb_reg) || (rs2 == wb_wb_reg));
-`endif
+  /**
+   * Hazard Detector
+   */
+  wire hz_data;
 
-  wire hz_data = hz_dat_rs1 || hz_dat_rs2;
+  hazard hazard_i (
+    .i_hz_rs1    (hz_rs1),
+    .i_hz_rs2    (hz_rs2),
+    .i_rs1       (rs1),
+    .i_rs2       (rs2),
+    .i_ex_wb_reg (ex_wb_reg),
+    .i_ma_wb_reg (ma_wb_reg),
+    .i_wb_wb_reg (wb_wb_reg),
+    .o_hz_data   (hz_data)
+  );
 
-
-  ///////////////////////////////////////////////////////////////////////////
-  // Clock Signals
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Clock Signals
+   */
   wire clk_ce = i_valid_i && i_valid_d && !alu_busy;
   wire clk_n = !i_clk;
 
+  ///////////////////////////////////////////////////////////////////////////
+  // FETCH STAGE
+  ///////////////////////////////////////////////////////////////////////////
 
-  ///////////////////////////////////////////////////////////////////////////
-  // Instruction fetch circuitry
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Instruction fetch circuitry
+   */
   wire [31:0] if_pc;
   wire [31:0] id_pc;
   wire [31:0] id_ir;
@@ -75,8 +77,12 @@ module cpu (
   );
 
   ///////////////////////////////////////////////////////////////////////////
-  // Instruction Decoder
+  // DECODE STAGE
   ///////////////////////////////////////////////////////////////////////////
+
+  /**
+   * Instruction Decoder
+   */
   wire [31:0] immediate;
   wire [ 4:0] opcode;
   wire [ 2:0] funct3;
@@ -116,10 +122,9 @@ module cpu (
     .o_wb_en     (wb_en)
   );
 
-
-  ///////////////////////////////////////////////////////////////////////////
-  // Register set
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Register set
+   */
   wire [31:0] rs1_d;
   wire [31:0] rs2_d;
 
@@ -135,10 +140,13 @@ module cpu (
     .o_dat_rd_b  (rs2_d)
   );
 
+  ///////////////////////////////////////////////////////////////////////////
+  // EXECUTE STAGE
+  ///////////////////////////////////////////////////////////////////////////
 
-  ///////////////////////////////////////////////////////////////////////////
-  // Execute Registers
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Execute Registers
+   */
   reg  [31:0] ex_rs1_d;
   reg  [31:0] ex_rs2_d;
   reg  [31:0] ex_imm;
@@ -200,10 +208,9 @@ module cpu (
     end
   end
 
-
-  ///////////////////////////////////////////////////////////////////////////
-  // Branch Conditioner
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Branch Conditioner
+   */
   wire br_en;
 
   branch branch_i (
@@ -214,15 +221,15 @@ module cpu (
     .o_br_en  (br_en)
   );
 
-
-  ///////////////////////////////////////////////////////////////////////////
-  // Arythmetic and Logic Unit
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Arythmetic and Logic Unit
+   */
   wire [31:0] alu_out;
   wire        alu_busy;
 
   alu alu_i (
     .i_clk_n   (clk_n),
+    .i_rst     (i_rst),
     .i_in_a    (alu_a_mux),
     .i_in_b    (alu_b_mux),
     .i_funct3  (ex_funct3),
@@ -236,10 +243,9 @@ module cpu (
   wire [31:0] alu_a_mux = (ex_alu_pc)  ? ex_pc  : ex_rs1_d;
   wire [31:0] alu_b_mux = (ex_alu_imm) ? ex_imm : ex_rs2_d;
 
-
-  ///////////////////////////////////////////////////////////////////////////
-  // Control and Status Registers
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Control and Status Registers
+   */
 `ifdef INCLUDE_CSR
   wire [31:0] csr_rd_data;
 
@@ -263,10 +269,13 @@ module cpu (
   wire csr_clr   = csr_wr_en && (ex_funct3[1:0] == 2'b11);
 `endif
 
+  ///////////////////////////////////////////////////////////////////////////
+  // MEMORY ACCESS STAGE
+  ///////////////////////////////////////////////////////////////////////////
 
-  ///////////////////////////////////////////////////////////////////////////
-  // Memory Access Registers
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Memory Access Registers
+   */
   reg  [31:0] ma_rs2_d;
   reg  [31:0] ma_res;
   reg  [31:0] ma_ret;
@@ -307,10 +316,9 @@ module cpu (
   wire [31:0] ma_res_dat = alu_out;
 `endif
 
-
-  ///////////////////////////////////////////////////////////////////////////
-  // Data Cache
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Data Memory
+   */
   wire [31:0] ma_rd_dat;
   wire [31:0] ma_wr_dat;
   wire [ 3:0] ma_we;
@@ -329,10 +337,13 @@ module cpu (
   wire [3:0] ma_wr_en = ma_we & {4{ma_wr}};
   wire       ma_rd_en = ma_rd;
 
+  ///////////////////////////////////////////////////////////////////////////
+  // WRITE BACK STAGE
+  ///////////////////////////////////////////////////////////////////////////
 
-  ///////////////////////////////////////////////////////////////////////////
-  // Write Back Registers
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Write Back Registers
+   */
   reg  [31:0] wb_wb_d;
   reg  [ 4:0] wb_wb_reg;
   reg         wb_wb_en;
@@ -352,10 +363,9 @@ module cpu (
   wire [31:0] wb_dat_mux = (ma_wb_mux == 2'b10) ? ma_ret :
     (ma_wb_mux == 2'b01) ? ma_rd_dat : ma_res;
 
-
-  ///////////////////////////////////////////////////////////////////////////
-  // Output assignment
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Output assignment
+   */
   assign o_addr_i = if_pc;
   assign o_rd_d   = ma_rd_en;
   assign o_we_d   = ma_wr_en;

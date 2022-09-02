@@ -15,9 +15,9 @@ module regs (
   output [31:0] o_dat_rd_b);
 
 
-  ///////////////////////////////////////////////////////////////////////////
-  // Register array
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Register array
+   */
   reg [31:0] registers [0:31];
   reg [31:0] dat_rd_a_reg = 0;
   reg [31:0] dat_rd_b_reg = 0;
@@ -40,8 +40,10 @@ module regs (
     end
   end
 
+  ///////////////////////////////////////////////////////////////////////////
   // If REGS_PASS_THROUGH is enabled we either put read data on read lines or
   //  we pass write data through in case of hazard
+  ///////////////////////////////////////////////////////////////////////////
 `ifdef REGS_PASS_THROUGH
   wire [31:0] dat_rd_a = (write_pass_a_en) ? i_dat_wr : dat_rd_a_reg;
   wire [31:0] dat_rd_b = (write_pass_b_en) ? i_dat_wr : dat_rd_b_reg;
@@ -50,7 +52,9 @@ module regs (
   wire write_pass_b_en = i_addr_rd_b == i_addr_wr && write_pass_en;
   wire write_pass_en = i_addr_wr != 5'b00000 && i_we;
 
+  ///////////////////////////////////////////////////////////////////////////
   // If REGS_PASS_THROUGH is disabled we just assign read data to read lines
+  ///////////////////////////////////////////////////////////////////////////
 `else
   wire [31:0] dat_rd_a = dat_rd_a_reg;
   wire [31:0] dat_rd_b = dat_rd_b_reg;
