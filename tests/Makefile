@@ -3,22 +3,22 @@
 RISCV_PREFIX	:= riscv64-elf-
 RISCV_GCC 		:= $(RISCV_PREFIX)gcc
 
-CXX				:= $(RISCV_PREFIX)gcc
-OBJDUMP 		:= $(RISCV_PREFIX)objdump --disassemble-all --disassemble-zeroes --section=.text --section=.text.startup --section=.text.init --section=.data
-OBJCOPY 		:= $(RISCV_PREFIX)objcopy -O binary
-OBJSIZE 		:= $(RISCV_PREFIX)size
-RM				:= rm -f
-MK				:= mkdir -p
-RMDIR			:= rmdir
+CXX     := $(RISCV_PREFIX)gcc
+OBJDUMP := $(RISCV_PREFIX)objdump --disassemble-all --disassemble-zeroes --section=.text --section=.text.startup --section=.text.init --section=.data
+OBJCOPY := $(RISCV_PREFIX)objcopy -O binary
+OBJSIZE := $(RISCV_PREFIX)size
+RM      := rm
+MK      := mkdir -p
+RMDIR   := rmdir
 
-SRCDIR			:= ./src
-INCDIR			:= ./inc
-BINDIR			:= ./bin
-DUMPDIR			:= ./dump
-OBJDIR			:= ./obj
+SRCDIR  := ./src
+INCDIR  := ./inc
+BINDIR  := ./bin
+DUMPDIR := ./dump
+OBJDIR  := ./obj
 
-FLAGS			:= -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -march=rv32g -mabi=ilp32
-CFLAGS			:= -Wall -O0 -march=rv32i -mabi=ilp32 -nostartfiles -lm -lc -lgcc
+FLAGS	  := -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -march=rv32g -mabi=ilp32
+CFLAGS  := -Wall -O0 -march=rv32i -mabi=ilp32 -nostartfiles -lm -lc -lgcc
 
 TESTS = \
 simple \
@@ -40,9 +40,7 @@ xor xori \
 mul mulh mulhsu mulhu \
 div divu \
 rem remu \
-# csr \
-# dcache \
-# float \
+rvc
 
 OBJ 			:= $(addprefix $(OBJDIR)/, $(addsuffix .o, $(TESTS)))
 BIN 			:= $(addprefix $(BINDIR)/, $(addsuffix .hex, $(TESTS)))

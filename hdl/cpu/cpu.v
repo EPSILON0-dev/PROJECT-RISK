@@ -29,18 +29,18 @@ module cpu (
   // Hazard Detection
   ///////////////////////////////////////////////////////////////////////////
 `ifdef REGS_PASS_THROUGH
-  wire hz_dat_rsa = hz_rsa && (rsa != 5'b0000) &&
-    ((rsa == ex_wb_reg) || (rsa == ma_wb_reg));
-  wire hz_dat_rsb = hz_rsb && (rsb != 5'b0000) &&
-    ((rsb == ex_wb_reg) || (rsb == ma_wb_reg));
+  wire hz_dat_rs1 = hz_rs1 && (rs1 != 5'b0000) &&
+    ((rs1 == ex_wb_reg) || (rs1 == ma_wb_reg));
+  wire hz_dat_rs2 = hz_rs2 && (rs2 != 5'b0000) &&
+    ((rs2 == ex_wb_reg) || (rs2 == ma_wb_reg));
 `else
-  wire hz_dat_rsa = hz_rsa && (rsa != 5'b0000) &&
-    ((rsa == ex_wb_reg) || (rsa == ma_wb_reg) || (rsa == wb_wb_reg));
-  wire hz_dat_rsb = hz_rsb && (rsb != 5'b0000) &&
-    ((rsb == ex_wb_reg) || (rsb == ma_wb_reg) || (rsb == wb_wb_reg));
+  wire hz_dat_rs1 = hz_rs1 && (rs1 != 5'b0000) &&
+    ((rs1 == ex_wb_reg) || (rs1 == ma_wb_reg) || (rs1 == wb_wb_reg));
+  wire hz_dat_rs2 = hz_rs2 && (rs2 != 5'b0000) &&
+    ((rs2 == ex_wb_reg) || (rs2 == ma_wb_reg) || (rs2 == wb_wb_reg));
 `endif
 
-  wire hz_data = hz_dat_rsa || hz_dat_rsb;
+  wire hz_data = hz_dat_rs1 || hz_dat_rs2;
 
 
   ///////////////////////////////////////////////////////////////////////////
@@ -81,11 +81,11 @@ module cpu (
   wire [ 4:0] opcode;
   wire [ 2:0] funct3;
   wire [ 6:0] funct7;
-  wire [ 4:0] rsa;
-  wire [ 4:0] rsb;
+  wire [ 4:0] rs1;
+  wire [ 4:0] rs2;
   wire [ 4:0] rd;
-  wire        hz_rsa;
-  wire        hz_rsb;
+  wire        hz_rs1;
+  wire        hz_rs2;
   wire        alu_pc;
   wire        alu_imm;
   wire        alu_en;
@@ -101,12 +101,12 @@ module cpu (
     .o_opcode    (opcode),
     .o_funct3    (funct3),
     .o_funct7    (funct7),
-    .o_rsa       (rsa),
-    .o_rsb       (rsb),
+    .o_rs1       (rs1),
+    .o_rs2       (rs2),
     .o_rd        (rd),
     .o_system    (system),
-    .o_hz_rsa    (hz_rsa),
-    .o_hz_rsb    (hz_rsb),
+    .o_hz_rs1    (hz_rs1),
+    .o_hz_rs2    (hz_rs2),
     .o_alu_pc    (alu_pc),
     .o_alu_imm   (alu_imm),
     .o_alu_en    (alu_en),
@@ -120,34 +120,34 @@ module cpu (
   ///////////////////////////////////////////////////////////////////////////
   // Register set
   ///////////////////////////////////////////////////////////////////////////
-  wire [31:0] rsa_d;
-  wire [31:0] rsb_d;
+  wire [31:0] rs1_d;
+  wire [31:0] rs2_d;
 
   regs regs_i (
     .i_clk       (clk_n),
     .i_ce        (clk_ce),
     .i_we        (wb_wb_en),
-    .i_addr_rd_a (rsa),
-    .i_addr_rd_b (rsb),
+    .i_addr_rd_a (rs1),
+    .i_addr_rd_b (rs2),
     .i_addr_wr   (wb_wb_reg),
     .i_dat_wr    (wb_wb_d),
-    .o_dat_rd_a  (rsa_d),
-    .o_dat_rd_b  (rsb_d)
+    .o_dat_rd_a  (rs1_d),
+    .o_dat_rd_b  (rs2_d)
   );
 
 
   ///////////////////////////////////////////////////////////////////////////
   // Execute Registers
   ///////////////////////////////////////////////////////////////////////////
-  reg  [31:0] ex_rsa_d;
-  reg  [31:0] ex_rsb_d;
+  reg  [31:0] ex_rs1_d;
+  reg  [31:0] ex_rs2_d;
   reg  [31:0] ex_imm;
   reg  [31:0] ex_pc;
   reg  [31:0] ex_ret;
   reg  [ 4:0] ex_opcode;
   reg  [ 2:0] ex_funct3;
   reg  [ 6:0] ex_funct7;
-  reg  [ 4:0] ex_rsa;
+  reg  [ 4:0] ex_rs1;
   reg         ex_alu_pc;
   reg         ex_alu_imm;
   reg         ex_alu_en;
@@ -160,15 +160,15 @@ module cpu (
 
   always @(posedge i_clk) begin
     if (i_rst || (clk_ce && (hz_br || hz_data || br_en))) begin
-      ex_rsa_d    <= 0;
-      ex_rsb_d    <= 0;
+      ex_rs1_d    <= 0;
+      ex_rs2_d    <= 0;
       ex_imm      <= 0;
       ex_pc       <= 0;
       ex_ret      <= 0;
       ex_opcode   <= 0;
       ex_funct3   <= 0;
       ex_funct7   <= 0;
-      ex_rsa      <= 0;
+      ex_rs1      <= 0;
       ex_alu_pc   <= 0;
       ex_alu_imm  <= 0;
       ex_alu_en   <= 0;
@@ -179,15 +179,15 @@ module cpu (
       ex_wb_en    <= 0;
       ex_system   <= 0;
     end else if (clk_ce) begin
-      ex_rsa_d    <= rsa_d;
-      ex_rsb_d    <= rsb_d;
+      ex_rs1_d    <= rs1_d;
+      ex_rs2_d    <= rs2_d;
       ex_imm      <= immediate;
       ex_pc       <= id_pc;
       ex_ret      <= id_ret;
       ex_opcode   <= opcode;
       ex_funct3   <= funct3;
       ex_funct7   <= funct7;
-      ex_rsa      <= rsa;
+      ex_rs1      <= rs1;
       ex_alu_pc   <= alu_pc;
       ex_alu_imm  <= alu_imm;
       ex_alu_en   <= alu_en;
@@ -207,8 +207,8 @@ module cpu (
   wire br_en;
 
   branch branch_i (
-    .i_dat_a  (ex_rsa_d),
-    .i_dat_b  (ex_rsb_d),
+    .i_dat_a  (ex_rs1_d),
+    .i_dat_b  (ex_rs2_d),
     .i_funct3 (ex_funct3),
     .i_opcode (ex_opcode),
     .o_br_en  (br_en)
@@ -233,8 +233,8 @@ module cpu (
     .o_alu_out (alu_out)
   );
 
-  wire [31:0] alu_a_mux = (ex_alu_pc)  ? ex_pc  : ex_rsa_d;
-  wire [31:0] alu_b_mux = (ex_alu_imm) ? ex_imm : ex_rsb_d;
+  wire [31:0] alu_a_mux = (ex_alu_pc)  ? ex_pc  : ex_rs1_d;
+  wire [31:0] alu_b_mux = (ex_alu_imm) ? ex_imm : ex_rs2_d;
 
 
   ///////////////////////////////////////////////////////////////////////////
@@ -254,9 +254,9 @@ module cpu (
     .o_rd_data (csr_rd_data)
   );
 
-  wire [31:0] csr_wr_data = ex_funct3[2] ? { 27'h0, ex_rsa} : ex_rsa_d;
+  wire [31:0] csr_wr_data = ex_funct3[2] ? {27'h0, ex_rs1} : ex_rs1_d;
 
-  wire csr_wr_en = ex_system && (ex_rsa != 5'b00000);
+  wire csr_wr_en = ex_system && (ex_rs1 != 5'b00000);
   wire csr_rd    = ex_system && (ex_wb_reg != 5'b00000);
   wire csr_wr    = csr_wr_en && (ex_funct3[1:0] == 2'b01);
   wire csr_set   = csr_wr_en && (ex_funct3[1:0] == 2'b10);
@@ -267,7 +267,7 @@ module cpu (
   ///////////////////////////////////////////////////////////////////////////
   // Memory Access Registers
   ///////////////////////////////////////////////////////////////////////////
-  reg  [31:0] ma_rsb_d;
+  reg  [31:0] ma_rs2_d;
   reg  [31:0] ma_res;
   reg  [31:0] ma_ret;
   reg  [ 2:0] ma_funct3;
@@ -279,7 +279,7 @@ module cpu (
 
   always @(posedge i_clk) begin
     if (i_rst) begin
-      ma_rsb_d  <= 0;
+      ma_rs2_d  <= 0;
       ma_res    <= 0;
       ma_ret    <= 0;
       ma_funct3 <= 0;
@@ -289,7 +289,7 @@ module cpu (
       ma_wb_mux <= 0;
       ma_wb_en  <= 0;
     end else if (clk_ce) begin
-      ma_rsb_d  <= ex_rsb_d;
+      ma_rs2_d  <= ex_rs2_d;
       ma_res    <= ma_res_dat;
       ma_ret    <= ex_ret;
       ma_funct3 <= ex_funct3;
@@ -317,7 +317,7 @@ module cpu (
 
   memory memory_i (
     .i_data_rd   (i_data_in_d),
-    .i_data_wr   (ma_rsb_d),
+    .i_data_wr   (ma_rs2_d),
     .i_shift     (ma_res[1:0]),
     .i_length    (ma_funct3[1:0]),
     .i_signed_rd (!ma_funct3[2]),

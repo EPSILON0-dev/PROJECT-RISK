@@ -1,7 +1,7 @@
 `include "config.v"
 `include "shifter.v"
 
-`ifdef MULDIV_EXTENSION
+`ifdef M_EXTENSION
 `include "muldiv.v"
 `endif
 
@@ -25,7 +25,7 @@ module alu (
   // Funct7 decoding
   ///////////////////////////////////////////////////////////////////////////
   wire funct7_5 = (i_funct7 == 7'b0100000);
-`ifdef MULDIV_EXTENSION
+`ifdef M_EXTENSION
   wire funct7_0 = (i_funct7 == 7'b0000001);
 `endif
 
@@ -64,11 +64,17 @@ module alu (
     .i_in_a     (i_in_a),
     .i_in_b     (i_in_b[4:0]),
     .i_funct3   (i_funct3),
-    .i_funct7_5 (funct7_5),
-    .i_alu_en   (i_alu_en),
+    .i_op_alt   (funct7_5),
+    .i_shift_en (shift_en),
     .o_result   (shift_result),
     .o_busy     (shift_busy)
   );
+
+`ifdef M_EXTENSION
+  wire shift_en = i_alu_en && !md_en;
+`else
+  wire shift_en = i_alu_en;
+`endif
 
 
   ///////////////////////////////////////////////////////////////////////////
@@ -92,23 +98,21 @@ module alu (
   ///////////////////////////////////////////////////////////////////////////
   // Multiplier and divider
   ///////////////////////////////////////////////////////////////////////////
-`ifdef MULDIV_EXTENSION
+`ifdef M_EXTENSION
   wire [31:0] md_result;
-  wire        md_enable;
   wire        md_busy;
 
   muldiv muldiv_i (
-    .i_clk_n    (i_clk_n),
-    .i_in_a     (i_in_a),
-    .i_in_b     (i_in_b),
-    .i_funct3   (i_funct3),
-    .i_funct7_0 (funct7_0),
-    .i_alu_en   (i_alu_en),
-    .i_alu_imm  (i_alu_imm),
-    .o_result   (md_result),
-    .o_enable   (md_enable),
-    .o_busy     (md_busy)
+    .i_clk_n   (i_clk_n),
+    .i_in_a    (i_in_a),
+    .i_in_b    (i_in_b),
+    .i_funct3  (i_funct3),
+    .i_md_en   (md_en),
+    .o_result  (md_result),
+    .o_busy    (md_busy)
   );
+
+  wire md_en = funct7_0 && i_alu_en && !i_alu_imm;
 
 `endif
 
@@ -116,9 +120,9 @@ module alu (
   ///////////////////////////////////////////////////////////////////////////
   // Output assignment
   ///////////////////////////////////////////////////////////////////////////
-`ifdef MULDIV_EXTENSION
+`ifdef M_EXTENSION
   assign o_busy = shift_busy || md_busy;
-  assign o_alu_out = (md_enable) ? md_result : mux;
+  assign o_alu_out = (md_en) ? md_result : mux;
 `else
   assign o_busy = shift_busy;
   assign o_alu_out = mux;

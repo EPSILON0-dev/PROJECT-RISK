@@ -2,7 +2,7 @@
 import sys
 
 def main():
-    if sys.argv[1] == 'NONE':
+    if 'NONE' in sys.argv[1]:
         print("Please use: 'make test_cpu TEST=<test file>'")
         return
     in_file = open(sys.argv[1], 'rb')

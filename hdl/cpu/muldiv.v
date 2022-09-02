@@ -7,21 +7,15 @@ module muldiv (
   input  [31:0] i_in_b,
 
   input  [ 2:0] i_funct3,
-  input         i_funct7_0,
-  input         i_alu_en,
-  input         i_alu_imm,
+  input         i_md_en,
 
   output [31:0] o_result,
-  output        o_enable,
   output        o_busy
 );
 
   // Inverted input signals
   wire [31:0] in_a_n = (0 - i_in_a[31:0]);
   wire [31:0] in_b_n = (0 - i_in_b[31:0]);
-
-  // Enable signals
-  wire md_enable = i_funct7_0 && i_alu_en && !i_alu_imm;
 
   // Sign enable signals
   wire md_m_a_signed = (i_funct3 == 3'b001) || (i_funct3 == 3'b010);
@@ -72,7 +66,7 @@ module muldiv (
   end
 
   wire md_m_busy = |md_m_b_reg;
-  wire md_m_en = md_enable && !i_funct3[2];
+  wire md_m_en = i_md_en && !i_funct3[2];
 
 `endif
 
@@ -109,7 +103,7 @@ module muldiv (
   wire [31:0] md_d_sub = md_d_a[62:31] - md_d_b;
   wire        div_cmp = (md_d_a[62:31] >= md_d_b);
   wire        md_d_busy = !md_d_cnt[5];
-  wire        md_d_en = md_enable &&  i_funct3[2];
+  wire        md_d_en = i_md_en &&  i_funct3[2];
 
   // Divide "postprocessing"
   wire [31:0] md_d_div = md_d_q;
@@ -120,6 +114,5 @@ module muldiv (
   // Final mux
   assign o_result = (i_funct3[2]) ? md_div : md_mul;
   assign o_busy = md_m_busy || md_d_busy;
-  assign o_enable = md_enable;
 
 endmodule

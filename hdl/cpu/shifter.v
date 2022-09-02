@@ -7,8 +7,8 @@ module shifter (
   input  [ 4:0] i_in_b,
 
   input  [ 2:0] i_funct3,
-  input         i_funct7_5,
-  input         i_alu_en,
+  input         i_op_alt,
+  input         i_shift_en,
 
   output [31:0] o_result,
   output        o_busy
@@ -19,9 +19,9 @@ module shifter (
   ///////////////////////////////////////////////////////////////////////////
 
   // Operation decoder
-  wire op_sll   = i_alu_en && (i_funct3 == 3'b001);
-  wire op_srl   = i_alu_en && (i_funct3 == 3'b101) && !i_funct7_5;
-  wire op_sra   = i_alu_en && (i_funct3 == 3'b101) &&  i_funct7_5;
+  wire op_sll   = i_shift_en && (i_funct3 == 3'b001);
+  wire op_srl   = i_shift_en && (i_funct3 == 3'b101) && !i_op_alt;
+  wire op_sra   = i_shift_en && (i_funct3 == 3'b101) &&  i_op_alt;
 
 
 `ifdef BARREL_SHIFTER

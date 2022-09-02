@@ -26,12 +26,16 @@ selftest: fresh_tst
 	@python3 tb/selftest.py
 
 test_cpu: $(CPUTSTOBJ)
-	@python3 tb/test.py ../../tests/bin/$(TEST).hex
+	@python3 tb/test.py ../tests/bin/$(TEST).hex
 	@vvp obj/cpu_tb.obj
 
+##################################  Watchers  #################################
+
 watch_tst:
-	@printf "Starting watching\n"
-	@while [ true ]; do make -s fresh_test_cpu; printf "\n"; inotifywait -r -q -e modify .; done
+	@while [ true ]; do printf "\033[2J\033[H"; make -s fresh_tst; make -s test_cpu; printf "\n"; inotifywait -r -q -e modify .; done
+
+lint:
+	@while [ true ]; do printf "\033[2J\033[H"; verilator --lint-only --relative-includes -Wall cpu/cpu.v; printf "\n"; inotifywait -r -q -e modify .; done
 
 ##################################  Cleaning  ##################################
 

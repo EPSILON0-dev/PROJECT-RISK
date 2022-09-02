@@ -6,7 +6,10 @@
 `define INCLUDE_CSR
 `define CSR_EXTERNAL_BUS
 
+// C extension
+`define C_EXTENSION
+
 // ALU and M extension configurtation
 `define BARREL_SHIFTER
-`define MULDIV_EXTENSION
+`define M_EXTENSION
 `define FAST_MULTIPLIER
