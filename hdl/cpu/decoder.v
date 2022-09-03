@@ -127,13 +127,10 @@ module decoder (
    * Compressed funct3 decoding
    */
   wire cf3_000 = (funct3_c == 3'b000);
-  wire cf3_001 = (funct3_c == 3'b001);
   wire cf3_010 = (funct3_c == 3'b010);
   wire cf3_011 = (funct3_c == 3'b011);
   wire cf3_100 = (funct3_c == 3'b100);
-  wire cf3_101 = (funct3_c == 3'b101);
   wire cf3_110 = (funct3_c == 3'b110);
-  wire cf3_111 = (funct3_c == 3'b111);
   wire cf3_x01 = (funct3_c[1:0] == 2'b01);
   wire cf3_11x = (funct3_c[2:1] == 2'b11);
 

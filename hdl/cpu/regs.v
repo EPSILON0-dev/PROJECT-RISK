@@ -11,6 +11,12 @@ module regs (
   input  [ 4:0] i_addr_wr,
   input  [31:0] i_dat_wr,
 
+  input         i_hz_rs1,
+  input         i_hz_rs2,
+  input   [4:0] i_ex_wb_reg,
+  input   [4:0] i_ma_wb_reg,
+
+  output        o_hz_data,
   output [31:0] o_dat_rd_a,
   output [31:0] o_dat_rd_b);
 
@@ -61,8 +67,38 @@ module regs (
 `endif
 
   ///////////////////////////////////////////////////////////////////////////
-  // Output assgnment
+  // If REGS_PASS_THROUGH is enabled hazard detector only checks for hazard
+  //  on execute and memory access phase as it can forward data from write
+  //  back phase.
   ///////////////////////////////////////////////////////////////////////////
+  wire [4:0] rs1 = i_addr_rd_a;
+  wire [4:0] rs2 = i_addr_rd_b;
+  wire [4:0] wb_wb_reg = i_addr_wr;
+`ifdef REGS_PASS_THROUGH
+  wire hz_dat_rs1 = i_hz_rs1 && (rs1 != 5'b0000) &&
+    ((rs1 == i_ex_wb_reg) || (rs1 == i_ma_wb_reg));
+  wire hz_dat_rs2 = i_hz_rs2 && (rs2 != 5'b0000) &&
+    ((rs2 == i_ex_wb_reg) || (rs2 == i_ma_wb_reg));
+  //
+  ///////////////////////////////////////////////////////////////////////////
+  // If REGS_PASS_THROUGH is disabled hazard detector checks for hazard on
+  //  all execution phases as it cannot forward any data
+  ///////////////////////////////////////////////////////////////////////////
+`else
+  wire hz_dat_rs1 = i_hz_rs1 && (rs1 != 5'b0000) &&
+    ((rs1 == i_ex_wb_reg) || (rs1 == i_ma_wb_reg) || (rs1 == wb_wb_reg));
+  wire hz_dat_rs2 = i_hz_rs2 && (rs2 != 5'b0000) &&
+    ((rs2 == i_ex_wb_reg) || (rs2 == i_ma_wb_reg) || (rs2 == wb_wb_reg));
+`endif
+
+  wire hz_data = hz_dat_rs1 || hz_dat_rs2;
+
+
+  /**
+   * Output assgnment
+   */
+
+  assign o_hz_data = hz_data;
   assign o_dat_rd_a = dat_rd_a;
   assign o_dat_rd_b = dat_rd_b;
 

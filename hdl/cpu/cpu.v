@@ -3,7 +3,6 @@
 `include "branch.v"
 `include "decoder.v"
 `include "fetch.v"
-`include "hazard.v"
 `include "memory.v"
 `include "regs.v"
 
@@ -24,23 +23,6 @@ module cpu (
   output        o_rd_d,
   output [31:0] o_data_out_d
 );
-
-
-  /**
-   * Hazard Detector
-   */
-  wire hz_data;
-
-  hazard hazard_i (
-    .i_hz_rs1    (hz_rs1),
-    .i_hz_rs2    (hz_rs2),
-    .i_rs1       (rs1),
-    .i_rs2       (rs2),
-    .i_ex_wb_reg (ex_wb_reg),
-    .i_ma_wb_reg (ma_wb_reg),
-    .i_wb_wb_reg (wb_wb_reg),
-    .o_hz_data   (hz_data)
-  );
 
   /**
    * Clock Signals
@@ -125,17 +107,23 @@ module cpu (
   /**
    * Register set
    */
+  wire hz_data;
   wire [31:0] rs1_d;
   wire [31:0] rs2_d;
 
   regs regs_i (
     .i_clk       (clk_n),
     .i_ce        (clk_ce),
-    .i_we        (wb_wb_en),
     .i_addr_rd_a (rs1),
     .i_addr_rd_b (rs2),
+    .i_we        (wb_wb_en),
     .i_addr_wr   (wb_wb_reg),
     .i_dat_wr    (wb_wb_d),
+    .i_hz_rs1    (hz_rs1),
+    .i_hz_rs2    (hz_rs2),
+    .i_ex_wb_reg (ex_wb_reg),
+    .i_ma_wb_reg (ma_wb_reg),
+    .o_hz_data   (hz_data),
     .o_dat_rd_a  (rs1_d),
     .o_dat_rd_b  (rs2_d)
   );
@@ -155,7 +143,6 @@ module cpu (
   reg  [ 4:0] ex_opcode;
   reg  [ 2:0] ex_funct3;
   reg  [ 6:0] ex_funct7;
-  reg  [ 4:0] ex_rs1;
   reg         ex_alu_pc;
   reg         ex_alu_imm;
   reg         ex_alu_en;
@@ -164,7 +151,10 @@ module cpu (
   reg  [ 1:0] ex_wb_mux;
   reg  [ 4:0] ex_wb_reg;
   reg         ex_wb_en;
+  // verilator lint_off unused
+  reg  [ 4:0] ex_rs1;
   reg         ex_system;
+  // verilator lint_on unused
 
   always @(posedge i_clk) begin
     if (i_rst || (clk_ce && (hz_br || hz_data || br_en))) begin

@@ -73,7 +73,7 @@ module fetch (
   reg [31:0] ret_t2;
   reg valid_t1;
   reg valid_t2;
-  reg t2_en;
+  reg t2_mode;
   always @(posedge i_clk) begin
     if (i_rst) begin
       data_t1  <= 0;
@@ -84,7 +84,7 @@ module fetch (
       pc_t2    <= 0;
       ret_t1   <= 0;
       ret_t2   <= 0;
-      t2_en    <= 0;
+      t2_mode  <= 0;
     end else begin
       if (i_clk_ce && (!i_hz_data || i_br_en)) begin
         data_t1  <= data_t0;
@@ -95,7 +95,7 @@ module fetch (
         pc_t2    <= pc_t1;
         ret_t1   <= pc_next;
         ret_t2   <= ret_t1;
-        t2_en    <= unaligned_32 || t2_en;
+        t2_mode  <= t2_en || t2_mode;
       end
     end
     if (i_clk_ce && i_br_en) begin
@@ -107,24 +107,30 @@ module fetch (
   end
 
   // This signal tells the fetch unit to switch to t2 mode
-  wire unaligned_32 = pc_t1[1] && !c_data_t1_1;
+  //  If C_FETCH_T2 is defined fetch unit will automatically enter t2 mode
+  //  no matter what opcode it receives.
+`ifdef C_FETCH_T2
+  wire t2_en = 1;
+`else
+  wire t2_en = pc_t1[1] && !c_data_t1_1;
 
   // This signal determines if unaligned instructions in t1 is compressed
   wire c_data_t1_1 = (data_t1[17:16] != 2'b11);
+`endif
 
   // These signals are the multiplexers that align the unaligned opcodes
   wire [31:0] data_o_t1 = (pc_t1[1])? { 16'h0000, data_t1[31:16] } : data_t1;
   wire [31:0] data_o_t2 = (pc_t2[1])? { data_t1[15:0], data_t2[31:16] } : data_t2;
 
   // This signals tell if opcodes are already valid or if the cpu should wait
-  wire valid_o_t1 = valid_t1 && !unaligned_32;
+  wire valid_o_t1 = valid_t1 && !t2_en;
   wire valid_o_t2 = valid_t2;
 
   // These are output multiplexers that switch between t2 and t1 registers
-  wire [31:0] data_out = (t2_en)? data_o_t2 : data_o_t1;
-  wire [31:0] pc_out = (t2_en)? pc_t2 : pc_t1;
-  wire [31:0] ret_out = (t2_en)? ret_t2 : ret_t1;
-  wire valid_out = (t2_en)? valid_o_t2 : valid_o_t1;
+  wire [31:0] data_out = (t2_mode)? data_o_t2 : data_o_t1;
+  wire [31:0] pc_out = (t2_mode)? pc_t2 : pc_t1;
+  wire [31:0] ret_out = (t2_mode)? ret_t2 : ret_t1;
+  wire valid_out = (t2_mode)? valid_o_t2 : valid_o_t1;
 
   /**
    * Output assignments
