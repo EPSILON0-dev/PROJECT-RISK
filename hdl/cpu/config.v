@@ -1,4 +1,4 @@
-`define REGS_PASS_THROUGH
+`define HAZARD_DATA_FORWARDNG
 `define CLEAN_DATA
 
 `define INCLUDE_CSR

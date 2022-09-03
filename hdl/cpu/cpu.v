@@ -3,6 +3,7 @@
 `include "branch.v"
 `include "decoder.v"
 `include "fetch.v"
+`include "hazard.v"
 `include "memory.v"
 `include "regs.v"
 
@@ -108,6 +109,8 @@ module cpu (
    * Register set
    */
   wire hz_data;
+  wire [31:0] rs1_raw_d;
+  wire [31:0] rs2_raw_d;
   wire [31:0] rs1_d;
   wire [31:0] rs2_d;
 
@@ -119,13 +122,37 @@ module cpu (
     .i_we        (wb_wb_en),
     .i_addr_wr   (wb_wb_reg),
     .i_dat_wr    (wb_wb_d),
-    .i_hz_rs1    (hz_rs1),
-    .i_hz_rs2    (hz_rs2),
-    .i_ex_wb_reg (ex_wb_reg),
-    .i_ma_wb_reg (ma_wb_reg),
-    .o_hz_data   (hz_data),
-    .o_dat_rd_a  (rs1_d),
-    .o_dat_rd_b  (rs2_d)
+    .o_dat_rd_a  (rs1_raw_d),
+    .o_dat_rd_b  (rs2_raw_d)
+  );
+
+  /**
+   * Hazard detector/forwarder
+   */
+  hazard hazard_i (
+    .i_hz_rs1     (hz_rs1),
+    .i_hz_rs2     (hz_rs2),
+    .i_rs1        (rs1),
+    .i_rs2        (rs2),
+    .i_ex_wb_reg  (ex_wb_reg),
+    .i_ma_wb_reg  (ma_wb_reg),
+    .i_wb_wb_reg  (wb_wb_reg),
+    .i_ex_wb_en   (ex_wb_en),
+    .i_ma_wb_en   (ma_wb_en),
+    .i_wb_wb_en   (wb_wb_en),
+    .i_ex_wb_mux  (ex_wb_mux),
+    .i_ma_wb_mux  (ma_wb_mux),
+    .i_ex_res_dat (ex_res_dat),
+    .i_ex_ret     (ex_ret),
+    .i_ma_res     (ma_res),
+    .i_ma_rd_dat  (ma_rd_dat),
+    .i_ma_ret     (ma_ret),
+    .i_wb_wb_d    (wb_wb_d),
+    .i_rs1_raw_d  (rs1_raw_d),
+    .i_rs2_raw_d  (rs2_raw_d),
+    .o_rs1_d      (rs1_d),
+    .o_rs2_d      (rs2_d),
+    .o_hz_data    (hz_data)
   );
 
   ///////////////////////////////////////////////////////////////////////////
@@ -289,7 +316,7 @@ module cpu (
       ma_wb_en  <= 0;
     end else if (clk_ce) begin
       ma_rs2_d  <= ex_rs2_d;
-      ma_res    <= ma_res_dat;
+      ma_res    <= ex_res_dat;
       ma_ret    <= ex_ret;
       ma_funct3 <= ex_funct3;
       ma_wr     <= ex_ma_wr;
@@ -301,9 +328,9 @@ module cpu (
   end
 
 `ifdef INCLUDE_CSR
-  wire [31:0] ma_res_dat = ex_system ? csr_rd_data : alu_out;
+  wire [31:0] ex_res_dat = ex_system ? csr_rd_data : alu_out;
 `else
-  wire [31:0] ma_res_dat = alu_out;
+  wire [31:0] ex_res_dat = alu_out;
 `endif
 
   /**
