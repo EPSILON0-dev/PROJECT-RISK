@@ -42,7 +42,7 @@ module muldiv (
   ///////////////////////////////////////////////////////////////////////////
   // Fast multiplier is just a verilog built-in combinational multiplier
   ///////////////////////////////////////////////////////////////////////////
-`ifdef FAST_MULTIPLIER
+`ifdef M_FAST_MULTIPLIER
 
   wire [63:0] mul_mul = in_a * in_b;
   wire        mul_busy = 0;

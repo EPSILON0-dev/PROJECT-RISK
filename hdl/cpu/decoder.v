@@ -29,6 +29,9 @@ module decoder (
 );
 
 `ifdef C_EXTENSION
+  /**
+   * Opcode elements extraction
+   */
   wire [4:0] rs1_cs    = {2'b01, i_opcode_in[9:7]};
   wire [4:0] rs2_cs    = {2'b01, i_opcode_in[4:2]};
   wire [4:0] rs1_cl    = i_opcode_in[11:7];
@@ -37,11 +40,11 @@ module decoder (
   wire [1:0] funct2_ch = i_opcode_in[11:10];
   wire [1:0] funct2_cl = i_opcode_in[6:5];
 
-  wire quad_0 = (i_opcode_in[1:0] == 2'b00);
-  wire quad_1 = (i_opcode_in[1:0] == 2'b01);
-  wire quad_2 = (i_opcode_in[1:0] == 2'b10);
-  wire quad_3 = (i_opcode_in[1:0] == 2'b11);
-
+  /**
+   * Immediate decoding
+   */
+  // Compressed immediate word
+  //  C.ADDI4SPN
   wire [7:0] immediate_ciw = {
     i_opcode_in[10:7],
     i_opcode_in[12:11],
@@ -49,11 +52,15 @@ module decoder (
     i_opcode_in[6]
   };
 
+  // Compressed immediate
+  //  C.ADDI C.LIC.ANDI C.SLLI
   wire [5:0] immediate_ci = {
     i_opcode_in[12],
     i_opcode_in[6:2]
   };
 
+  // Compressed 16byte stack offset immediate
+  //  C.ADDI16SP
   wire [9:4] immediate_c16sp = {
     i_opcode_in[12],
     i_opcode_in[4:3],
@@ -62,17 +69,16 @@ module decoder (
     i_opcode_in[6]
   };
 
+  // Compressed load/store immediate
+  //  C.LW C.SW
   wire [4:0] immediate_cls = {
     i_opcode_in[5],
     i_opcode_in[12:10],
     i_opcode_in[6]
   };
 
-  wire [5:0] immediate_ca = {
-    i_opcode_in[12],
-    i_opcode_in[6:2]
-  };
-
+  // Compressed jump immediate
+  //  C.J C.JAL
   wire [11:1] immediate_cj = {
     i_opcode_in[12],
     i_opcode_in[8],
@@ -84,6 +90,8 @@ module decoder (
     i_opcode_in[5:3]
   };
 
+  // Compressed branch immediate
+  //  C.BEQZ C.BNEZ
   wire [8:1] immediate_cb = {
     i_opcode_in[12],
     i_opcode_in[6:5],
@@ -92,184 +100,225 @@ module decoder (
     i_opcode_in[4:3]
   };
 
+  // Compressed stack based store
+  //  C.SWSP
   wire [7:2] immediate_cssp = {
     i_opcode_in[8:7],
     i_opcode_in[12:9]
   };
 
+  // Compressed stack based load
+  //  C.LWSP
   wire [7:2] immediate_clsp = {
     i_opcode_in[3:2],
     i_opcode_in[12],
     i_opcode_in[6:4]
   };
 
-  wire c_addi4spn = quad_0 && (funct3_c == 3'b000);
+  /**
+   * Quadrant decoding
+   */
+  wire q_0 = (i_opcode_in[1:0] == 2'b00);
+  wire q_1 = (i_opcode_in[1:0] == 2'b01);
+  wire q_2 = (i_opcode_in[1:0] == 2'b10);
+  wire q_3 = (i_opcode_in[1:0] == 2'b11);
 
-  wire c_lui = quad_1 && (funct3_c == 3'b011) &&
-      (rs1_cl != 5'b00000) && (rs1_cl != 5'b00010);
+  /**
+   * Compressed funct3 decoding
+   */
+  wire cf3_000 = (funct3_c == 3'b000);
+  wire cf3_001 = (funct3_c == 3'b001);
+  wire cf3_010 = (funct3_c == 3'b010);
+  wire cf3_011 = (funct3_c == 3'b011);
+  wire cf3_100 = (funct3_c == 3'b100);
+  wire cf3_101 = (funct3_c == 3'b101);
+  wire cf3_110 = (funct3_c == 3'b110);
+  wire cf3_111 = (funct3_c == 3'b111);
+  wire cf3_x01 = (funct3_c[1:0] == 2'b01);
+  wire cf3_11x = (funct3_c[2:1] == 2'b11);
 
-  wire c_addi16sp = quad_1 && (funct3_c == 3'b011) && (rs1_cl == 5'b00010);
+  /**
+   * Register conditions
+   */
+  wire rs1_nz  = (rs1_cl != 5'b00000);
+  wire rs1_nsp = (rs1_cl != 5'b00010);
+  wire rs1_sp  = (rs1_cl == 5'b00010);
+  wire rs2_nz  = (rs2_cl != 5'b00000);
+  wire rs2_z   = (rs2_cl == 5'b00000);
 
-  wire c_lw = quad_0 && (funct3_c == 3'b010);
+  /**
+   * Instruction signals
+   */
+  wire c_addi4spn = q_0 && cf3_000;
+  wire c_lui      = q_1 && cf3_011 && rs1_nz && rs1_nsp;
+  wire c_addi16sp = q_1 && cf3_011 && rs1_sp;
+  wire c_lw       = q_0 && cf3_010;
+  wire c_sw       = q_0 && cf3_110;
+  wire c_addi     = q_1 && cf3_000 && rs1_nz;
+  wire c_li       = q_1 && cf3_010 && rs1_nz;
+  wire c_slli     = q_2 && cf3_000;
+  wire c_j        = q_1 && cf3_x01;
+  wire c_b        = q_1 && cf3_11x;
+  wire c_jr       = q_2 && cf3_100 && rs1_nz && rs2_z;
+  wire c_add      = q_2 && cf3_100 && rs1_nz && rs2_nz;
+  wire c_lwsp     = q_2 && cf3_010;
+  wire c_swsp     = q_2 && cf3_110;
+  wire c_alu      = q_1 && cf3_100;
 
-  wire c_sw = quad_0 && (funct3_c == 3'b110);
+  /**
+   * ALU instruction signals
+   */
+  wire c_sri      = c_alu && !funct2_ch[1];
+  wire c_ar       = c_alu && (funct2_ch == 2'b11);
+  wire c_andi     = c_alu && (funct2_ch == 2'b10);
+  wire c_sub      = c_ar  && (funct2_cl == 2'b00);
 
-  wire c_addi = quad_1 && (funct3_c == 3'b000) && (rs1_cl != 5'b00000);
-
-  wire c_li = quad_1 && (funct3_c == 3'b010) && (rs1_cl != 5'b00000);
-
-  wire c_alu = quad_1 && (funct3_c == 3'b100);
-
-  wire c_sri = c_alu && !funct2_ch[1];
-
-  wire c_ar = c_alu && (funct2_ch == 2'b11);
   wire [2:0] c_ar_f3 =
     (funct2_cl == 2'b00) ? 3'b000 :
     (funct2_cl == 2'b01) ? 3'b100 :
     (funct2_cl == 2'b10) ? 3'b110 :
     (funct2_cl == 2'b11) ? 3'b111 : 0;
-  wire c_sub = c_ar && (funct2_cl == 2'b00);
 
-  wire c_andi = c_alu && (funct2_ch == 2'b10);
-
-  wire c_slli = quad_2 && (funct3_c == 3'b000);
-
-  wire c_j = quad_1 && (funct3_c[1:0] == 2'b01);
-
-  wire c_b = quad_1 && (funct3_c[2:1] == 2'b11);
-
-  wire c_jr = quad_2 && (funct3_c == 3'b100) &&
-    (rs1_cl != 5'b00000) && (rs2_cl == 5'b00000);
-
-  wire c_add = quad_2 && (funct3_c == 3'b100) &&
-    (rs1_cl != 5'b00000) && (rs2_cl != 5'b00000);
-
-  wire c_lwsp = quad_2 && (funct3_c == 3'b010);
-
-  wire c_swsp = quad_2 && (funct3_c == 3'b110);
-
+  /**
+   * Opcode validation
+   */
+`ifdef C_SIMPLE_VALIDATOR
+  wire valid_c = (i_opcode_in[15:0] != 16'h0000);
+`else
   wire valid_c = c_addi4spn || c_lui || c_addi16sp || c_lw ||
     c_sw || c_li || c_addi || c_sri || c_andi || c_ar ||
     c_slli || c_j || c_b || c_jr || c_add || c_swsp || c_lwsp;
+`endif
 
-  wire [4:0] c_rd =
-    (c_addi4spn) ? rs2_cs :
-    (c_lui) ? rs1_cl :
-    (c_addi16sp) ? rs1_cl :
-    (c_lw) ? rs2_cs :
-    (c_sw) ? {immediate_cls[2:0], 2'b00} :
-    (c_addi) ? rs1_cl :
-    (c_li) ? rs1_cl :
-    (c_sri) ? rs1_cs :
-    (c_andi) ? rs1_cs :
-    (c_ar) ? rs1_cs :
-    (c_slli) ? rs1_cl :
-    (c_j) ? {4'b0000, !funct3_c[2]} :
-    (c_b) ? {immediate_cb[4:1], immediate_cb[8]} :
-    (c_jr) ? {4'b0000, i_opcode_in[12]} :
-    (c_add) ? rs1_cl :
-    (c_lwsp) ? rs1_cl :
-    (c_swsp) ? {immediate_cssp[4:2], 2'b00} : 0;
+  /**
+   * Opcode multiplexers
+   */
+  // RD field
+  wire c_rd_rs2s     = c_addi4spn || c_lw;
+  wire c_rd_rs1s     = c_alu;
+  wire c_rd_rs1l     = c_lui || c_addi16sp || c_addi || c_li || c_slli ||
+    c_add || c_lwsp;
+  wire c_rd_imm_cls  = c_sw;
+  wire c_rd_imm_cb   = c_b;
+  wire c_rd_imm_cssp = c_swsp;
+  wire c_rd_j        = c_j;
+  wire c_rd_jr       = c_jr;
+  wire [4:0] c_rd    =
+    (c_rd_rs2s)      ? rs2_cs :
+    (c_rd_rs1s)      ? rs1_cs :
+    (c_rd_rs1l)      ? rs1_cl :
+    (c_rd_imm_cls)   ? {immediate_cls [2:0], 2'b00} :
+    (c_rd_imm_cb)    ? {immediate_cb  [4:1], immediate_cb[8]} :
+    (c_rd_imm_cssp)  ? {immediate_cssp[4:2], 2'b00} :
+    (c_rd_j)         ? {4'b0000, !funct3_c[2]} :
+    (c_rd_jr)        ? {4'b0000, i_opcode_in[12]} :
+    5'b00000;
 
-  wire [4:0] c_rs1 =
-    (c_addi4spn) ? 5'b00010 :
-    (c_lui) ? {{3{immediate_ci[5]}}, immediate_ci[4:3]} :
-    (c_addi16sp) ? 5'b00010 :
-    (c_lw) ? rs1_cs :
-    (c_sw) ? rs1_cs :
-    (c_addi) ? rs1_cl :
-    (c_li) ? 5'b00000 :
-    (c_sri) ? rs1_cs :
-    (c_andi) ? rs1_cs :
-    (c_ar) ? rs1_cs :
-    (c_slli) ? rs1_cl :
-    (c_j) ? {5{immediate_cj[11]}} :
-    (c_b) ? rs1_cs :
-    (c_jr) ? rs1_cl :
-    (c_add) ? rs1_cl & {5{i_opcode_in[12]}} :
-    (c_lwsp) ? 5'b00010 :
-    (c_swsp) ? 5'b00010 : 0;
+  // RS1 field
+  wire c_rs1_sp     = c_addi4spn || c_addi16sp || c_swsp || c_lwsp;
+  wire c_rs1_rs1s   = c_lw || c_sw || c_sri || c_andi || c_ar || c_b;
+  wire c_rs1_rs1l   = c_addi || c_slli || c_jr || (c_add && i_opcode_in[12]);
+  wire c_rs1_imm_ci = c_lui;
+  wire c_rs1_imm_cj = c_j;
+  wire [4:0] c_rs1  =
+    (c_rs1_sp)      ? 5'b00010 :
+    (c_rs1_rs1s)    ? rs1_cs :
+    (c_rs1_rs1l)    ? rs1_cl :
+    (c_rs1_imm_ci)  ? {{3{immediate_ci[5]}}, immediate_ci[4:3]} :
+    (c_rs1_imm_cj)  ? {5{immediate_cj[11]}} :
+    5'b00000;
 
-  wire [4:0] c_rs2 =
-    (c_addi4spn) ? {immediate_ciw[2:0], 2'b00} :
-    (c_lui) ? {5{immediate_ci[5]}} :
-    (c_addi16sp) ? {immediate_c16sp[4], 4'b0000} :
-    (c_lw) ? {immediate_cls[2:0], 2'b00} :
-    (c_sw) ? rs2_cs :
-    (c_addi) ? immediate_ci[4:0] :
-    (c_li) ? immediate_ci[4:0] :
-    (c_sri) ? immediate_ca[4:0] :
-    (c_andi) ? immediate_ca[4:0] :
-    (c_ar) ? rs2_cs :
-    (c_slli) ? immediate_ca[4:0] :
-    (c_j) ? {immediate_cj[4:1], immediate_cj[11]} :
-    (c_b) ? 5'b00000 :
-    (c_jr) ? 5'b00000 :
-    (c_add) ? rs2_cl :
-    (c_lwsp) ? {immediate_clsp[4:2], 2'b00} :
-    (c_swsp) ? rs2_cl : 0;
+  // RS2 field
+  wire c_rs2_rs2s      = c_sw || c_ar;
+  wire c_rs2_rs2l      = c_swsp || c_add;
+  wire c_rs2_imm_cil   = c_sri || c_andi || c_slli || c_addi || c_li;
+  wire c_rs2_imm_cih   = c_lui;
+  wire c_rs2_imm_cls   = c_lw;
+  wire c_rs2_imm_ciw   = c_addi4spn;
+  wire c_rs2_imm_cj    = c_j;
+  wire c_rs2_imm_c16sp = c_addi16sp;
+  wire c_rs2_imm_clsp  = c_lwsp;
+  wire [4:0] c_rs2     =
+    (c_rs2_rs2s)       ? rs2_cs :
+    (c_rs2_rs2l)       ? rs2_cl :
+    (c_rs2_imm_cil)    ? immediate_ci[4:0] :
+    (c_rs2_imm_cih)    ? {5{immediate_ci[5]}} :
+    (c_rs2_imm_cls)    ? {immediate_cls[2:0], 2'b00} :
+    (c_rs2_imm_ciw)    ? {immediate_ciw[2:0], 2'b00} :
+    (c_rs2_imm_cj)     ? {immediate_cj[4:1], immediate_cj[11]} :
+    (c_rs2_imm_c16sp)  ? {immediate_c16sp[4], 4'b0000} :
+    (c_rs2_imm_clsp)   ? {immediate_clsp[4:2], 2'b00} :
+    5'b00000;
 
+  // Funct3 field
+  wire c_f3_010       = c_sw || c_lw || c_swsp || c_lwsp;
+  wire c_f3_101       = c_sri;
+  wire c_f3_001       = c_slli || (c_b && funct3_c[0]);
+  wire c_f3_111       = c_andi || (c_j && immediate_cj[11]);
+  wire c_f3_ar_f3     = c_ar;
+  wire c_f3_imm_ci    = c_lui;
   wire [2:0] c_funct3 =
-    (c_addi4spn) ? 3'b000 :
-    (c_lui) ? immediate_ci[2:0] :
-    (c_addi16sp) ? 3'b000 :
-    (c_lw) ? 3'b010 :
-    (c_sw) ? 3'b010 :
-    (c_addi) ? 3'b000 :
-    (c_li) ? 3'b000 :
-    (c_sri) ? 3'b101 :
-    (c_andi) ? 3'b111 :
-    (c_ar) ? c_ar_f3 :
-    (c_slli) ? 3'b001 :
-    (c_j) ? {3{immediate_cj[11]}} :
-    (c_b) ? {2'b00, funct3_c[0]} :
-    (c_jr) ? 3'b000 :
-    (c_add) ? 3'b000 :
-    (c_lwsp) ? 3'b010 :
-    (c_swsp) ? 3'b010 : 0;
+    (c_f3_imm_ci)     ? immediate_ci[2:0] :
+    (c_f3_ar_f3)      ? c_ar_f3 :
+    (c_f3_001)        ? 3'b001 :
+    (c_f3_010)        ? 3'b010 :
+    (c_f3_101)        ? 3'b101 :
+    (c_f3_111)        ? 3'b111 :
+    3'b000;
 
+  // Funct7 field
+  wire c_f7_imm_ci    = c_lui || c_addi || c_li || c_andi;
+  wire c_f7_imm_cls   = c_lw || c_sw;
+  wire c_f7_imm_cj    = c_j;
+  wire c_f7_imm_cb    = c_b;
+  wire c_f7_imm_ciw   = c_addi4spn;
+  wire c_f7_imm_c16sp = c_addi16sp;
+  wire c_f7_imm_clsp  = c_lwsp;
+  wire c_f7_imm_cssp  = c_swsp;
+  wire c_f7_sub       = c_ar;
+  wire c_f7_sr        = c_sri;
   wire [6:0] c_funct7 =
-    (c_addi4spn) ? {2'b00, immediate_ciw[7:3]} :
-    (c_lui) ? {7{immediate_ci[5]}} :
-    (c_addi16sp) ? {{3{immediate_c16sp[9]}}, immediate_c16sp[8:5]} :
-    (c_lw) ? {5'b00000, immediate_cls[4:3]} :
-    (c_sw) ? {5'b00000, immediate_cls[4:3]} :
-    (c_addi) ? {7{immediate_ci[5]}} :
-    (c_li) ? {7{immediate_ci[5]}} :
-    (c_sri) ? {1'b0, funct2_ch[0], 5'b00000} :
-    (c_andi) ? {7{immediate_ca[5]}} :
-    (c_ar) ? {1'b0, c_sub, 5'b00000} :
-    (c_slli) ? 7'b0000000 :
-    (c_j) ? {immediate_cj[11:5]} :
-    (c_b) ? {{4{immediate_cb[8]}}, immediate_cb[7:5]} :
-    (c_jr) ? 7'b0000000 :
-    (c_add) ? 7'b0000000 :
-    (c_lwsp) ? {4'b0000, immediate_clsp[7:5]} :
-    (c_swsp) ? {4'b0000, immediate_cssp[7:5]} : 0;
+    (c_f7_imm_ci)     ? {7{immediate_ci[5]}} :
+    (c_f7_imm_cls)    ? {5'b00000, immediate_cls[4:3]} :
+    (c_f7_imm_cj)     ? {immediate_cj[11:5]} :
+    (c_f7_imm_cb)     ? {{4{immediate_cb[8]}}, immediate_cb[7:5]} :
+    (c_f7_imm_ciw)    ? {2'b00, immediate_ciw[7:3]} :
+    (c_f7_imm_c16sp)  ? {{3{immediate_c16sp[9]}}, immediate_c16sp[8:5]} :
+    (c_f7_imm_clsp)   ? {4'b0000, immediate_clsp[7:5]} :
+    (c_f7_imm_cssp)   ? {4'b0000, immediate_cssp[7:5]} :
+    (c_f7_sr)         ? {1'b0, funct2_ch[0], 5'b00000} :
+    (c_f7_sub)        ? {1'b0, c_sub, 5'b00000} :
+    7'b0000000;
 
+  // Opcode field
+  //  Default opcode is 5'b00100 because it's register/immediate operation,
+  //  in case of illegal opcode (if simplified validator is used) instead of
+  //  executing arbitrary instruction CPU will just execute NOP
+  //  (addi zero, zero, 0)
+  wire c_op = c_ar || c_add;
+  wire c_load = c_lw || c_lwsp;
+  wire c_store = c_sw || c_swsp;
+  wire c_jal = c_j;
+  wire c_jalr = c_jr;
+  wire c_branch = c_b;
   wire [4:0] c_opcode =
-    (c_addi4spn) ? 5'b00100 :
+    (c_op) ? 5'b01100 :
+    (c_load) ? 5'b00000 :
+    (c_store) ? 5'b01000 :
+    (c_jal) ? 5'b11011 :
+    (c_jalr) ? 5'b11001 :
     (c_lui) ? 5'b01101 :
-    (c_addi16sp) ? 5'b00100 :
-    (c_lw) ? 5'b00000 :
-    (c_sw) ? 5'b01000 :
-    (c_addi) ? 5'b00100 :
-    (c_li) ? 5'b00100 :
-    (c_sri) ? 5'b00100 :
-    (c_andi) ? 5'b00100 :
-    (c_ar) ? 5'b01100 :
-    (c_slli) ? 5'b00100 :
-    (c_j) ? 5'b11011 :
-    (c_b) ? 5'b11000 :
-    (c_jr) ? 5'b11001 :
-    (c_add) ? 5'b01100 :
-    (c_lwsp) ? 5'b00000 :
-    (c_swsp) ? 5'b01000 : 0;
+    (c_branch) ? 5'b11000 :
+    5'b00100;
 
+  // Opcode assignment
   wire [31:0] c_opcode_in =
     {c_funct7, c_rs2, c_rs1, c_funct3, c_rd, c_opcode, {2{valid_c}}};
-  wire [31:0] opcode_in = (quad_3)? i_opcode_in : c_opcode_in;
+  wire [31:0] opcode_in = (q_3)? i_opcode_in : c_opcode_in;
+
 `else
+
+  // Opcode assignment
   wire [31:0] opcode_in = i_opcode_in;
 `endif
 
