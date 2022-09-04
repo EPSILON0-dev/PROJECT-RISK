@@ -19,34 +19,35 @@ module cpu_tb;
   reg         i_valid_i;
   reg         i_valid_d;
   reg  [31:0] i_data_in_i;
-  reg  [31:0] i_data_in_d;
-  wire [ 3:0] o_we_d;
+  reg  [31:0] i_data_rd_d;
+  wire [ 3:0] o_wr_d;
   wire        o_rd_d;
   wire [31:0] o_addr_i;
   wire [31:0] o_addr_d;
-  wire [31:0] o_data_out_d;
+  wire [31:0] o_data_wr_d;
 
+  // verilator lint_off pinmissing
   cpu DUT (
-    .i_clk    (i_clk),
-    .i_rst    (i_rst),
-    .i_valid_i  (i_valid_i),
-    .i_valid_d  (i_valid_d),
-    .i_data_in_i  (i_data_in_i),
-    .i_data_in_d  (i_data_in_d),
-    .o_addr_i   (o_addr_i),
-    .o_addr_d   (o_addr_d),
-    .o_we_d     (o_we_d),
-    .o_rd_d     (o_rd_d),
-    .o_data_out_d (o_data_out_d)
+    .i_clk       (i_clk),
+    .i_rst       (i_rst),
+    .i_valid_i   (i_valid_i),
+    .i_valid_d   (i_valid_d),
+    .o_addr_i    (o_addr_i),
+    .i_data_in_i (i_data_in_i),
+    .o_addr_d    (o_addr_d),
+    .i_data_rd_d (i_data_rd_d),
+    .o_wr_d      (o_wr_d),
+    .o_rd_d      (o_rd_d),
+    .o_data_wr_d (o_data_wr_d)
   );
-
+  // verilator lint_on pinmissing
 
   ///////////////////////////////////////////////////////////////////////////
   // Clock
   ///////////////////////////////////////////////////////////////////////////
   initial   i_clk = 0;
   always #1 i_clk = !i_clk;
-  // always #2 i_valid_i = !i_valid_i;
+  // always #4 i_valid_i = !i_valid_i;
 
 
   ///////////////////////////////////////////////////////////////////////////
@@ -56,7 +57,7 @@ module cpu_tb;
     i_rst = 1;
     i_valid_i = 1;
     i_valid_d = 1;
-    i_data_in_d = 0;
+    i_data_rd_d = 0;
     #10 i_rst = 0;
 
     #10000 $display("Killed by timeout"); $finish;
@@ -72,7 +73,7 @@ module cpu_tb;
   end
 
   always @(negedge i_clk) begin
-    i_data_in_i <= i_cache_array[o_addr_i[16:2]];
+    i_data_in_i <= i_cache_array[o_addr_i[14:2]];
   end
 
 
@@ -86,23 +87,23 @@ module cpu_tb;
 
   always @(negedge i_clk) begin
     if (o_rd_d) begin
-      i_data_in_d <= d_read_data;
+      i_data_rd_d <= d_read_data;
       $display("%d (%h)", d_write_data, o_addr_d);
     end else begin
-      i_data_in_d <= 0;
+      i_data_rd_d <= 0;
     end
-    if (|o_we_d) begin
+    if (|o_wr_d) begin
       $display("%d (%h)", d_write_data, o_addr_d);
-      d_cache_array[o_addr_d[16:2]] <= d_write_data;
+      d_cache_array[o_addr_d[14:2]] <= d_write_data;
     end
   end
 
-  wire [31:0] d_read_data = d_cache_array[o_addr_d[16:2]];
+  wire [31:0] d_read_data = d_cache_array[o_addr_d[14:2]];
   wire [31:0] d_write_data = {
-    o_we_d[3]? o_data_out_d[31:24] : d_read_data[31:24],
-    o_we_d[2]? o_data_out_d[23:16] : d_read_data[23:16],
-    o_we_d[1]? o_data_out_d[15:8 ] : d_read_data[15:8 ],
-    o_we_d[0]? o_data_out_d[ 7:0 ] : d_read_data[ 7:0 ]
+    o_wr_d[3]? o_data_wr_d[31:24] : d_read_data[31:24],
+    o_wr_d[2]? o_data_wr_d[23:16] : d_read_data[23:16],
+    o_wr_d[1]? o_data_wr_d[15:8 ] : d_read_data[15:8 ],
+    o_wr_d[0]? o_data_wr_d[ 7:0 ] : d_read_data[ 7:0 ]
   };
 
 

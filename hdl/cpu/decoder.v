@@ -137,11 +137,11 @@ module decoder (
   /**
    * Register conditions
    */
-  wire rs1_nz  = (rs1_cl != 5'b00000);
-  wire rs1_nsp = (rs1_cl != 5'b00010);
-  wire rs1_sp  = (rs1_cl == 5'b00010);
-  wire rs2_nz  = (rs2_cl != 5'b00000);
-  wire rs2_z   = (rs2_cl == 5'b00000);
+  wire rs1_nz  =  |rs1_cl;
+  wire rs1_nsp =  (rs1_cl != 5'b00010);
+  wire rs1_sp  =  (rs1_cl == 5'b00010);
+  wire rs2_nz  =  |rs2_cl;
+  wire rs2_z   = ~|rs2_cl;
 
   /**
    * Instruction signals
@@ -180,7 +180,7 @@ module decoder (
    * Opcode validation
    */
 `ifdef C_SIMPLE_VALIDATOR
-  wire valid_c = (i_opcode_in[15:0] != 16'h0000);
+  wire valid_c = |i_opcode_in[15:0];
 `else
   wire valid_c = c_addi4spn || c_lui || c_addi16sp || c_lw ||
     c_sw || c_li || c_addi || c_sri || c_andi || c_ar ||
@@ -292,20 +292,20 @@ module decoder (
   //  in case of illegal opcode (if simplified validator is used) instead of
   //  executing arbitrary instruction CPU will just execute NOP
   //  (addi zero, zero, 0)
-  wire c_op = c_ar || c_add;
-  wire c_load = c_lw || c_lwsp;
-  wire c_store = c_sw || c_swsp;
-  wire c_jal = c_j;
-  wire c_jalr = c_jr;
-  wire c_branch = c_b;
+  wire c_op           = c_ar || c_add;
+  wire c_load         = c_lw || c_lwsp;
+  wire c_store        = c_sw || c_swsp;
+  wire c_jal          = c_j;
+  wire c_jalr         = c_jr;
+  wire c_branch       = c_b;
   wire [4:0] c_opcode =
-    (c_op) ? 5'b01100 :
-    (c_load) ? 5'b00000 :
-    (c_store) ? 5'b01000 :
-    (c_jal) ? 5'b11011 :
-    (c_jalr) ? 5'b11001 :
-    (c_lui) ? 5'b01101 :
-    (c_branch) ? 5'b11000 :
+    (c_op)            ? 5'b01100 :
+    (c_load)          ? 5'b00000 :
+    (c_store)         ? 5'b01000 :
+    (c_jal)           ? 5'b11011 :
+    (c_jalr)          ? 5'b11001 :
+    (c_lui)           ? 5'b01101 :
+    (c_branch)        ? 5'b11000 :
     5'b00100;
 
   // Opcode assignment

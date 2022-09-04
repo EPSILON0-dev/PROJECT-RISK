@@ -14,15 +14,26 @@
 module cpu (
   input         i_clk,
   input         i_rst,
+
   input         i_valid_i,
   input         i_valid_d,
-  input  [31:0] i_data_in_i,
-  input  [31:0] i_data_in_d,
+
+`ifdef CSR_EXTERNAL_BUS
+  output [11:0] o_csr_addr,
+  input  [31:0] i_csr_rd_data,
+  output [31:0] o_csr_wr_data,
+  output        o_csr_wr,
+  output        o_csr_rd,
+`endif
+
   output [31:0] o_addr_i,
+  input  [31:0] i_data_in_i,
+
   output [31:0] o_addr_d,
-  output  [3:0] o_we_d,
-  output        o_rd_d,
-  output [31:0] o_data_out_d
+  input  [31:0] i_data_rd_d,
+  output [31:0] o_data_wr_d,
+  output  [3:0] o_wr_d,
+  output        o_rd_d
 );
 
   /**
@@ -264,7 +275,13 @@ module cpu (
    * Control and Status Registers
    */
 `ifdef INCLUDE_CSR
+`ifdef CSR_EXTERNAL_BUS
   wire [31:0] csr_rd_data;
+  wire [11:0] csr_ext_addr;
+  wire [31:0] csr_ext_wr_data;
+  wire        csr_ext_wr;
+  wire        csr_ext_rd;
+`endif
 
   csr csr_i (
     .i_clk     (i_clk),
@@ -272,7 +289,14 @@ module cpu (
     .i_wr      (csr_wr),
     .i_set     (csr_set),
     .i_clr     (csr_clr),
-    .i_adr     (ex_imm[11:0]),
+`ifdef CSR_EXTERNAL_BUS
+    .o_ext_addr    (csr_ext_addr),
+    .i_ext_rd_data (i_csr_rd_data),
+    .o_ext_wr_data (csr_ext_wr_data),
+    .o_ext_wr      (csr_ext_wr),
+    .o_ext_rd      (csr_ext_rd),
+`endif
+    .i_addr    (ex_imm[11:0]),
     .i_wr_data (csr_wr_data),
     .o_rd_data (csr_rd_data)
   );
@@ -341,7 +365,7 @@ module cpu (
   wire [ 3:0] ma_we;
 
   memory memory_i (
-    .i_data_rd   (i_data_in_d),
+    .i_data_rd   (i_data_rd_d),
     .i_data_wr   (ma_rs2_d),
     .i_shift     (ma_res[1:0]),
     .i_length    (ma_funct3[1:0]),
@@ -385,14 +409,21 @@ module cpu (
    */
   assign o_addr_i = if_pc;
   assign o_rd_d   = ma_rd_en;
-  assign o_we_d   = ma_wr_en;
+  assign o_wr_d   = ma_wr_en;
 
 `ifdef CLEAN_DATA
-  assign o_addr_d     = (ma_rd_en || |ma_wr_en) ? ma_res    : 0;
-  assign o_data_out_d = (ma_rd_en || |ma_wr_en) ? ma_wr_dat : 0;
+  assign o_addr_d    = (ma_rd_en || |ma_wr_en) ? ma_res    : 0;
+  assign o_data_wr_d = (ma_rd_en || |ma_wr_en) ? ma_wr_dat : 0;
 `else
-  assign o_addr_d     = ma_res;
-  assign o_data_out_d = ma_wr_dat;
+  assign o_addr_d    = ma_res;
+  assign o_data_wr_d = ma_wr_dat;
+`endif
+
+`ifdef CSR_EXTERNAL_BUS
+  assign o_csr_addr    = csr_ext_addr;
+  assign o_csr_wr_data = csr_ext_wr_data;
+  assign o_csr_wr      = csr_ext_wr;
+  assign o_csr_rd      = csr_ext_rd;
 `endif
 
 endmodule

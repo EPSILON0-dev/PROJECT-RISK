@@ -1,12 +1,22 @@
 module csr (
   input         i_clk,
+
   // verilator lint_off unused
   input         i_rd,
   // verilator lint_on unused
   input         i_wr,
   input         i_set,
   input         i_clr,
-  input  [11:0] i_adr,
+
+`ifdef CSR_EXTERNAL_BUS
+  output [11:0] o_ext_addr,
+  input  [31:0] i_ext_rd_data,
+  output [31:0] o_ext_wr_data,
+  output        o_ext_wr,
+  output        o_ext_rd,
+`endif
+
+  input  [11:0] i_addr,
   input  [31:0] i_wr_data,
   output [31:0] o_rd_data
 );
@@ -32,11 +42,15 @@ module csr (
   reg  [31:0] read_data;
 
   always @* begin
-    case (i_adr)
+    case (i_addr)
       12'h200: read_data = reg_200;
       12'h800: read_data = reg_800;
       12'hF00: read_data = reg_F00;
+`ifdef CSR_EXTERNAL_BUS
+      default: read_data = i_ext_rd_data;
+`else
       default: read_data = 0;
+`endif
     endcase
   end
 
@@ -59,7 +73,7 @@ module csr (
    */
   always @(posedge i_clk) begin
     if (write_enable) begin
-      case (i_adr)
+      case (i_addr)
         12'h200: reg_200 <= write_data;
         12'h800: reg_800 <= write_data;
         12'hF00: reg_F00 <= write_data;
@@ -73,6 +87,13 @@ module csr (
    * Output assignment
    */
   assign o_rd_data = read_data;
+
+`ifdef CSR_EXTERNAL_BUS
+  assign o_ext_addr    = i_addr;
+  assign o_ext_wr_data = write_data;
+  assign o_ext_wr      = i_wr;
+  assign o_ext_rd      = i_rd;
+`endif
 
 
 endmodule
