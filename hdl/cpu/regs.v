@@ -12,12 +12,15 @@ module regs (
   input  [31:0] i_dat_wr,
 
   output [31:0] o_dat_rd_a,
-  output [31:0] o_dat_rd_b);
+  output [31:0] o_dat_rd_b
+);
 
-
-  /**
-   * Register array
-   */
+  // Register array
+`ifdef REGS_DISTRIBUTED
+  (* ram_style = "distributed" *)
+`else
+  (* ram_style = "block" *)
+`endif
   reg [31:0] registers [0:31];
   reg [31:0] dat_rd_a_reg = 0;
   reg [31:0] dat_rd_b_reg = 0;

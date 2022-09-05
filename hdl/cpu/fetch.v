@@ -23,10 +23,41 @@ module fetch (
   //  don't have to be aligned to 4-byte boundries.
   ///////////////////////////////////////////////////////////////////////////
 `ifdef C_EXTENSION
+  // Program counter
+  reg  [31:0] if_pc;
+  wire [31:0] pc_mux;
+  wire [31:0] pc_t0;
+  wire [31:0] data_t0;
+  wire        data_t0_cl;
+  wire        data_t0_ch;
+  wire        pc_next_c;
+  wire [31:0] pc_next;
+
+  // Instruction registers
+  reg  [31:0] data_t1;
+  reg  [31:0] data_t2;
+  reg  [31:0] pc_t1;
+  reg  [31:0] pc_t2;
+  reg  [31:0] ret_t1;
+  reg  [31:0] ret_t2;
+  reg         valid_t1;
+  reg         valid_t2;
+  reg         t2_mode;
+  wire        t2_en;
+  wire        c_data_t1_1;
+  wire [31:0] data_o_t1;
+  wire [31:0] data_o_t2;
+  wire        valid_o_t1;
+  wire        valid_o_t2;
+  wire [31:0] data_out;
+  wire [31:0] pc_out;
+  wire [31:0] ret_out;
+  wire        valid_out;
+
+
   /**
    * Program counter and branch hazard
    */
-  reg [31:0] if_pc;
   always @(posedge i_clk) begin
     if (i_rst) begin
       // Clear on reset
@@ -40,19 +71,19 @@ module fetch (
   end
 
   // If branching pc input should be branch address
-  wire [31:0] pc_mux = (i_br_en)? i_br_addr : pc_next;
+  assign pc_mux = (i_br_en)? i_br_addr : pc_next;
 
   // This timing signals makes next expressions a bit clearer
-  wire [31:0] pc_t0 = if_pc;
-  wire [31:0] data_t0 = i_data_in;
+  assign pc_t0 = if_pc;
+  assign data_t0 = i_data_in;
 
   // These signals determine if instructions from memory are compressed
-  wire data_t0_cl = (data_t0[1:0] != 2'b11);
-  wire data_t0_ch = (data_t0[17:16] != 2'b11);
+  assign data_t0_cl = (data_t0[1:0] != 2'b11);
+  assign data_t0_ch = (data_t0[17:16] != 2'b11);
 
   // This signal tells if pc should advance by half or full instruction
-  wire pc_next_c = (data_t0_cl && !pc_t0[1]) || (pc_t0[1] && data_t0_ch);
-  wire [31:0] pc_next = pc_t0 + ((pc_next_c) ? 32'h2 : 32'h4);
+  assign pc_next_c = (data_t0_cl && !pc_t0[1]) || (pc_t0[1] && data_t0_ch);
+  assign pc_next = pc_t0 + ((pc_next_c) ? 32'h2 : 32'h4);
 
   /**
    * Data registers
@@ -65,15 +96,6 @@ module fetch (
    *  next one so that unaligned opcodes can be read. To save a few cycles
    *  fetch unit doesn't enter t1 mode until branch or reset occurs.
    */
-  reg [31:0] data_t1;
-  reg [31:0] data_t2;
-  reg [31:0] pc_t1;
-  reg [31:0] pc_t2;
-  reg [31:0] ret_t1;
-  reg [31:0] ret_t2;
-  reg valid_t1;
-  reg valid_t2;
-  reg t2_mode;
   always @(posedge i_clk) begin
     if (i_rst) begin
       data_t1  <= 0;
@@ -110,27 +132,27 @@ module fetch (
   //  If C_FETCH_T2 is defined fetch unit will automatically enter t2 mode
   //  no matter what opcode it receives.
 `ifdef C_FETCH_T2
-  wire t2_en = 1;
+  assign t2_en = 1;
 `else
-  wire t2_en = pc_t1[1] && !c_data_t1_1;
+  assign t2_en = pc_t1[1] && !c_data_t1_1;
 
   // This signal determines if unaligned instructions in t1 is compressed
-  wire c_data_t1_1 = (data_t1[17:16] != 2'b11);
+  assign c_data_t1_1 = (data_t1[17:16] != 2'b11);
 `endif
 
   // These signals are the multiplexers that align the unaligned opcodes
-  wire [31:0] data_o_t1 = (pc_t1[1])? { 16'h0000, data_t1[31:16] } : data_t1;
-  wire [31:0] data_o_t2 = (pc_t2[1])? { data_t1[15:0], data_t2[31:16] } : data_t2;
+  assign data_o_t1 = (pc_t1[1])? { 16'h0000, data_t1[31:16] }      : data_t1;
+  assign data_o_t2 = (pc_t2[1])? { data_t1[15:0], data_t2[31:16] } : data_t2;
 
   // This signals tell if opcodes are already valid or if the cpu should wait
-  wire valid_o_t1 = valid_t1 && !t2_en;
-  wire valid_o_t2 = valid_t2;
+  assign valid_o_t1 = valid_t1 && !t2_en;
+  assign valid_o_t2 = valid_t2;
 
   // These are output multiplexers that switch between t2 and t1 registers
-  wire [31:0] data_out = (t2_mode)? data_o_t2 : data_o_t1;
-  wire [31:0] pc_out = (t2_mode)? pc_t2 : pc_t1;
-  wire [31:0] ret_out = (t2_mode)? ret_t2 : ret_t1;
-  wire valid_out = (t2_mode)? valid_o_t2 : valid_o_t1;
+  assign data_out  = (t2_mode)? data_o_t2  : data_o_t1;
+  assign pc_out    = (t2_mode)? pc_t2      : pc_t1;
+  assign ret_out   = (t2_mode)? ret_t2     : ret_t1;
+  assign valid_out = (t2_mode)? valid_o_t2 : valid_o_t1;
 
   /**
    * Output assignments
@@ -148,12 +170,21 @@ module fetch (
   //  to 4-byte boundries.
   ///////////////////////////////////////////////////////////////////////////
 `else
+  // Program counter
+  reg         hz_br;
+  reg  [31:0] if_pc;
+  wire [31:0] pc_next;
+  wire [31:0] pc_mux;
+
+  // Instruction registers
+  reg  [31:0] id_ret;
+  reg  [31:0] id_pc;
+  reg  [31:0] id_ir;
+
+
   /**
    * Program counter and branch hazard
    */
-  reg        hz_br;
-  reg [31:0] if_pc;
-
   always @(posedge i_clk) begin
     if (i_rst) begin
       // Clear on reset
@@ -175,8 +206,8 @@ module fetch (
     end
   end
 
-  wire [31:0] pc_next = if_pc + 32'h4;
-  wire [31:0] pc_mux = (i_br_en) ? i_br_addr : pc_next;
+  assign pc_next = if_pc + 32'h4;
+  assign pc_mux = (i_br_en) ? i_br_addr : pc_next;
 
 
   /**
@@ -185,10 +216,6 @@ module fetch (
    *  address, return address and the instruction from memory and keep them
    *  in register for the cpu to read
    */
-  reg [31:0] id_ret;
-  reg [31:0] id_pc;
-  reg [31:0] id_ir;
-
   always @(posedge i_clk) begin
     if (i_rst) begin
       id_ret <= 0;

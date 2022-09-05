@@ -69,7 +69,7 @@ module cpu_tb;
   ///////////////////////////////////////////////////////////////////////////
   reg  [31:0] i_cache_array [0:8191];
   initial begin
-    $readmemh("obj/cpu.mem", i_cache_array);
+    $readmemh("cpu.mem", i_cache_array);
   end
 
   always @(negedge i_clk) begin
@@ -82,7 +82,7 @@ module cpu_tb;
   ///////////////////////////////////////////////////////////////////////////
   reg  [31:0] d_cache_array [0:8191];
   initial begin
-    $readmemh("obj/cpu.mem", d_cache_array);
+    $readmemh("cpu.mem", d_cache_array);
   end
 
   always @(negedge i_clk) begin

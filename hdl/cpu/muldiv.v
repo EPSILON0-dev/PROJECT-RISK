@@ -14,38 +14,79 @@ module muldiv (
   output        o_busy
 );
 
+
+  // Sign signals
+  wire [31:0] in_a_n;
+  wire [31:0] in_b_n;
+  wire        mul_a_se;
+  wire        mul_b_se;
+  wire        div_se;
+  wire        a_se;
+  wire        b_se;
+  wire [31:0] a_s;
+  wire [31:0] b_s;
+  wire        mul_s;
+  wire        div_s;
+  wire        rem_s;
+  wire        div_rem_s;
+  wire [31:0] in_a;
+  wire [31:0] in_b;
+
+  // Multiply postprocessing
+  wire [63:0] mul_q;
+  wire [31:0] mul;
+
+  // Divider
+  reg  [63:0] div_a;
+  reg  [31:0] div_b;
+  reg  [31:0] div_q;
+  reg   [5:0] div_cnt;
+  wire [31:0] div_sub;
+  wire        div_cmp;
+  wire        div_busy;
+  wire        div_en;
+
+  // Divider postprocessing
+  wire [31:0] div_div;
+  wire [31:0] div_rem;
+  wire [31:0] div_res;
+  wire [31:0] div;
+
   // Inverted input signals (not exactly inverted but sign inverted)
-  wire [31:0] in_a_n = (0 - i_in_a[31:0]);
-  wire [31:0] in_b_n = (0 - i_in_b[31:0]);
+  assign in_a_n = (0 - i_in_a[31:0]);
+  assign in_b_n = (0 - i_in_b[31:0]);
 
   // Sign enable signals (se for sign enable)
-  wire mul_a_se = (i_funct3 == 3'b001) || (i_funct3 == 3'b010);
-  wire mul_b_se = (i_funct3 == 3'b001);
-  wire div_se = (i_funct3 == 3'b100) || (i_funct3 == 3'b110);
-  wire a_se = mul_a_se || div_se;
-  wire b_se = mul_b_se || div_se;
+  assign mul_a_se = (i_funct3 == 3'b001) || (i_funct3 == 3'b010);
+  assign mul_b_se = (i_funct3 == 3'b001);
+  assign div_se = (i_funct3 == 3'b100) || (i_funct3 == 3'b110);
+  assign a_se = mul_a_se || div_se;
+  assign b_se = mul_b_se || div_se;
 
   // Unsigned signals (unsigned versions of input signals)
-  wire [31:0] a_s = (i_in_a[31]) ? in_a_n : i_in_a;
-  wire [31:0] b_s = (i_in_b[31]) ? in_b_n : i_in_b;
+  assign a_s = (i_in_a[31]) ? in_a_n : i_in_a;
+  assign b_s = (i_in_b[31]) ? in_b_n : i_in_b;
 
   // Sign signals (actual signs, s for sign)
-  wire mul_s = (a_se && i_in_a[31]) ^ (b_se && i_in_b[31]);
-  wire div_s = mul_s;
-  wire rem_s = (a_se && i_in_a[31]);
-  wire div_rem_s = (i_funct3[1]) ? rem_s : div_s;
+  assign mul_s = (a_se && i_in_a[31]) ^ (b_se && i_in_b[31]);
+  assign div_s = mul_s;
+  assign rem_s = (a_se && i_in_a[31]);
+  assign div_rem_s = (i_funct3[1]) ? rem_s : div_s;
 
   // Final inputs (unsigned or sign inverted)
-  wire [31:0] in_a = (a_se) ? a_s : i_in_a;
-  wire [31:0] in_b = (b_se) ? b_s : i_in_b;
+  assign in_a = (a_se) ? a_s : i_in_a;
+  assign in_b = (b_se) ? b_s : i_in_b;
 
   ///////////////////////////////////////////////////////////////////////////
   // Fast multiplier is just a verilog built-in combinational multiplier
   ///////////////////////////////////////////////////////////////////////////
 `ifdef M_FAST_MULTIPLIER
 
-  wire [63:0] mul_mul = in_a * in_b;
-  wire        mul_busy = 0;
+  wire [63:0] mul_mul;
+  wire        mul_busy;
+
+  assign mul_mul = $unsigned(in_a) * $unsigned(in_b);
+  assign mul_busy = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // Slow multiplier is a shift-and-add multiplier, at every clock cycle
@@ -61,6 +102,8 @@ module muldiv (
   reg  [63:0] mul_a_reg;
   reg  [31:0] mul_b_reg;
   reg  [63:0] mul_mul;
+  wire        mul_busy;
+  wire        mul_en;
 
   always @(posedge i_clk_n) begin
     if (i_rst) begin
@@ -87,15 +130,15 @@ module muldiv (
   end
 
   // Busy and enable signal
-  wire mul_busy = |mul_b_reg;
-  wire mul_en = i_md_en && !i_funct3[2];
+  assign mul_busy = |mul_b_reg;
+  assign mul_en = i_md_en && !i_funct3[2];
 
 `endif
 
   // Multiplier "postprocessing"
   //  If result sign is negative then the result is in inverted
-  wire [63:0] mul_q = (mul_s) ? (0 - mul_mul) : mul_mul;
-  wire [31:0] mul = (|i_funct3[1:0]) ? mul_q[63:32] : mul_q[31:0];
+  assign mul_q = (mul_s) ? (0 - mul_mul) : mul_mul;
+  assign mul = (|i_funct3[1:0]) ? mul_q[63:32] : mul_q[31:0];
 
   ///////////////////////////////////////////////////////////////////////////
   // Divider
@@ -109,10 +152,6 @@ module muldiv (
   // B register - divisor
   // Q register - accumulator (result)
   // Divider counter
-  reg [63:0] div_a;
-  reg [31:0] div_b;
-  reg [31:0] div_q;
-  reg [ 5:0] div_cnt = 6'b100000;
 
   always @(posedge i_clk_n) begin
     if (i_rst) begin
@@ -143,20 +182,20 @@ module muldiv (
   end
 
   // Divider comparator and subtractor
-  wire [31:0] div_sub = div_a[62:31] - div_b;
-  wire        div_cmp = (div_a[62:31] >= div_b);
+  assign div_sub = div_a[62:31] - div_b;
+  assign div_cmp = (div_a[62:31] >= div_b);
 
   // Busy and enable signals
-  wire        div_busy = !div_cnt[5];
-  wire        div_en = i_md_en &&  i_funct3[2];
+  assign div_busy = !div_cnt[5];
+  assign div_en = i_md_en &&  i_funct3[2];
 
   // Divide "postprocessing"
   //  This is just a MUX switching between the reminder and the result
   //  Also if result sign is negative then the result is in inverted
-  wire [31:0] div_div = div_q;
-  wire [31:0] div_rem = div_a[63:32];
-  wire [31:0] div_res = (i_funct3[1]) ? div_rem : div_div;
-  wire [31:0] div = (div_rem_s) ? (0 - div_res) : div_res;
+  assign div_div = div_q;
+  assign div_rem = div_a[63:32];
+  assign div_res = (i_funct3[1]) ? div_rem : div_div;
+  assign div = (div_rem_s) ? (0 - div_res) : div_res;
 
   // Final result MUX and busy signal
   assign o_result = (i_funct3[2]) ? div : mul;

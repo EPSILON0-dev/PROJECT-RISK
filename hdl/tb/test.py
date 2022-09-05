@@ -14,7 +14,7 @@ def main():
         in_data_formatted = in_data_formatted + ' ' + num.hex()
     for i in range(len(in_data), 32768, 4):
         in_data_formatted = in_data_formatted + ' 00000000'
-    out_file = open('obj/cpu.mem', 'w')
+    out_file = open('cpu.mem', 'w')
     out_file.write(in_data_formatted)
     out_file.close()
 

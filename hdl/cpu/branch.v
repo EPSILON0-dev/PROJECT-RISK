@@ -9,26 +9,41 @@ module branch (
 );
 
 
+  // Branch condition comparators
+  wire equal;
+  wire lower;
+  wire lower_u;
+
+  // Operation decoders
+  wire op_jump;
+  wire op_branch;
+
+  // Conditiom multiplexer
+  reg  condition_mux;
+  wire condition;
+
+  // Final branch condition
+  wire br_en;
+
+
   /**
    * Branch condition comparators
    */
-  wire equal   = (i_dat_a == i_dat_b);
-  wire lower   = ($signed(i_dat_a) < $signed(i_dat_b));
-  wire lower_u = ($unsigned(i_dat_a) < $unsigned(i_dat_b));
+  assign equal   = (i_dat_a == i_dat_b);
+  assign lower   = ($signed(i_dat_a) < $signed(i_dat_b));
+  assign lower_u = ($unsigned(i_dat_a) < $unsigned(i_dat_b));
 
   /**
    * Operation decoders
    */
-  wire op_jump   = (i_opcode == 5'b11001) || (i_opcode == 5'b11011);
-  wire op_branch = (i_opcode == 5'b11000);
+  assign op_jump   = (i_opcode == 5'b11001) || (i_opcode == 5'b11011);
+  assign op_branch = (i_opcode == 5'b11000);
 
   /**
    * Condition multiplexer
    *  Bits 2:1 of the funct3 are condition selectors
    *  Bit 0 tells if condition should be inverted or not
    */
-  reg condition_mux;
-
   always @* begin
     case (i_funct3[2:1])
       2'b00:   condition_mux = equal;
@@ -38,13 +53,13 @@ module branch (
     endcase
   end
 
-  wire condition = condition_mux ^ i_funct3[0];
+  assign condition = condition_mux ^ i_funct3[0];
 
   /**
    * Final branch condition
    *  Jump is always taken and branch is taken if the condition is met
    */
-  wire br_en = op_jump || (op_branch && condition);
+  assign br_en = op_jump || (op_branch && condition);
 
   /**
    * Output assignment

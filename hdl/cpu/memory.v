@@ -13,11 +13,27 @@ module memory (
 );
 
 
+  // Length mask
+  reg  [31:0] length_mask;
+
+  // Write data processing
+  reg  [31:0] data_wr_shift;
+
+  // Read data processing
+  reg  [31:0] data_rd_shift;
+  wire [31:0] data_rd_short;
+  wire        sign_bit;
+  wire [31:0] sign_extension;
+  wire [31:0] data_rd_signed;
+
+  // Write enable generation
+  reg   [3:0] we_lenght;
+  reg   [3:0] we_shifted;
+
+
   /**
    * Length mask
    */
-  reg [31:0] length_mask;
-
   always @* begin
     case (i_length)
       2'b00:   length_mask = 32'h000000ff;
@@ -32,8 +48,6 @@ module memory (
    *  We only need to shift the data to prepare it, masking is unecessary as
    *  it will be done in the memory based on write enable signals.
    */
-  reg [31:0] data_wr_shift;
-
   always @* begin
     case (i_shift)
       2'b01:   data_wr_shift = { i_data_wr[23:0], i_data_wr[31:24] };
@@ -50,8 +64,6 @@ module memory (
    *  Stage 2: Data is length masked
    *  Stage 3: Inverted length mask is used to sign extend the value
    */
-  reg [31:0] data_rd_shift;
-
   always @* begin
     case (i_shift)
       2'b01:   data_rd_shift = { i_data_rd[ 7:0], i_data_rd[31:8 ] };
@@ -61,10 +73,10 @@ module memory (
     endcase
   end
 
-  wire [31:0] data_rd_short = data_rd_shift & length_mask;
-  wire        sign_bit = (i_length[0])? data_rd_shift[15] : data_rd_shift[7];
-  wire [31:0] sign_extension = (sign_bit && i_signed_rd) ? ~length_mask : 0;
-  wire [31:0] data_rd_signed = data_rd_short | sign_extension;
+  assign data_rd_short = data_rd_shift & length_mask;
+  assign sign_bit = (i_length[0])? data_rd_shift[15] : data_rd_shift[7];
+  assign sign_extension = (sign_bit && i_signed_rd) ? ~length_mask : 0;
+  assign data_rd_signed = data_rd_short | sign_extension;
 
   /**
    * Write enable generation
@@ -72,9 +84,6 @@ module memory (
    *  Stage 1: Length is calculated
    *  Stage 2: Length is offset by the address
    */
-  reg  [3:0] we_lenght;
-  reg  [3:0] we_shifted;
-
   always @* begin
     case (i_length)
       2'b00:   we_lenght = 4'b0001;

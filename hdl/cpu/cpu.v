@@ -36,11 +36,106 @@ module cpu (
   output        o_rd_d
 );
 
-  /**
-   * Clock Signals
-   */
-  wire clk_ce = i_valid_i && i_valid_d && !alu_busy;
-  wire clk_n = !i_clk;
+
+  // Clock signals
+  wire clk_ce;
+  wire clk_n;
+
+  // Instruction fetch circuitry
+  wire [31:0] if_pc;
+  wire [31:0] id_pc;
+  wire [31:0] id_ir;
+  wire [31:0] id_ret;
+  wire hz_br;
+
+  // Instruction decoder
+  wire [31:0] immediate;
+  wire [ 4:0] opcode;
+  wire [ 2:0] funct3;
+  wire [ 6:0] funct7;
+  wire [ 4:0] rs1;
+  wire [ 4:0] rs2;
+  wire [ 4:0] rd;
+  wire        hz_rs1;
+  wire        hz_rs2;
+  wire        alu_pc;
+  wire        alu_imm;
+  wire        alu_en;
+  wire        d_wr;
+  wire        d_rd;
+  wire [ 1:0] wb_mux;
+  wire        wb_en;
+  wire        system;
+
+  // Register set and hazard detector/forwarder
+  wire hz_data;
+  wire [31:0] rs1_raw_d;
+  wire [31:0] rs2_raw_d;
+  wire [31:0] rs1_d;
+  wire [31:0] rs2_d;
+
+  // Execute stage registers
+  reg  [31:0] ex_rs1_d;
+  reg  [31:0] ex_rs2_d;
+  reg  [31:0] ex_imm;
+  reg  [31:0] ex_pc;
+  reg  [31:0] ex_ret;
+  reg  [ 4:0] ex_opcode;
+  reg  [ 2:0] ex_funct3;
+  reg  [ 6:0] ex_funct7;
+  reg         ex_alu_pc;
+  reg         ex_alu_imm;
+  reg         ex_alu_en;
+  reg         ex_ma_wr;
+  reg         ex_ma_rd;
+  reg  [ 1:0] ex_wb_mux;
+  reg  [ 4:0] ex_wb_reg;
+  reg         ex_wb_en;
+  // verilator lint_off unused
+  reg  [ 4:0] ex_rs1;
+  reg         ex_system;
+  // verilator lint_on unused
+
+  // Branch decoder
+  wire br_en;
+
+  // Arythmetic and logic unit
+  wire [31:0] alu_out;
+  wire        alu_busy;
+  wire [31:0] alu_a_mux;
+  wire [31:0] alu_b_mux;
+
+  // Memory access registers
+  wire [31:0] ex_res_dat;
+  reg  [31:0] ma_rs2_d;
+  reg  [31:0] ma_res;
+  reg  [31:0] ma_ret;
+  reg  [ 2:0] ma_funct3;
+  reg         ma_wr;
+  reg         ma_rd;
+  reg  [ 4:0] ma_wb_reg;
+  reg  [ 1:0] ma_wb_mux;
+  reg         ma_wb_en;
+
+  // Data memory
+  wire [31:0] ma_rd_dat;
+  wire [31:0] ma_wr_dat;
+  wire [ 3:0] ma_we;
+  wire [3:0] ma_wr_en;
+  wire       ma_rd_en;
+
+  // Write back registers
+  reg  [31:0] wb_wb_d;
+  reg  [ 4:0] wb_wb_reg;
+  reg         wb_wb_en;
+  wire [31:0] wb_dat_mux;
+
+
+  ///////////////////////////////////////////////////////////////////////////
+  // Clock signals
+  ///////////////////////////////////////////////////////////////////////////
+  assign clk_ce = i_valid_i && i_valid_d && !alu_busy;
+  assign clk_n = !i_clk;
 
   ///////////////////////////////////////////////////////////////////////////
   // FETCH STAGE
@@ -49,12 +144,6 @@ module cpu (
   /**
    * Instruction fetch circuitry
    */
-  wire [31:0] if_pc;
-  wire [31:0] id_pc;
-  wire [31:0] id_ir;
-  wire [31:0] id_ret;
-  wire hz_br;
-
   fetch fetch_i (
     .i_clk      (i_clk),
     .i_clk_ce   (clk_ce),
@@ -77,24 +166,6 @@ module cpu (
   /**
    * Instruction Decoder
    */
-  wire [31:0] immediate;
-  wire [ 4:0] opcode;
-  wire [ 2:0] funct3;
-  wire [ 6:0] funct7;
-  wire [ 4:0] rs1;
-  wire [ 4:0] rs2;
-  wire [ 4:0] rd;
-  wire        hz_rs1;
-  wire        hz_rs2;
-  wire        alu_pc;
-  wire        alu_imm;
-  wire        alu_en;
-  wire        d_wr;
-  wire        d_rd;
-  wire [ 1:0] wb_mux;
-  wire        wb_en;
-  wire        system;
-
   decoder decoder_i (
     .i_opcode_in (id_ir),
     .o_immediate (immediate),
@@ -119,12 +190,6 @@ module cpu (
   /**
    * Register set
    */
-  wire hz_data;
-  wire [31:0] rs1_raw_d;
-  wire [31:0] rs2_raw_d;
-  wire [31:0] rs1_d;
-  wire [31:0] rs2_d;
-
   regs regs_i (
     .i_clk       (clk_n),
     .i_ce        (clk_ce),
@@ -173,27 +238,6 @@ module cpu (
   /**
    * Execute Registers
    */
-  reg  [31:0] ex_rs1_d;
-  reg  [31:0] ex_rs2_d;
-  reg  [31:0] ex_imm;
-  reg  [31:0] ex_pc;
-  reg  [31:0] ex_ret;
-  reg  [ 4:0] ex_opcode;
-  reg  [ 2:0] ex_funct3;
-  reg  [ 6:0] ex_funct7;
-  reg         ex_alu_pc;
-  reg         ex_alu_imm;
-  reg         ex_alu_en;
-  reg         ex_ma_wr;
-  reg         ex_ma_rd;
-  reg  [ 1:0] ex_wb_mux;
-  reg  [ 4:0] ex_wb_reg;
-  reg         ex_wb_en;
-  // verilator lint_off unused
-  reg  [ 4:0] ex_rs1;
-  reg         ex_system;
-  // verilator lint_on unused
-
   always @(posedge i_clk) begin
     if (i_rst || (clk_ce && (hz_br || hz_data || br_en))) begin
       ex_rs1_d    <= 0;
@@ -239,8 +283,6 @@ module cpu (
   /**
    * Branch Conditioner
    */
-  wire br_en;
-
   branch branch_i (
     .i_dat_a  (ex_rs1_d),
     .i_dat_b  (ex_rs2_d),
@@ -252,9 +294,6 @@ module cpu (
   /**
    * Arythmetic and Logic Unit
    */
-  wire [31:0] alu_out;
-  wire        alu_busy;
-
   alu alu_i (
     .i_clk_n   (clk_n),
     .i_rst     (i_rst),
@@ -268,8 +307,8 @@ module cpu (
     .o_alu_out (alu_out)
   );
 
-  wire [31:0] alu_a_mux = (ex_alu_pc)  ? ex_pc  : ex_rs1_d;
-  wire [31:0] alu_b_mux = (ex_alu_imm) ? ex_imm : ex_rs2_d;
+  assign alu_a_mux = (ex_alu_pc)  ? ex_pc  : ex_rs1_d;
+  assign alu_b_mux = (ex_alu_imm) ? ex_imm : ex_rs2_d;
 
   /**
    * Control and Status Registers
@@ -282,6 +321,12 @@ module cpu (
   wire        csr_ext_wr;
   wire        csr_ext_rd;
 `endif
+  wire [31:0] csr_wr_data;
+  wire        csr_wr_en;
+  wire        csr_rd;
+  wire        csr_wr;
+  wire        csr_set;
+  wire        csr_clr;
 
   csr csr_i (
     .i_clk     (i_clk),
@@ -301,13 +346,12 @@ module cpu (
     .o_rd_data (csr_rd_data)
   );
 
-  wire [31:0] csr_wr_data = ex_funct3[2] ? {27'h0, ex_rs1} : ex_rs1_d;
-
-  wire csr_wr_en = ex_system && (ex_rs1 != 5'b00000);
-  wire csr_rd    = ex_system && (ex_wb_reg != 5'b00000);
-  wire csr_wr    = csr_wr_en && (ex_funct3[1:0] == 2'b01);
-  wire csr_set   = csr_wr_en && (ex_funct3[1:0] == 2'b10);
-  wire csr_clr   = csr_wr_en && (ex_funct3[1:0] == 2'b11);
+  assign csr_wr_data = ex_funct3[2] ? {27'h0, ex_rs1} : ex_rs1_d;
+  assign csr_wr_en   = ex_system && (ex_rs1 != 5'b00000);
+  assign csr_rd      = ex_system && (ex_wb_reg != 5'b00000);
+  assign csr_wr      = csr_wr_en && (ex_funct3[1:0] == 2'b01);
+  assign csr_set     = csr_wr_en && (ex_funct3[1:0] == 2'b10);
+  assign csr_clr     = csr_wr_en && (ex_funct3[1:0] == 2'b11);
 `endif
 
   ///////////////////////////////////////////////////////////////////////////
@@ -317,16 +361,6 @@ module cpu (
   /**
    * Memory Access Registers
    */
-  reg  [31:0] ma_rs2_d;
-  reg  [31:0] ma_res;
-  reg  [31:0] ma_ret;
-  reg  [ 2:0] ma_funct3;
-  reg         ma_wr;
-  reg         ma_rd;
-  reg  [ 4:0] ma_wb_reg;
-  reg  [ 1:0] ma_wb_mux;
-  reg         ma_wb_en;
-
   always @(posedge i_clk) begin
     if (i_rst) begin
       ma_rs2_d  <= 0;
@@ -352,18 +386,14 @@ module cpu (
   end
 
 `ifdef INCLUDE_CSR
-  wire [31:0] ex_res_dat = ex_system ? csr_rd_data : alu_out;
+  assign ex_res_dat = ex_system ? csr_rd_data : alu_out;
 `else
-  wire [31:0] ex_res_dat = alu_out;
+  assign ex_res_dat = alu_out;
 `endif
 
   /**
    * Data Memory
    */
-  wire [31:0] ma_rd_dat;
-  wire [31:0] ma_wr_dat;
-  wire [ 3:0] ma_we;
-
   memory memory_i (
     .i_data_rd   (i_data_rd_d),
     .i_data_wr   (ma_rs2_d),
@@ -375,8 +405,8 @@ module cpu (
     .o_we        (ma_we)
   );
 
-  wire [3:0] ma_wr_en = ma_we & {4{ma_wr}};
-  wire       ma_rd_en = ma_rd;
+  assign ma_wr_en = ma_we & {4{ma_wr}};
+  assign ma_rd_en = ma_rd;
 
   ///////////////////////////////////////////////////////////////////////////
   // WRITE BACK STAGE
@@ -385,10 +415,6 @@ module cpu (
   /**
    * Write Back Registers
    */
-  reg  [31:0] wb_wb_d;
-  reg  [ 4:0] wb_wb_reg;
-  reg         wb_wb_en;
-
   always @(posedge i_clk) begin
     if (i_rst) begin
       wb_wb_d   <= 0;
@@ -401,7 +427,7 @@ module cpu (
     end
   end
 
-  wire [31:0] wb_dat_mux = (ma_wb_mux == 2'b10) ? ma_ret :
+  assign wb_dat_mux = (ma_wb_mux == 2'b10) ? ma_ret :
     (ma_wb_mux == 2'b01) ? ma_rd_dat : ma_res;
 
   /**

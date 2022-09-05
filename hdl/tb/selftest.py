@@ -26,8 +26,8 @@ def find_line(arr, pattern):
 
 # Run given test
 def run_test(test_name):
-    run(f'tb/test.py ../tests/bin/{test_name}.hex')
-    result = run('vvp obj/cpu_tb.obj')
+    run(f'./test.py ../../tests/bin/{test_name}.hex')
+    result = run('vvp cpu_tb.obj')
     result_line = find_line(result, '(00010000)')
     cycles_taken = result[-1].split(' ')[-1]
     if '1365' in result_line:

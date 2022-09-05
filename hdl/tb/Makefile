@@ -2,9 +2,9 @@ IVERILOG	:= iverilog
 VVP			:= vvp
 
 MODULES		:= cpu
-TSTSRC		:= $(patsubst %, tb/%_tb.v, $(MODULES))
-TSTOBJ		:= $(patsubst %, obj/%_tb.obj, $(MODULES))
-CPUTSTOBJ	:= obj/cpu_tb.obj
+TSTSRC		:= $(patsubst %, %_tb.v, $(MODULES))
+TSTOBJ		:= $(patsubst %, %_tb.obj, $(MODULES))
+CPUTSTOBJ	:= cpu_tb.obj
 TEST		?= NONE
 
 all: compile_tst
@@ -15,7 +15,7 @@ fresh_tst: clean compile_tst
 
 compile_tst: $(TSTOBJ)
 
-obj/%.obj: tb/%.v
+%.obj: %.v
 	@$(IVERILOG) -grelative-include -o $@ $<
 
 ##############################  CPU TB Testing  ###############################
@@ -23,11 +23,11 @@ obj/%.obj: tb/%.v
 fresh_test_cpu: clean test_cpu
 
 selftest: fresh_tst
-	@python3 tb/selftest.py
+	@python3 ./selftest.py
 
 test_cpu: $(CPUTSTOBJ)
-	@python3 tb/test.py ../tests/bin/$(TEST).hex
-	@vvp obj/cpu_tb.obj
+	@python3 ./test.py ../../tests/bin/$(TEST).hex
+	@vvp cpu_tb.obj
 
 ##################################  Watchers  #################################
 
@@ -35,10 +35,11 @@ watch_tst:
 	@while [ true ]; do printf "\033[2J\033[H"; make -s fresh_tst; make -s test_cpu; printf "\n"; inotifywait -r -q -e modify .; done
 
 lint:
-	@while [ true ]; do printf "\033[2J\033[H"; verilator --lint-only --relative-includes -Wall cpu/cpu.v; printf "\n"; inotifywait -r -q -e modify .; done
+	@while [ true ]; do printf "\033[2J\033[H"; verilator --lint-only --relative-includes -Wall ../cpu/cpu.v; printf "\n"; inotifywait -r -q -e modify ../cpu; done
 
 ##################################  Cleaning  ##################################
 
 .PHONY: clean
 clean:
-	@rm -f ./obj/*
+	@-rm cpu_log.vcd
+	@-rm cpu_tb.obj

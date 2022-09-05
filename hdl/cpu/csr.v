@@ -22,25 +22,24 @@ module csr (
 );
 
 
-  /**
-   * Temporary registers for testing
-   */
+  // Temporary registers for testing
   reg [31:0] reg_200;
   reg [31:0] reg_800;
   reg [31:0] reg_F00;
 
-  initial begin
-    reg_200 = 0;
-    reg_800 = 0;
-    reg_F00 = 0;
-  end
+  // Read circuitry
+  reg  [31:0] read_data;
+
+  // Write circuitry
+  wire        write_enable;
+  wire [31:0] set_data;
+  wire [31:0] clr_data;
+  wire [31:0] write_data;
 
 
   /**
    * Read from currently selected CSR
    */
-  reg  [31:0] read_data;
-
   always @* begin
     case (i_addr)
       12'h200: read_data = reg_200;
@@ -54,19 +53,18 @@ module csr (
     endcase
   end
 
-
   /**
    * Generate the write data
    */
-  wire write_enable = i_wr | i_set | i_clr;
+  assign write_enable = i_wr | i_set | i_clr;
 
-  wire [31:0] set_data = read_data |  i_wr_data;
-  wire [31:0] clr_data = read_data & ~i_wr_data;
+  assign set_data = read_data |  i_wr_data;
+  assign clr_data = read_data & ~i_wr_data;
 
-  wire [31:0] write_data = (i_wr) ? i_wr_data :
+  assign write_data =
+    (i_wr) ? i_wr_data :
     (i_set) ? set_data :
     (i_clr) ? clr_data : 0;
-
 
   /**
    * Write to the selected register
@@ -81,7 +79,6 @@ module csr (
       endcase
     end
   end
-
 
   /**
    * Output assignment

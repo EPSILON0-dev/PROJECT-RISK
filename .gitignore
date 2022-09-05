@@ -5,7 +5,6 @@ tests/dump/
 *.hex
 *.dump
 *.bak
-.vscode
 .vscode/
-.vscode/*
 TODO
+hdl/xst/build/
