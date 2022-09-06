@@ -130,10 +130,9 @@ module cpu (
   reg         wb_wb_en;
   wire [31:0] wb_dat_mux;
 
-
-  ///////////////////////////////////////////////////////////////////////////
-  // Clock signals
-  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * Clock Signals
+   */
   assign clk_ce = i_valid_i && i_valid_d && !alu_busy;
   assign clk_n = !i_clk;
 
