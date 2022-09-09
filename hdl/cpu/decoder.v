@@ -157,7 +157,7 @@ module decoder (
   wire        c_rd_imm_cssp;
   wire        c_rd_j;
   wire        c_rd_jr;
-  wire  [4:0] c_rd;
+  reg   [4:0] c_rd;
 
   // RS1 field
   wire        c_rs1_sp;
@@ -165,7 +165,7 @@ module decoder (
   wire        c_rs1_rs1l;
   wire        c_rs1_imm_ci;
   wire        c_rs1_imm_cj;
-  wire  [4:0] c_rs1;
+  reg   [4:0] c_rs1;
 
   // RS2 field
   wire        c_rs2_rs2s;
@@ -177,7 +177,7 @@ module decoder (
   wire        c_rs2_imm_cj;
   wire        c_rs2_imm_c16sp;
   wire        c_rs2_imm_clsp;
-  wire  [4:0] c_rs2;
+  reg   [4:0] c_rs2;
 
   // Funct3 field
   wire        c_f3_010;
@@ -186,7 +186,7 @@ module decoder (
   wire        c_f3_111;
   wire        c_f3_ar_f3;
   wire        c_f3_imm_ci;
-  wire  [2:0] c_funct3;
+  reg   [2:0] c_funct3;
 
   // Funct7 field
   wire        c_f7_imm_ci;
@@ -199,7 +199,7 @@ module decoder (
   wire        c_f7_imm_cssp;
   wire        c_f7_sub;
   wire        c_f7_sr;
-  wire  [6:0] c_funct7;
+  reg   [6:0] c_funct7;
 
   // Opcode field
   wire        c_op;
@@ -208,7 +208,7 @@ module decoder (
   wire        c_jal;
   wire        c_jalr;
   wire        c_branch;
-  wire  [4:0] c_opcode;
+  reg   [4:0] c_opcode;
 
   // Conmbined opcode
   wire [31:0] c_opcode_in;
@@ -384,16 +384,22 @@ module decoder (
   assign c_rd_imm_cssp = c_swsp;
   assign c_rd_j        = c_j;
   assign c_rd_jr       = c_jr;
-  assign c_rd          =
-    (c_rd_rs2s)        ? rs2_cs :
-    (c_rd_rs1s)        ? rs1_cs :
-    (c_rd_rs1l)        ? rs1_cl :
-    (c_rd_imm_cls)     ? {immediate_cls [2:0], 2'b00} :
-    (c_rd_imm_cb)      ? {immediate_cb  [4:1], immediate_cb[8]} :
-    (c_rd_imm_cssp)    ? {immediate_cssp[4:2], 2'b00} :
-    (c_rd_j)           ? {4'b0000, !funct3_c[2]} :
-    (c_rd_jr)          ? {4'b0000, i_opcode_in[12]} :
-    5'b00000;
+`ifdef HARDWARE_TIPS
+  (* parallel_case *)
+`endif
+  always @* begin
+    case (1'b1)
+      c_rd_rs2s:     c_rd = rs2_cs;
+      c_rd_rs1s:     c_rd = rs1_cs;
+      c_rd_rs1l:     c_rd = rs1_cl;
+      c_rd_imm_cls:  c_rd = {immediate_cls [2:0], 2'b00};
+      c_rd_imm_cb:   c_rd = {immediate_cb  [4:1], immediate_cb[8]};
+      c_rd_imm_cssp: c_rd = {immediate_cssp[4:2], 2'b00};
+      c_rd_j:        c_rd = {4'b0000, !funct3_c[2]};
+      c_rd_jr:       c_rd = {4'b0000, i_opcode_in[12]};
+      default:       c_rd = 5'b00000;
+    endcase
+  end
 
   // RS1 field
   assign c_rs1_sp     = c_addi4spn || c_addi16sp || c_swsp || c_lwsp;
@@ -402,13 +408,19 @@ module decoder (
     (c_add && i_opcode_in[12]);
   assign c_rs1_imm_ci = c_lui;
   assign c_rs1_imm_cj = c_j;
-  assign c_rs1        =
-    (c_rs1_sp)        ? 5'b00010 :
-    (c_rs1_rs1s)      ? rs1_cs :
-    (c_rs1_rs1l)      ? rs1_cl :
-    (c_rs1_imm_ci)    ? {{3{immediate_ci[5]}}, immediate_ci[4:3]} :
-    (c_rs1_imm_cj)    ? {5{immediate_cj[11]}} :
-    5'b00000;
+`ifdef HARDWARE_TIPS
+  (* parallel_case *)
+`endif
+  always @* begin
+    case (1'b1)
+      c_rs1_sp:      c_rs1 = 5'b00010;
+      c_rs1_rs1s:    c_rs1 = rs1_cs;
+      c_rs1_rs1l:    c_rs1 = rs1_cl;
+      c_rs1_imm_ci:  c_rs1 = {{3{immediate_ci[5]}}, immediate_ci[4:3]};
+      c_rs1_imm_cj:  c_rs1 = {5{immediate_cj[11]}};
+      default:       c_rs1 = 5'b00000;
+    endcase
+  end
 
   // RS2 field
   assign c_rs2_rs2s      = c_sw || c_ar;
@@ -420,17 +432,23 @@ module decoder (
   assign c_rs2_imm_cj    = c_j;
   assign c_rs2_imm_c16sp = c_addi16sp;
   assign c_rs2_imm_clsp  = c_lwsp;
-  assign c_rs2           =
-    (c_rs2_rs2s)         ? rs2_cs :
-    (c_rs2_rs2l)         ? rs2_cl :
-    (c_rs2_imm_cil)      ? immediate_ci[4:0] :
-    (c_rs2_imm_cih)      ? {5{immediate_ci[5]}} :
-    (c_rs2_imm_cls)      ? {immediate_cls[2:0], 2'b00} :
-    (c_rs2_imm_ciw)      ? {immediate_ciw[2:0], 2'b00} :
-    (c_rs2_imm_cj)       ? {immediate_cj[4:1], immediate_cj[11]} :
-    (c_rs2_imm_c16sp)    ? {immediate_c16sp[4], 4'b0000} :
-    (c_rs2_imm_clsp)     ? {immediate_clsp[4:2], 2'b00} :
-    5'b00000;
+`ifdef HARDWARE_TIPS
+  (* parallel_case *)
+`endif
+  always @* begin
+    case (1'b1)
+      c_rs2_rs2s:      c_rs2 = rs2_cs;
+      c_rs2_rs2l:      c_rs2 = rs2_cl;
+      c_rs2_imm_cil:   c_rs2 = immediate_ci[4:0];
+      c_rs2_imm_cih:   c_rs2 = {5{immediate_ci[5]}};
+      c_rs2_imm_cls:   c_rs2 = {immediate_cls[2:0], 2'b00};
+      c_rs2_imm_ciw:   c_rs2 = {immediate_ciw[2:0], 2'b00};
+      c_rs2_imm_cj:    c_rs2 = {immediate_cj[4:1], immediate_cj[11]};
+      c_rs2_imm_c16sp: c_rs2 = {immediate_c16sp[4], 4'b0000};
+      c_rs2_imm_clsp:  c_rs2 = {immediate_clsp[4:2], 2'b00};
+      default:         c_rs2 = 5'b00000;
+    endcase
+  end
 
   // Funct3 field
   assign c_f3_010    = c_sw || c_lw || c_swsp || c_lwsp;
@@ -439,14 +457,20 @@ module decoder (
   assign c_f3_111    = c_andi || (c_j && immediate_cj[11]);
   assign c_f3_ar_f3  = c_ar;
   assign c_f3_imm_ci = c_lui;
-  assign c_funct3    =
-    (c_f3_imm_ci)    ? immediate_ci[2:0] :
-    (c_f3_ar_f3)     ? c_ar_f3 :
-    (c_f3_001)       ? 3'b001 :
-    (c_f3_010)       ? 3'b010 :
-    (c_f3_101)       ? 3'b101 :
-    (c_f3_111)       ? 3'b111 :
-    3'b000;
+`ifdef HARDWARE_TIPS
+  (* parallel_case *)
+`endif
+  always @* begin
+    case (1'b1)
+      c_f3_imm_ci: c_funct3 = immediate_ci[2:0];
+      c_f3_ar_f3:  c_funct3 = c_ar_f3;
+      c_f3_001:    c_funct3 = 3'b001;
+      c_f3_010:    c_funct3 = 3'b010;
+      c_f3_101:    c_funct3 = 3'b101;
+      c_f3_111:    c_funct3 = 3'b111;
+      default:     c_funct3 = 3'b000;
+    endcase
+  end
 
   // Funct7 field
   assign c_f7_imm_ci    = c_lui || c_addi || c_li || c_andi;
@@ -459,18 +483,24 @@ module decoder (
   assign c_f7_imm_cssp  = c_swsp;
   assign c_f7_sub       = c_ar;
   assign c_f7_sr        = c_sri;
-  assign c_funct7       =
-    (c_f7_imm_ci)       ? {7{immediate_ci[5]}} :
-    (c_f7_imm_cls)      ? {5'b00000, immediate_cls[4:3]} :
-    (c_f7_imm_cj)       ? {immediate_cj[11:5]} :
-    (c_f7_imm_cb)       ? {{4{immediate_cb[8]}}, immediate_cb[7:5]} :
-    (c_f7_imm_ciw)      ? {2'b00, immediate_ciw[7:3]} :
-    (c_f7_imm_c16sp)    ? {{3{immediate_c16sp[9]}}, immediate_c16sp[8:5]} :
-    (c_f7_imm_clsp)     ? {4'b0000, immediate_clsp[7:5]} :
-    (c_f7_imm_cssp)     ? {4'b0000, immediate_cssp[7:5]} :
-    (c_f7_sr)           ? {1'b0, funct2_ch[0], 5'b00000} :
-    (c_f7_sub)          ? {1'b0, c_sub, 5'b00000} :
-    7'b0000000;
+`ifdef HARDWARE_TIPS
+  (* parallel_case *)
+`endif
+  always @* begin
+    case (1'b1)
+      c_f7_imm_ci:    c_funct7 = {7{immediate_ci[5]}};
+      c_f7_imm_cls:   c_funct7 = {5'b00000, immediate_cls[4:3]};
+      c_f7_imm_cj:    c_funct7 = {immediate_cj[11:5]};
+      c_f7_imm_cb:    c_funct7 = {{4{immediate_cb[8]}}, immediate_cb[7:5]};
+      c_f7_imm_ciw:   c_funct7 = {2'b00, immediate_ciw[7:3]};
+      c_f7_imm_c16sp: c_funct7 = {{3{immediate_c16sp[9]}}, immediate_c16sp[8:5]};
+      c_f7_imm_clsp:  c_funct7 = {4'b0000, immediate_clsp[7:5]};
+      c_f7_imm_cssp:  c_funct7 = {4'b0000, immediate_cssp[7:5]};
+      c_f7_sr:        c_funct7 = {1'b0, funct2_ch[0], 5'b00000};
+      c_f7_sub:       c_funct7 = {1'b0, c_sub, 5'b00000};
+      default:        c_funct7 = 7'b0000000;
+    endcase
+  end
 
   // Opcode field
   //  Default opcode is 5'b00100 because it's register/immediate operation,
@@ -483,15 +513,21 @@ module decoder (
   assign c_jal          = c_j;
   assign c_jalr         = c_jr;
   assign c_branch       = c_b;
-  assign c_opcode =
-    (c_op)              ? 5'b01100 :
-    (c_load)            ? 5'b00000 :
-    (c_store)           ? 5'b01000 :
-    (c_jal)             ? 5'b11011 :
-    (c_jalr)            ? 5'b11001 :
-    (c_lui)             ? 5'b01101 :
-    (c_branch)          ? 5'b11000 :
-    5'b00100;
+`ifdef HARDWARE_TIPS
+  (* parallel_case *)
+`endif
+  always @* begin
+    case (1'b1)
+      c_op:     c_opcode = 5'b01100;
+      c_load:   c_opcode = 5'b00000;
+      c_store:  c_opcode = 5'b01000;
+      c_jal:    c_opcode = 5'b11011;
+      c_jalr:   c_opcode = 5'b11001;
+      c_lui:    c_opcode = 5'b01101;
+      c_branch: c_opcode = 5'b11000;
+      default:  c_opcode = 5'b00100;
+    endcase
+  end
 
   // Opcode assignment
   assign c_opcode_in =

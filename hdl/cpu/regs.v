@@ -16,10 +16,12 @@ module regs (
 );
 
   // Register array
+`ifdef HARDWARE_TIPS
 `ifdef REGS_DISTRIBUTED
   (* ram_style = "distributed" *)
 `else
   (* ram_style = "block" *)
+`endif
 `endif
   reg [31:0] registers [0:31];
   reg [31:0] dat_rd_a_reg = 0;
@@ -27,11 +29,13 @@ module regs (
 
   // Register array initialization (filling with zeros), this is required for
   //  the simulation to eliminate undefined values at the start
+`ifndef HARDWARE_TIPS
   initial begin
     for (integer i = 0; i < 32; i=i+1) begin
       registers[i] = 32'd0;
     end
   end
+`endif
 
   // Register read/write process
   always @(posedge i_clk) begin

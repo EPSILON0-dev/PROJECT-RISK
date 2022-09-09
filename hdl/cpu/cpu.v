@@ -128,7 +128,7 @@ module cpu (
   reg  [31:0] wb_wb_d;
   reg  [ 4:0] wb_wb_reg;
   reg         wb_wb_en;
-  wire [31:0] wb_dat_mux;
+  reg  [31:0] wb_dat_mux;
 
   /**
    * Clock Signals
@@ -217,7 +217,6 @@ module cpu (
     .i_wb_wb_en   (wb_wb_en),
     .i_ex_wb_mux  (ex_wb_mux),
     .i_ma_wb_mux  (ma_wb_mux),
-    .i_ex_res_dat (ex_res_dat),
     .i_ex_ret     (ex_ret),
     .i_ma_res     (ma_res),
     .i_ma_rd_dat  (ma_rd_dat),
@@ -426,8 +425,13 @@ module cpu (
     end
   end
 
-  assign wb_dat_mux = (ma_wb_mux == 2'b10) ? ma_ret :
-    (ma_wb_mux == 2'b01) ? ma_rd_dat : ma_res;
+  always @* begin
+    case (ma_wb_mux)
+      default: wb_dat_mux = ma_res;
+      2'b01:   wb_dat_mux = ma_rd_dat;
+      2'b10:   wb_dat_mux = ma_ret;
+    endcase
+  end
 
   /**
    * Output assignment

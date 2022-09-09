@@ -104,14 +104,14 @@ module shifter (
   always @(posedge i_clk_n) begin
 
     // Initial register preload
-    if (op_shift && shift_amount == 0) begin
+    if (op_shift && ~|shift_amount) begin
       shift_amount   <= i_in_b[4:0];
       shift_result   <= i_in_a;
       shift_dir_left <= op_sll;
     end
 
     // Actual shifting
-    if (shift_amount != 0) begin
+    if (|shift_amount) begin
       shift_result <= (shift_dir_left) ? shift_left : shift_right;
       shift_amount <= shift_amount - 5'h1;
     end
@@ -127,7 +127,7 @@ module shifter (
 
   // Output signals
   assign o_result = shift_result;
-  assign o_busy = (shift_amount != 0);
+  assign o_busy = |shift_amount;
 
 `endif
 

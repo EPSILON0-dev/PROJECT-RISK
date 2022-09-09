@@ -32,7 +32,7 @@ test_cpu: $(CPUTSTOBJ)
 ##################################  Watchers  #################################
 
 watch_tst:
-	@while [ true ]; do printf "\033[2J\033[H"; make -s fresh_tst; make -s test_cpu; printf "\n"; inotifywait -r -q -e modify .; done
+	@while [ true ]; do printf "\033[2J\033[H"; make -s fresh_tst; make -s test_cpu; printf "\n"; inotifywait -r -q -e modify ../cpu; done
 
 lint:
 	@while [ true ]; do printf "\033[2J\033[H"; verilator --lint-only --relative-includes -Wall ../cpu/cpu.v; printf "\n"; inotifywait -r -q -e modify ../cpu; done

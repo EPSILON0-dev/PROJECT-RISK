@@ -20,7 +20,6 @@ module hazard (
   input   [1:0] i_ex_wb_mux,
   input   [1:0] i_ma_wb_mux,
 
-  input  [31:0] i_ex_res_dat,
   input  [31:0] i_ex_ret,
   input  [31:0] i_ma_rd_dat,
   input  [31:0] i_ma_res,
@@ -41,9 +40,10 @@ module hazard (
 `ifdef HAZARD_DATA_FORWARDNG
   ///////////////////////////////////////////////////////////////////////////
   // If hazard data forwarding is enabled hazard unit tries to forward the
-  //  data from the pipeline, if it cannot be done data hazard is generated
+  //  data from the pipeline, if it cannot be done data hazard is generated,
+  //  using MUX6 to do the switching isn't ideal but it's the least bad
+  //  option that I have
   ///////////////////////////////////////////////////////////////////////////
-  wire        Hazard;
 
   // Hazard enables for read registers
   wire        rs1_hz_en;
@@ -74,8 +74,8 @@ module hazard (
   wire        hz_ex_rd2;
 
   // Forwarding to read registers
-  wire [31:0] rs1_d;
-  wire [31:0] rs2_d;
+  reg  [31:0] rs1_d;
+  reg  [31:0] rs2_d;
 
   // Unrecoverable hazard
   wire        hz_data;
@@ -110,22 +110,34 @@ module hazard (
   assign hz_ex_rd2  = hz_ex2 && (i_ex_wb_mux == 2'b01);
 
   // Forwarding to rs1
-  assign rs1_d =
-    (hz_wb1)     ? i_wb_wb_d :
-    (hz_ma_res1) ? i_ma_res :
-    (hz_ma_ret1) ? i_ma_ret :
-    (hz_ma_rd1)  ? i_ma_rd_dat :
-    (hz_ex_ret1) ? i_ex_ret :
-    i_rs1_raw_d;
+`ifdef HARDWARE_TIPS
+  (* parallel_case *)
+`endif
+  always @* begin
+    case (1'b1)
+      hz_wb1:     rs1_d = i_wb_wb_d;
+      hz_ma_res1: rs1_d = i_ma_res;
+      hz_ma_ret1: rs1_d = i_ma_ret;
+      hz_ma_rd1:  rs1_d = i_ma_rd_dat;
+      hz_ex_ret1: rs1_d = i_ex_ret;
+      default:    rs1_d = i_rs1_raw_d;
+    endcase
+  end
 
   // Forwarding to rs2
-  assign rs2_d =
-    (hz_wb2)     ? i_wb_wb_d :
-    (hz_ma_res2) ? i_ma_res :
-    (hz_ma_ret2) ? i_ma_ret :
-    (hz_ma_rd2)  ? i_ma_rd_dat :
-    (hz_ex_ret2) ? i_ex_ret :
-    i_rs2_raw_d;
+`ifdef HARDWARE_TIPS
+  (* parallel_case *)
+`endif
+  always @* begin
+    case (1'b1)
+      hz_wb2:     rs2_d = i_wb_wb_d;
+      hz_ma_res2: rs2_d = i_ma_res;
+      hz_ma_ret2: rs2_d = i_ma_ret;
+      hz_ma_rd2:  rs2_d = i_ma_rd_dat;
+      hz_ex_ret2: rs2_d = i_ex_ret;
+      default:    rs2_d = i_rs2_raw_d;
+    endcase
+  end
 
   // Critical unrecoverable hazards
   assign hz_data = hz_ex_rd1 || hz_ex_rd2 || hz_ex_res1 || hz_ex_res2;
@@ -142,9 +154,9 @@ module hazard (
   wire [31:0] rs1_d;
   wire [31:0] rs2_d;
 
-  assign hz_dat_rs1 = i_hz_rs1 && (i_rs1 != 0) && ((i_rs1 == i_ex_wb_reg)
+  assign hz_dat_rs1 = i_hz_rs1 && (|i_rs1) && ((i_rs1 == i_ex_wb_reg)
     || (i_rs1 == i_ma_wb_reg) || (i_rs1 == i_wb_wb_reg));
-  assign hz_dat_rs2 = i_hz_rs2 && (i_rs2 != 0) && ((i_rs2 == i_ex_wb_reg)
+  assign hz_dat_rs2 = i_hz_rs2 && (|i_rs2) && ((i_rs2 == i_ex_wb_reg)
     || (i_rs2 == i_ma_wb_reg) || (i_rs2 == i_wb_wb_reg));
   assign hz_data = hz_dat_rs1 || hz_dat_rs2;
 
