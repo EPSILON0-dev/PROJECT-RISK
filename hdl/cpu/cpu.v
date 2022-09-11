@@ -50,7 +50,6 @@ module cpu (
 
   // Instruction decoder
   wire [31:0] immediate;
-  wire [ 4:0] opcode;
   wire [ 2:0] funct3;
   wire [ 6:0] funct7;
   wire [ 4:0] rs1;
@@ -58,6 +57,8 @@ module cpu (
   wire [ 4:0] rd;
   wire        hz_rs1;
   wire        hz_rs2;
+  wire        branch;
+  wire        jump;
   wire        alu_pc;
   wire        alu_imm;
   wire        alu_en;
@@ -80,9 +81,10 @@ module cpu (
   reg  [31:0] ex_imm;
   reg  [31:0] ex_pc;
   reg  [31:0] ex_ret;
-  reg  [ 4:0] ex_opcode;
   reg  [ 2:0] ex_funct3;
   reg  [ 6:0] ex_funct7;
+  reg         ex_jump;
+  reg         ex_branch;
   reg         ex_alu_pc;
   reg         ex_alu_imm;
   reg         ex_alu_en;
@@ -121,8 +123,8 @@ module cpu (
   wire [31:0] ma_rd_dat;
   wire [31:0] ma_wr_dat;
   wire [ 3:0] ma_we;
-  wire [3:0] ma_wr_en;
-  wire       ma_rd_en;
+  wire  [3:0] ma_wr_en;
+  wire        ma_rd_en;
 
   // Write back registers
   reg  [31:0] wb_wb_d;
@@ -168,7 +170,6 @@ module cpu (
   decoder decoder_i (
     .i_opcode_in (id_ir),
     .o_immediate (immediate),
-    .o_opcode    (opcode),
     .o_funct3    (funct3),
     .o_funct7    (funct7),
     .o_rs1       (rs1),
@@ -177,6 +178,8 @@ module cpu (
     .o_system    (system),
     .o_hz_rs1    (hz_rs1),
     .o_hz_rs2    (hz_rs2),
+    .o_branch    (branch),
+    .o_jump      (jump),
     .o_alu_pc    (alu_pc),
     .o_alu_imm   (alu_imm),
     .o_alu_en    (alu_en),
@@ -243,10 +246,11 @@ module cpu (
       ex_imm      <= 0;
       ex_pc       <= 0;
       ex_ret      <= 0;
-      ex_opcode   <= 0;
       ex_funct3   <= 0;
       ex_funct7   <= 0;
       ex_rs1      <= 0;
+      ex_branch   <= 0;
+      ex_jump     <= 0;
       ex_alu_pc   <= 0;
       ex_alu_imm  <= 0;
       ex_alu_en   <= 0;
@@ -262,10 +266,11 @@ module cpu (
       ex_imm      <= immediate;
       ex_pc       <= id_pc;
       ex_ret      <= id_ret;
-      ex_opcode   <= opcode;
       ex_funct3   <= funct3;
       ex_funct7   <= funct7;
       ex_rs1      <= rs1;
+      ex_branch   <= branch;
+      ex_jump     <= jump;
       ex_alu_pc   <= alu_pc;
       ex_alu_imm  <= alu_imm;
       ex_alu_en   <= alu_en;
@@ -285,7 +290,8 @@ module cpu (
     .i_dat_a  (ex_rs1_d),
     .i_dat_b  (ex_rs2_d),
     .i_funct3 (ex_funct3),
-    .i_opcode (ex_opcode),
+    .i_branch (ex_branch),
+    .i_jump   (ex_jump),
     .o_br_en  (br_en)
   );
 

@@ -3,7 +3,8 @@ module branch (
   input  [31:0] i_dat_b,
 
   input  [ 2:0] i_funct3,
-  input  [ 4:0] i_opcode,
+  input         i_branch,
+  input         i_jump,
 
   output        o_br_en
 );
@@ -13,10 +14,6 @@ module branch (
   wire equal;
   wire lower;
   wire lower_u;
-
-  // Operation decoders
-  wire op_jump;
-  wire op_branch;
 
   // Conditiom multiplexer
   reg  condition_mux;
@@ -32,12 +29,6 @@ module branch (
   assign equal   = (i_dat_a == i_dat_b);
   assign lower   = ($signed(i_dat_a) < $signed(i_dat_b));
   assign lower_u = ($unsigned(i_dat_a) < $unsigned(i_dat_b));
-
-  /**
-   * Operation decoders
-   */
-  assign op_jump   = (i_opcode == 5'b11001) || (i_opcode == 5'b11011);
-  assign op_branch = (i_opcode == 5'b11000);
 
   /**
    * Condition multiplexer
@@ -59,7 +50,7 @@ module branch (
    * Final branch condition
    *  Jump is always taken and branch is taken if the condition is met
    */
-  assign br_en = op_jump || (op_branch && condition);
+  assign br_en = i_jump || (i_branch && condition);
 
   /**
    * Output assignment

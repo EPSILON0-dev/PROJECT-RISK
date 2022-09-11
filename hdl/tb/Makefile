@@ -11,7 +11,7 @@ all: compile_tst
 
 #############################  Test Compilation  ##############################
 
-fresh_tst: clean compile_tst
+fresh: clean compile_tst
 
 compile_tst: $(TSTOBJ)
 
@@ -20,9 +20,9 @@ compile_tst: $(TSTOBJ)
 
 ##############################  CPU TB Testing  ###############################
 
-fresh_test_cpu: clean test_cpu
+fresh_tst: clean test_cpu
 
-selftest: fresh_tst
+selftest: fresh
 	@python3 ./selftest.py
 
 test_cpu: $(CPUTSTOBJ)
