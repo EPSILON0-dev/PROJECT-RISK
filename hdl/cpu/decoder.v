@@ -4,7 +4,6 @@ module decoder (
   input  [31:0] i_opcode_in,
 
   output [31:0] o_immediate,
-  output [ 4:0] o_opcode,
   output [ 2:0] o_funct3,
   output [ 6:0] o_funct7,
 
@@ -40,6 +39,12 @@ module decoder (
   wire  [2:0] funct3;
   wire  [6:0] funct7;
 `ifdef C_EXTENSION
+  wire  [4:0] rs1cs;
+  wire  [4:0] rs2cs;
+  wire  [4:0] rs1cl;
+  wire  [4:0] rs2cl;
+  wire  [1:0] funct2h;
+  wire  [1:0] funct2l;
   wire  [2:0] copcode;
 `endif
 
@@ -75,14 +80,34 @@ module decoder (
   wire        op_cjr_mv_add;
 `endif
 
+  wire        op_jump;
+`ifdef C_EXTENSION
+  wire        op_caddi16sp;
+  wire        op_clui;
+  wire        op_csri;
+  wire        op_candi;
+  wire        op_caryth;
+  wire        op_csub;
+`endif
+
   // Format decoding
+  wire        opcode_valid;
   wire        format_u;
   wire        format_j;
   wire        format_b;
   wire        format_s;
   wire        format_r;
   wire        format_i;
-  wire        opcode_valid;
+`ifdef C_EXTENSION
+  wire        format_ciw;
+  wire        format_ci;
+  wire        format_c16sp;
+  wire        format_cls;
+  wire        format_cj;
+  wire        format_cb;
+  wire        format_cssp;
+  wire        format_clsp;
+`endif
 
   // Immediate deconding
   wire [31:0] immediate_u;
@@ -103,8 +128,6 @@ module decoder (
 `endif
 
   // Internal signals decoding
-  wire        branch;
-  wire        jump;
   wire        alu_pc;
   wire        alu_imm;
   wire        alu_en;
@@ -114,7 +137,19 @@ module decoder (
   wire        wb_en;
   wire        hz_rs1;
   wire        hz_rs2;
-
+`ifdef C_EXTENSION
+  reg   [4:0] rs1_mux;
+  reg   [4:0] rs2_mux;
+  reg   [4:0] rd_mux;
+  reg   [2:0] funct3_mux;
+  reg   [6:0] funct7_mux;
+`else
+  wire  [4:0] rs1_mux;
+  wire  [4:0] rs2_mux;
+  wire  [4:0] rd_mux;
+  wire  [2:0] funct3_mux;
+  wire  [6:0] funct7_mux;
+`endif
 
   /**
    * Opcode elements extraction
@@ -127,22 +162,32 @@ module decoder (
   assign funct7  = i_opcode_in[31:25];
 `ifdef C_EXTENSION
   assign copcode = i_opcode_in[15:13];
+  assign rs1cs   = {2'b01, i_opcode_in[9:7]};
+  assign rs2cs   = {2'b01, i_opcode_in[4:2]};
+  assign rs1cl   = i_opcode_in[11:7];
+  assign rs2cl   = i_opcode_in[6:2];
+  assign funct2h = i_opcode_in[11:10];
+  assign funct2l = i_opcode_in[6:5];
 `endif
 
   /**
    * Operation decoding
    */
-  assign op_load   = quad3  && (opcode == 5'b00000);
-  assign op_op_imm = quad3  && (opcode == 5'b00100);
-  assign op_auipc  = quad3  && (opcode == 5'b00101);
-  assign op_store  = quad3  && (opcode == 5'b01000);
-  assign op_op     = quad3  && (opcode == 5'b01100);
-  assign op_lui    = quad3  && (opcode == 5'b01101);
-  assign op_branch = quad3  && (opcode == 5'b11000);
-  assign op_jalr   = quad3  && (opcode == 5'b11001);
-  assign op_jal    = quad3  && (opcode == 5'b11011);
-  assign op_system = quad3  && (opcode == 5'b11100);
+  assign quad3         = (i_opcode_in[1:0] == 2'b11);
+  assign op_load       = quad3 && (opcode == 5'b00000);
+  assign op_op_imm     = quad3 && (opcode == 5'b00100);
+  assign op_auipc      = quad3 && (opcode == 5'b00101);
+  assign op_store      = quad3 && (opcode == 5'b01000);
+  assign op_op         = quad3 && (opcode == 5'b01100);
+  assign op_lui        = quad3 && (opcode == 5'b01101);
+  assign op_branch     = quad3 && (opcode == 5'b11000);
+  assign op_jalr       = quad3 && (opcode == 5'b11001);
+  assign op_jal        = quad3 && (opcode == 5'b11011);
+  assign op_system     = quad3 && (opcode == 5'b11100);
 `ifdef C_EXTENSION
+  assign quad0         = (i_opcode_in[1:0] == 2'b00);
+  assign quad1         = (i_opcode_in[1:0] == 2'b01);
+  assign quad2         = (i_opcode_in[1:0] == 2'b10);
   assign op_caddi4spn  = quad0 && (copcode == 3'b000);
   assign op_clw        = quad0 && (copcode == 3'b010);
   assign op_csw        = quad0 && (copcode == 3'b110);
@@ -161,6 +206,19 @@ module decoder (
 `endif
 
   /**
+   * Operation decoding helper signals
+   */
+  assign op_jump      = op_jal || op_jalr;
+`ifdef C_EXTENSION
+  assign op_caddi16sp = op_clui_a16sp && (rs1cl == 5'b00010);
+  assign op_clui      = op_clui_a16sp && (rs1cl != 5'b00010) && |rs1cl;
+  assign op_csri      = op_calu && (funct2h[1] == 1'b0);
+  assign op_candi     = op_calu && (funct2h[1:0] == 2'b10);
+  assign op_caryth    = op_calu && (funct2h[1:0] == 2'b11);
+  assign op_csub      = op_caryth && (funct2l[1:0] == 2'b00);
+`endif
+
+  /**
    * Format decoding
    */
   assign format_u = op_auipc || op_lui;
@@ -169,11 +227,34 @@ module decoder (
   assign format_s = op_store;
   assign format_r = op_op;
   assign format_i = op_load || op_op_imm || op_jalr || op_system;
+`ifdef C_EXTENSION
+  assign format_ciw   = op_caddi4spn;
+  assign format_ci    = op_caddi || op_cli || op_candi || op_cslli;
+  assign format_c16sp = op_caddi16sp;
+  assign format_cls   = op_clw || op_csw;
+  assign format_cj    = op_cj || op_cjal;
+  assign format_cb    = op_cbeqz || op_cbnez;
+  assign format_cssp  = op_cswsp;
+  assign format_clsp  = op_clwsp;
+`endif
 
   /**
    * Opcode validation
    */
-  assign opcode_valid = (i_opcode_in[1:0] == 2'b11) && (
+  assign opcode_valid = (
+  `ifdef C_EXTENSION
+    op_calu      ||
+    format_ciw   ||
+    format_ci    ||
+    format_c16sp ||
+    format_cls   ||
+    format_cj    ||
+    format_cb    ||
+    format_cssp  ||
+    format_clsp  ||
+  `else
+    i_opcode_in[1:0] == 2'b11) && (
+  `endif
     format_u ||
     format_j ||
     format_b ||
@@ -228,15 +309,16 @@ module decoder (
     i_opcode_in[30:20]
   };
 
-  `ifdef C_EXTENSION
+`ifdef C_EXTENSION
   // Compressed immediate word
   //  C.ADDI4SPN
   assign immediate_ciw = {
-    24'b0000_0000_0000_0000_0000_0000,
+    22'b00_0000_0000_0000_0000_0000,
     i_opcode_in[10:7],
     i_opcode_in[12:11],
     i_opcode_in[5],
-    i_opcode_in[6]
+    i_opcode_in[6],
+    2'b00
   };
 
   // Compressed immediate
@@ -316,73 +398,139 @@ module decoder (
 `endif
   always @* begin
     case (1'b1)
-      format_u: immediate_mux = immediate_u;
-      format_j: immediate_mux = immediate_j;
-      format_b: immediate_mux = immediate_b;
-      format_i: immediate_mux = immediate_i;
-      format_s: immediate_mux = immediate_s;
-      default:  immediate_mux = 32'h00000000;
+`ifdef C_EXTENSION
+      format_ciw:   immediate_mux = immediate_ciw;
+      format_ci:    immediate_mux = immediate_ci;
+      format_c16sp: immediate_mux = immediate_c16sp;
+      format_cls:   immediate_mux = immediate_cls;
+      format_cj:    immediate_mux = immediate_cj;
+      format_cb:    immediate_mux = immediate_cb;
+      format_cssp:  immediate_mux = immediate_cssp;
+      format_clsp:  immediate_mux = immediate_clsp;
+`endif
+      format_u:     immediate_mux = immediate_u;
+      format_j:     immediate_mux = immediate_j;
+      format_b:     immediate_mux = immediate_b;
+      format_i:     immediate_mux = immediate_i;
+      format_s:     immediate_mux = immediate_s;
+      default:      immediate_mux = 32'h00000000;
     endcase
   end
-
 
   /**
    * Internal CPU signals
    */
-
-  // Branch and jump signals
-  assign branch = op_branch;
-  assign jump   = op_jal || op_jalr;
-
-  // Only branches, JAL and AUIPC use ALU to generate address from pc.
-  // JALR uses rs1 as address base so it isn't here.
+`ifdef C_EXTENSION
   assign alu_pc = op_jal || op_auipc || op_branch;
-  // Only normal arythmetics don't use immediate values.
   assign alu_imm = !op_op;
-  // ALU is enabled on OP and OP_IMM, everything else just relys on ADD.
-  // In disabled state ALU only performs ADD operations.
   assign alu_en = op_op || op_op_imm;
-
-  // This will select what is stored in write back register.
-  // There are three possible write back sources:
-  //  [ 00 ] - ALU
-  //  [ 01 ] - Memory (LOAD)
-  //  [ 10 ] - Return address (JAL and JALR)
   assign wb_mux = {op_jal || op_jalr, op_load};
-
-  // These are pretty selfexplenatory
   assign ma_wr = op_store && opcode_valid;
   assign ma_rd = op_load && opcode_valid;
-
-  // Only stores and branches don't write back any data.
-  // This changes future states of the cpu so we need to make sure that
-  //  the opcode is valid.
   assign wb_en = !(op_store || op_branch) && opcode_valid;
-
-  // Only LUI, AUIPC and JAL don't use RSA so they don't generate hazard
   assign hz_rs1 = !(op_lui || op_auipc || op_jal);
-  // Only branches, stores and normal ops use RSB so they do generate hazard
   assign hz_rs2 = op_branch || op_store || op_op;
+`else
+  assign alu_pc = op_jal || op_auipc || op_branch;
+  assign alu_imm = !op_op;
+  assign alu_en = op_op || op_op_imm;
+  assign wb_mux = {op_jal || op_jalr, op_load};
+  assign ma_wr = op_store && opcode_valid;
+  assign ma_rd = op_load && opcode_valid;
+  assign wb_en = !(op_store || op_branch) && opcode_valid;
+  assign hz_rs1 = !(op_lui || op_auipc || op_jal);
+  assign hz_rs2 = op_branch || op_store || op_op;
+`endif
+
+`ifdef C_EXTENSION
+
+`ifdef HARDWARE_TIPS
+  (* parallel_case *)
+`endif
+  always @* begin
+    case (1'b1)
+      rs1_normal: rs1_mux = rs1;
+      rs1_sp: rs1_mux = 5'b00010;
+      default: rs1_mux = 5'b00000;
+    endcase
+  end
+  wire rs1_normal = quad3;
+  wire rs1_sp = op_caddi4spn;
+
+`ifdef HARDWARE_TIPS
+  (* parallel_case *)
+`endif
+  always @* begin
+    case (1'b1)
+      rs2_normal: rs2_mux = rs2;
+      default: rs2_mux = 5'b00000;
+    endcase
+  end
+  wire rs2_normal = quad3;
+
+`ifdef HARDWARE_TIPS
+  (* parallel_case *)
+`endif
+  always @* begin
+    case (1'b1)
+      rd_normal: rd_mux = rd;
+      rd_sp: rd_mux = 5'b00010;
+      rd_rs2s: rd_mux = rs2cs;
+      default: rd_mux = 5'b00000;
+    endcase
+  end
+  wire rd_normal = quad3;
+  wire rd_sp = op_caddi4spn;
+  wire rd_rs2s = op_caddi4spn;
+
+`ifdef HARDWARE_TIPS
+  (* parallel_case *)
+`endif
+  always @* begin
+    case (1'b1)
+      funct3_normal: funct3_mux = funct3;
+      default: funct3_mux = 3'b000;
+    endcase
+  end
+  wire funct3_normal = quad3;
+
+`ifdef HARDWARE_TIPS
+  (* parallel_case *)
+`endif
+  always @* begin
+    case (1'b1)
+      funct7_normal: funct7_mux = funct7;
+      default: funct7_mux = 7'b0000000;
+    endcase
+  end
+  wire funct7_normal = quad3;
+
+`else
+  assign rs1_mux    = rs1;
+  assign rs2_mux    = rs2;
+  assign rd_mux     = rd;
+  assign funct3_mux = funct3;
+  assign funct7_mux = funct7;
+`endif
 
   /**
    * Output assignments
    */
   assign o_immediate  = immediate_mux;
-  assign o_opcode     = opcode;
-  assign o_funct3     = funct3;
-  assign o_funct7     = funct7;
+  assign o_funct3     = funct3_mux;
+  assign o_funct7     = funct7_mux;
 
   assign o_system     = op_system;
 
-  assign o_rs1        = rs1;
-  assign o_rs2        = rs2;
-  assign o_rd         = rd;
+  assign o_rs1        = rs1_mux;
+  assign o_rs2        = rs2_mux;
+  assign o_rd         = rd_mux;
 
   assign o_hz_rs1     = hz_rs1;
   assign o_hz_rs2     = hz_rs2;
 
-  assign o_branch     = branch;
-  assign o_jump       = jump;
+  assign o_branch     = op_branch;
+  assign o_jump       = op_jump;
 
   assign o_alu_pc     = alu_pc;
   assign o_alu_imm    = alu_imm;
