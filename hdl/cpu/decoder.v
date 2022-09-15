@@ -84,10 +84,14 @@ module decoder (
 `ifdef C_EXTENSION
   wire        op_caddi16sp;
   wire        op_clui;
-  wire        op_csri;
+  wire        op_csrli;
+  wire        op_csrai;
   wire        op_candi;
   wire        op_caryth;
   wire        op_csub;
+  wire        op_cxor;
+  wire        op_cor;
+  wire        op_cand;
 `endif
 
   // Format decoding
@@ -101,6 +105,7 @@ module decoder (
 `ifdef C_EXTENSION
   wire        format_ciw;
   wire        format_ci;
+  wire        format_cu;
   wire        format_c16sp;
   wire        format_cls;
   wire        format_cj;
@@ -119,6 +124,7 @@ module decoder (
 `ifdef C_EXTENSION
   wire [31:0] immediate_ciw;
   wire [31:0] immediate_ci;
+  wire [31:0] immediate_cu;
   wire [31:0] immediate_c16sp;
   wire [31:0] immediate_cls;
   wire [31:0] immediate_cj;
@@ -212,10 +218,14 @@ module decoder (
 `ifdef C_EXTENSION
   assign op_caddi16sp = op_clui_a16sp && (rs1cl == 5'b00010);
   assign op_clui      = op_clui_a16sp && (rs1cl != 5'b00010) && |rs1cl;
-  assign op_csri      = op_calu && (funct2h[1] == 1'b0);
-  assign op_candi     = op_calu && (funct2h[1:0] == 2'b10);
-  assign op_caryth    = op_calu && (funct2h[1:0] == 2'b11);
-  assign op_csub      = op_caryth && (funct2l[1:0] == 2'b00);
+  assign op_csrli     = op_calu && (funct2h == 2'b00);
+  assign op_csrai     = op_calu && (funct2h == 2'b01);
+  assign op_candi     = op_calu && (funct2h == 2'b10);
+  assign op_caryth    = op_calu && (funct2h == 2'b11);
+  assign op_csub      = op_caryth && (funct2l == 2'b00);
+  assign op_cxor      = op_caryth && (funct2l == 2'b01);
+  assign op_cor       = op_caryth && (funct2l == 2'b10);
+  assign op_cand      = op_caryth && (funct2l == 2'b11);
 `endif
 
   /**
@@ -229,7 +239,9 @@ module decoder (
   assign format_i = op_load || op_op_imm || op_jalr || op_system;
 `ifdef C_EXTENSION
   assign format_ciw   = op_caddi4spn;
-  assign format_ci    = op_caddi || op_cli || op_candi || op_cslli;
+  assign format_ci    = op_caddi || op_cli || op_candi || op_cslli ||
+    op_csrai || op_csrli;
+  assign format_cu    = op_clui;
   assign format_c16sp = op_caddi16sp;
   assign format_cls   = op_clw || op_csw;
   assign format_cj    = op_cj || op_cjal;
@@ -246,6 +258,7 @@ module decoder (
     op_calu      ||
     format_ciw   ||
     format_ci    ||
+    format_cu    ||
     format_c16sp ||
     format_cls   ||
     format_cj    ||
@@ -328,6 +341,14 @@ module decoder (
     i_opcode_in[6:2]
   };
 
+  // Compressed immediate
+  //  C.LUI
+  assign immediate_cu = {
+    {15{i_opcode_in[12]}},
+    i_opcode_in[6:2],
+    12'b0000_0000_0000
+  };
+
   // Compressed 16byte stack offset immediate
   //  C.ADDI16SP
   assign immediate_c16sp = {
@@ -342,9 +363,10 @@ module decoder (
   // Compressed load/store immediate
   //  C.LW C.SW
   assign immediate_cls = {
-    {28{i_opcode_in[5]}},
+    {26{i_opcode_in[5]}},
     i_opcode_in[12:10],
-    i_opcode_in[6]
+    i_opcode_in[6],
+    2'b00
   };
 
   // Compressed jump immediate
@@ -401,6 +423,7 @@ module decoder (
 `ifdef C_EXTENSION
       format_ciw:   immediate_mux = immediate_ciw;
       format_ci:    immediate_mux = immediate_ci;
+      format_cu:    immediate_mux = immediate_cu;
       format_c16sp: immediate_mux = immediate_c16sp;
       format_cls:   immediate_mux = immediate_cls;
       format_cj:    immediate_mux = immediate_cj;
@@ -421,15 +444,20 @@ module decoder (
    * Internal CPU signals
    */
 `ifdef C_EXTENSION
+  wire c_op_store = op_store || op_csw;
+  wire c_op_load  = op_load  || op_clw;
+  wire c_op_op_imm = op_op_imm || (op_calu && !op_caryth) || op_cslli;
+  wire c_op_op = op_op || op_caryth;
+  wire c_jal = op_jal || op_cj || op_cjal;
   assign alu_pc = op_jal || op_auipc || op_branch;
-  assign alu_imm = !op_op;
-  assign alu_en = op_op || op_op_imm;
-  assign wb_mux = {op_jal || op_jalr, op_load};
-  assign ma_wr = op_store && opcode_valid;
-  assign ma_rd = op_load && opcode_valid;
-  assign wb_en = !(op_store || op_branch) && opcode_valid;
+  assign alu_imm = !c_op_op;
+  assign alu_en = c_op_op || c_op_op_imm;
+  assign wb_mux = {c_jal || op_jalr, c_op_load};
+  assign ma_wr = c_op_store && opcode_valid;
+  assign ma_rd = c_op_load && opcode_valid;
+  assign wb_en = !(c_op_store || op_branch) && opcode_valid;
   assign hz_rs1 = !(op_lui || op_auipc || op_jal);
-  assign hz_rs2 = op_branch || op_store || op_op;
+  assign hz_rs2 = op_branch || c_op_store || c_op_op;
 `else
   assign alu_pc = op_jal || op_auipc || op_branch;
   assign alu_imm = !op_op;
@@ -450,12 +478,16 @@ module decoder (
   always @* begin
     case (1'b1)
       rs1_normal: rs1_mux = rs1;
-      rs1_sp: rs1_mux = 5'b00010;
-      default: rs1_mux = 5'b00000;
+      rs1_rs1l: rs1_mux = rs1cl;
+      rs1_rs1s: rs1_mux = rs1cs;
+      default: rs1_mux = {3'b000, rs1_sp, 1'b0};
     endcase
   end
   wire rs1_normal = quad3;
   wire rs1_sp = op_caddi4spn;
+  wire rs1_rs1l = op_caddi16sp || op_caddi || op_cslli;
+  wire rs1_rs1s = op_clw || op_csw || op_csrai || op_csrli || op_candi ||
+    op_caryth;
 
 `ifdef HARDWARE_TIPS
   (* parallel_case *)
@@ -463,10 +495,12 @@ module decoder (
   always @* begin
     case (1'b1)
       rs2_normal: rs2_mux = rs2;
+      rs2_rs2s: rs2_mux = rs2cs;
       default: rs2_mux = 5'b00000;
     endcase
   end
   wire rs2_normal = quad3;
+  wire rs2_rs2s = op_csw || op_caryth;
 
 `ifdef HARDWARE_TIPS
   (* parallel_case *)
@@ -474,14 +508,16 @@ module decoder (
   always @* begin
     case (1'b1)
       rd_normal: rd_mux = rd;
-      rd_sp: rd_mux = 5'b00010;
+      rd_rs1l: rd_mux = rs1cl;
+      rd_rs1s: rd_mux = rs1cs;
       rd_rs2s: rd_mux = rs2cs;
-      default: rd_mux = 5'b00000;
+      default: rd_mux = {4'b0000, op_cjal};
     endcase
   end
   wire rd_normal = quad3;
-  wire rd_sp = op_caddi4spn;
-  wire rd_rs2s = op_caddi4spn;
+  wire rd_rs2s = op_caddi4spn || op_clw;
+  wire rd_rs1l = op_caddi16sp || op_caddi || op_cli || op_clui || op_cslli;
+  wire rd_rs1s = op_csrai || op_csrli || op_candi || op_caryth;
 
 `ifdef HARDWARE_TIPS
   (* parallel_case *)
@@ -489,10 +525,22 @@ module decoder (
   always @* begin
     case (1'b1)
       funct3_normal: funct3_mux = funct3;
-      default: funct3_mux = 3'b000;
+      funct3_001:    funct3_mux = 3'b001;
+      funct3_010:    funct3_mux = 3'b010;
+      funct3_100:    funct3_mux = 3'b100;
+      funct3_101:    funct3_mux = 3'b101;
+      funct3_110:    funct3_mux = 3'b110;
+      funct3_111:    funct3_mux = 3'b111;
+      default:       funct3_mux = 3'b000;
     endcase
   end
   wire funct3_normal = quad3;
+  wire funct3_001    = op_cslli || op_cbnez;
+  wire funct3_010    = op_clw || op_csw;
+  wire funct3_100    = op_cxor;
+  wire funct3_101    = op_csrai || op_csrli;
+  wire funct3_110    = op_cor;
+  wire funct3_111    = op_candi || op_cand;
 
 `ifdef HARDWARE_TIPS
   (* parallel_case *)
@@ -500,10 +548,11 @@ module decoder (
   always @* begin
     case (1'b1)
       funct7_normal: funct7_mux = funct7;
-      default: funct7_mux = 7'b0000000;
+      default: funct7_mux = {1'b0, funct7_5, 5'b00000};
     endcase
   end
   wire funct7_normal = quad3;
+  wire funct7_5 = op_csrai || op_csub;
 
 `else
   assign rs1_mux    = rs1;
