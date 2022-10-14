@@ -13,10 +13,9 @@
 
 module cpu (
   input         i_clk,
+  input         i_clk_ce,
   input         i_rst,
 
-  input         i_valid_i,
-  input         i_valid_d,
 
 `ifdef CSR_EXTERNAL_BUS
   output [11:0] o_csr_addr,
@@ -135,7 +134,7 @@ module cpu (
   /**
    * Clock Signals
    */
-  assign clk_ce = i_valid_i && i_valid_d && !alu_busy;
+  assign clk_ce = i_clk_ce && !alu_busy;
   assign clk_n = !i_clk;
 
   ///////////////////////////////////////////////////////////////////////////
@@ -218,6 +217,7 @@ module cpu (
     .i_ex_wb_en   (ex_wb_en),
     .i_ma_wb_en   (ma_wb_en),
     .i_wb_wb_en   (wb_wb_en),
+`ifdef HAZARD_DATA_FORWARDNG
     .i_ex_wb_mux  (ex_wb_mux),
     .i_ma_wb_mux  (ma_wb_mux),
     .i_ex_ret     (ex_ret),
@@ -225,6 +225,7 @@ module cpu (
     .i_ma_rd_dat  (ma_rd_dat),
     .i_ma_ret     (ma_ret),
     .i_wb_wb_d    (wb_wb_d),
+`endif
     .i_rs1_raw_d  (rs1_raw_d),
     .i_rs2_raw_d  (rs2_raw_d),
     .o_rs1_d      (rs1_d),

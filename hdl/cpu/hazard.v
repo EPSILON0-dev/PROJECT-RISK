@@ -11,12 +11,11 @@ module hazard (
   input   [4:0] i_ma_wb_reg,
   input   [4:0] i_wb_wb_reg,
 
-  // verilator lint_off unused
-
   input         i_ex_wb_en,
   input         i_ma_wb_en,
   input         i_wb_wb_en,
 
+`ifdef HAZARD_DATA_FORWARDNG
   input   [1:0] i_ex_wb_mux,
   input   [1:0] i_ma_wb_mux,
 
@@ -25,8 +24,7 @@ module hazard (
   input  [31:0] i_ma_res,
   input  [31:0] i_ma_ret,
   input  [31:0] i_wb_wb_d,
-
-  // verilator lint_on unused
+`endif
 
   input  [31:0] i_rs1_raw_d,
   input  [31:0] i_rs2_raw_d,
@@ -154,10 +152,14 @@ module hazard (
   wire [31:0] rs1_d;
   wire [31:0] rs2_d;
 
-  assign hz_dat_rs1 = i_hz_rs1 && (|i_rs1) && ((i_rs1 == i_ex_wb_reg)
-    || (i_rs1 == i_ma_wb_reg) || (i_rs1 == i_wb_wb_reg));
-  assign hz_dat_rs2 = i_hz_rs2 && (|i_rs2) && ((i_rs2 == i_ex_wb_reg)
-    || (i_rs2 == i_ma_wb_reg) || (i_rs2 == i_wb_wb_reg));
+  assign hz_dat_rs1 = i_hz_rs1 && (|i_rs1) && (
+    ((i_rs1 == i_ex_wb_reg) && i_ex_wb_en) ||
+    ((i_rs1 == i_ma_wb_reg) && i_ma_wb_en) ||
+    ((i_rs1 == i_wb_wb_reg) && i_wb_wb_en));
+  assign hz_dat_rs2 = i_hz_rs2 && (|i_rs2) && (
+    ((i_rs2 == i_ex_wb_reg) && i_ex_wb_en) ||
+    ((i_rs2 == i_ma_wb_reg) && i_ma_wb_en) ||
+    ((i_rs2 == i_wb_wb_reg) && i_wb_wb_en));
   assign hz_data = hz_dat_rs1 || hz_dat_rs2;
 
   // Pass through for registers direcly, they won't be used on hazard anyway
