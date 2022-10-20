@@ -171,7 +171,7 @@ sudocons:
 
 ifeq ($(PROGRAMMER), mimasv2)
 prog: $(BITFILE) sudocons
-	@sudo mimasv2-prog --filename build/$(PROJECT).bin
+	@sudo /./opt/MimasV2/mimasv2-prog --filename build/$(PROJECT).bin
 endif
 
 ifeq ($(PROGRAMMER), impact)

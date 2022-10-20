@@ -1,3 +1,31 @@
+/****************************************************************************
+ * Copyright 2022 Lukasz Forenc
+ *
+ * File: cpu.v
+ *
+ * This file contains all of the connections between modules, nothing (except
+ * for some CSR control signals) is calculated here, it's only inter-module
+ * connections.
+ *
+ * i_clk         - Clock input
+ * i_clk_ce      - Clock enable
+ * i_rst         - Reset input
+ *
+ * o_csr_addr    - External CSR bus address bus
+ * i_csr_rd_data - External CSR bus data input bus
+ * o_csr_wr_data - External CSR bus data output bus
+ * o_csr_wr      - External CSR bus write enable
+ * o_csr_rd      - External CSR bus write enable
+ *
+ * o_addr_i      - Instruction memory address output
+ * i_data_in_i   - Instruction memory data input
+ *
+ * o_addr_d      - Data memory address output
+ * i_data_rd_d   - Data memory data input
+ * o_data_wr_d   - Data memory data output
+ * o_wr_d        - Data memory write enable
+ * o_rd_d        - Data memory read enable
+ ***************************************************************************/
 `include "config.v"
 `include "alu.v"
 `include "branch.v"
@@ -6,7 +34,6 @@
 `include "hazard.v"
 `include "memory.v"
 `include "regs.v"
-
 `ifdef INCLUDE_CSR
 `include "csr.v"
 `endif
@@ -15,7 +42,6 @@ module cpu (
   input         i_clk,
   input         i_clk_ce,
   input         i_rst,
-
 
 `ifdef CSR_EXTERNAL_BUS
   output [11:0] o_csr_addr,

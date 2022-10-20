@@ -1,8 +1,28 @@
+/****************************************************************************
+ * Copyright 2022 Lukasz Forenc
+ *
+ * File: shifter.v
+ *
+ * This file contains either bit-shifter or the barrel shifter based on the
+ * configuration data.
+ *
+ * i_clk_n    - Inverted clock input
+ * i_rst      - Reset input
+ * i_in_a     - Shifter input data input
+ * i_in_b     - Shift amount input
+ * i_funct3   - Shift function selector (used for left/right selection)
+ * i_op_alt   - Alternative function (used for arythmetic/logic selection)
+ * i_shift_en - Shifter operation enable (required to start the bit-shifter)
+ *
+ * o_result   - Shift result
+ * o_busy     - Shifter busy signal (remains '1' until bit shift finishes)
+ ***************************************************************************/
 `include "config.v"
 
 module shifter (
   // verilator lint_off unused
   input         i_clk_n,
+  input         i_rst,
   // verilator lint_on unused
 
   input  [31:0] i_in_a,
@@ -90,9 +110,9 @@ module shifter (
    */
 
   // Bit shifter
-  reg  [31:0] shift_result = 0;
-  reg   [4:0] shift_amount = 0;
-  reg         shift_dir_left = 0;
+  reg  [31:0] shift_result;
+  reg   [4:0] shift_amount;
+  reg         shift_dir_left;
 
   // Operation decoder
   wire        op_shift;
@@ -103,17 +123,24 @@ module shifter (
 
   always @(posedge i_clk_n) begin
 
-    // Initial register preload
-    if (op_shift && ~|shift_amount) begin
-      shift_amount   <= i_in_b[4:0];
-      shift_result   <= i_in_a;
-      shift_dir_left <= op_sll;
-    end
+    if (i_rst) begin
+      // Reset data load
+      shift_amount   <= 0;
+      shift_result   <= 0;
+      shift_dir_left <= 0;
+    end else begin
+      // Initial register preload
+      if (op_shift && ~|shift_amount) begin
+        shift_amount   <= i_in_b[4:0];
+        shift_result   <= i_in_a;
+        shift_dir_left <= op_sll;
+      end
 
-    // Actual shifting
-    if (|shift_amount) begin
-      shift_result <= (shift_dir_left) ? shift_left : shift_right;
-      shift_amount <= shift_amount - 5'h1;
+      // Actual shifting
+      if (|shift_amount) begin
+        shift_result <= (shift_dir_left) ? shift_left : shift_right;
+        shift_amount <= shift_amount - 5'h1;
+      end
     end
 
   end

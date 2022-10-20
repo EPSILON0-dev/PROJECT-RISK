@@ -1,3 +1,29 @@
+/****************************************************************************
+ * Copyright 2022 Lukasz Forenc
+ *
+ * File: csr.v
+ *
+ * This file contains an interface to the control and status registers.
+ * The contorl and status registers themeselves are located in the other
+ * files. There is also an interface routed outside the CPU.
+ *
+ * i_clk         - Clock input
+ * i_rd          - Read enable input
+ * i_wr          - Write enable input
+ * i_set         - Bit set input
+ * i_clr         - Bit clr input
+ *
+ * o_ext_addr    - External CSR bus address bus
+ * i_ext_rd_data - External CSR bus data input bus
+ * o_ext_wr_data - External CSR bus data output bus
+ * o_ext_wr      - External CSR bus write enable
+ * o_ext_rd      - External CSR bus write enable
+ *
+ * i_addr        - CSR address input
+ * i_wr_data     - CSR write data input
+ * o_rd_data     - CSR read data output
+ ***************************************************************************/
+
 module csr (
   input         i_clk,
 

@@ -1,3 +1,23 @@
+/****************************************************************************
+ * Copyright 2022 Lukasz Forenc
+ *
+ * File: regs.v
+ *
+ * Simple register array, there's an option to generate it as a distributed
+ * RAM array. The array has one write port and two read ports, when the write
+ * address is zero write is disabled (zero isn't hard-wired but works anyway).
+ *
+ * i_clk       - Clock input
+ * i_ce        - Clock enable input
+ * i_addr_rd_a - Read address 1 (RS1)
+ * i_addr_rd_b - Read address 2 (RS2)
+ * i_we        - Write enable input
+ * i_addr_wr   - Write address (RD)
+ * i_data_wr   - Write data (RD)
+ *
+ * o_dat_rd_a  - Read data 1 (RS1)
+ * o_dat_rd_b  - Read data 2 (RS2)
+ ***************************************************************************/
 `include "config.v"
 
 module regs (

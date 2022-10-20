@@ -1,3 +1,38 @@
+/****************************************************************************
+ * Copyright 2022 Lukasz Forenc
+ *
+ * File: decoder.v
+ *
+ * This file contains both base I set encoder and compressed C decoder.
+ * Firstly the operation quad (2 least significant bits) is decoded, quads
+ * 0-2 are compressed instruction quads while 3rd quad is base I set quad,
+ * based on the quad and the opcode operation is decoded (op_x signals), from
+ * the operation signal operation format (format_x signal) is decoded, based
+ * on the format immediate decoded earlier (immediate_x) is selected. Finally
+ * from the operation signal internal CPU control signals are generated and
+ * (when using C set) the register select and funct signals are multiplexed.
+ *
+ * i_opcode_in - Instruction from fetch unit
+ *
+ * o_immediate - Decoded immediate
+ * o_funct3    - Decoded funct3 field
+ * o_funct7    - Decoded funct7 field
+ * o_system    - System operation enable (CSR access, etc.)
+ * o_rs1       - RS1 register
+ * o_rs2       - RS2 register
+ * o_rd        - RD register
+ * o_hz_rs1    - Data hazard enable for RS1
+ * o_hz_rs2    - Data hazard enable for RS2
+ * o_branch    - Branch enable (conditional jump)
+ * o_jump      - Jump enable (unconditional branch)
+ * o_alu_pc    - Use PC as ALU A input
+ * o_alu_imm   - Use immediate as ALU B input
+ * o_alu_en    - ALU enable (If disabled ALU performs addition)
+ * o_ma_wr     - Memory write enable
+ * o_ma_rd     - Memory read enable
+ * o_wb_mux    - Write back source selection
+ * o_wb_en     - Write back enable
+ ***************************************************************************/
 `include "config.v"
 
 module decoder (

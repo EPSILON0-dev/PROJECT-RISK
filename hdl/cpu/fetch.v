@@ -1,3 +1,26 @@
+/****************************************************************************
+ * Copyright 2022 Lukasz Forenc
+ *
+ * File: fetch.v
+ *
+ * This file contains program counter, fetch unit and decode phase registers.
+ * Depending on the configuration it either contains 32/16 bit fetch unit or
+ * just 32 bit fetch unit. It's also responsible for branch hazard generation.
+ *
+ * i_clk     - Clock input
+ * i_clk_ce  - Clock enable
+ * i_rst     - Reset input
+ * i_data_in - Data from program memory
+ * i_hz_data - Data hazard (used to freeze PC and ID registers)
+ * i_br_en   - Branch enable
+ * i_br_addr - Branch address
+ *
+ * o_if_pc   - Program counter in IF phase (used for program memory reads)
+ * o_id_pc   - Program counter in ID phase (used for branch calculation)
+ * o_id_ret  - Return address in ID phase (used for JAL and JALR)
+ * o_id_ir   - Instruction in ID phase (guess what this is used for)
+ ***************************************************************************/
+
 module fetch (
   input         i_clk,
   input         i_clk_ce,
@@ -8,7 +31,6 @@ module fetch (
   input         i_br_en,
   input  [31:0] i_br_addr,
 
-
   output [31:0] o_if_pc,
   output [31:0] o_id_pc,
   output [31:0] o_id_ret,
@@ -17,11 +39,11 @@ module fetch (
   output        o_hz_br
 );
 
-  ///////////////////////////////////////////////////////////////////////////
-  // C extension fetch unit
-  //  This version supports both 16bit and 32bit opcodes, 32bit opcodes
-  //  don't have to be aligned to 4-byte boundries.
-  ///////////////////////////////////////////////////////////////////////////
+  /*
+   * C extension fetch unit
+   *  This version supports both 16bit and 32bit opcodes, 32bit opcodes
+   *  don't have to be aligned to 4-byte boundries.
+   */
 `ifdef C_EXTENSION
   // Program counter
   reg  [31:0] if_pc;
@@ -164,11 +186,11 @@ module fetch (
 
   assign o_hz_br = !valid_out;
 
-  ///////////////////////////////////////////////////////////////////////////
-  // Base I fetch unit
-  //  This version only supports both 32bit opcodes which have to be aligned
-  //  to 4-byte boundries.
-  ///////////////////////////////////////////////////////////////////////////
+  /*
+   * Base I fetch unit
+   *  This version only supports both 32bit opcodes which have to be aligned
+   *  to 4-byte boundries.
+   */
 `else
   // Program counter
   reg         hz_br;

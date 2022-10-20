@@ -1,3 +1,25 @@
+/****************************************************************************
+ * Copyright 2022 Lukasz Forenc
+ *
+ * File: muldiv.v
+ *
+ * This file contains multiplier and divider circuitry for the M extension.
+ * Based on the configuration data multiplier is either combitional or
+ * sequential. Combinational multiplier comes with a long propagation delay
+ * so there's an option to add a register that generates alu_busy signal
+ * for one cycle while the signal propagates. Another bottleneck are the
+ * input registers, there's an option to enable input buffer registers.
+ *
+ * i_clk_n  - Inverted clock input
+ * i_rst    - Reset input
+ * i_in_a   - Data input A (multiplicand/dividend)
+ * i_in_b   - Data input B (multiplier/divisor)
+ * i_funct3 - Mul/Div function selector
+ * i_md_en  - Mul/Div operation enable (required to start the operation)
+ *
+ * o_result - Mul/Div result
+ * o_busy   - Mul/Div busy signal (remains '1' until bit operation finishes)
+ ***************************************************************************/
 `include "config.v"
 
 module muldiv (
@@ -103,9 +125,9 @@ module muldiv (
 `endif
 
 
-  ///////////////////////////////////////////////////////////////////////////
-  // Fast multiplier is just a verilog built-in combinational multiplier
-  ///////////////////////////////////////////////////////////////////////////
+  /*
+   * Fast multiplier is just a verilog built-in combinational multiplier
+   */
 `ifdef M_FAST_MULTIPLIER
 
   wire [63:0] mul_mul;
@@ -113,12 +135,12 @@ module muldiv (
 
   assign mul_mul = $unsigned(in_a) * $unsigned(in_b);
 
-  ///////////////////////////////////////////////////////////////////////////
-  // DSPs in FPGAs can be a bit slow, especially when they have to do
-  //  32x32bit multiplication (like in this case), this circuit creates one
-  //  cycle hazard during multiplication which allows signal to overcome DSPs
-  //  combinational delay and reach next phase registers
-  ///////////////////////////////////////////////////////////////////////////
+  /*
+   * DSPs in FPGAs can be a bit slow, especially when they have to do
+   *  32x32bit multiplication (like in this case), this circuit creates one
+   *  cycle hazard during multiplication which allows signal to overcome DSPs
+   *  combinational delay and reach next phase registers
+   */
 `ifdef M_FAST_MUL_DELAY
   reg  mul_delay;
   wire mul_en;
@@ -141,12 +163,12 @@ module muldiv (
   assign mul_busy = 0;
 `endif
 
-  ///////////////////////////////////////////////////////////////////////////
-  // Slow multiplier is a shift-and-add multiplier, at every clock cycle
-  //  A operand is added to result if the zeroth bit in B register is set
-  //  after that A operand is shifted left and B is shifted right, we keep
-  //  adding shifted A until all ones are shifted out of B register
-  ///////////////////////////////////////////////////////////////////////////
+  /*
+   * Slow multiplier is a shift-and-add multiplier, at every clock cycle
+   *  A operand is added to result if the zeroth bit in B register is set
+   *  after that A operand is shifted left and B is shifted right, we keep
+   *  adding shifted A until all ones are shifted out of B register
+   */
 `else
 
   // A register - multiplicand
@@ -193,14 +215,14 @@ module muldiv (
   assign mul_q = (mul_s) ? (0 - mul_mul) : mul_mul;
   assign mul = (|i_funct3[1:0]) ? mul_q[63:32] : mul_q[31:0];
 
-  ///////////////////////////////////////////////////////////////////////////
-  // Divider
-  //  Divider works by shifting left the dividend and subtracting divisor
-  //  from it if the shifted value is big enough, if it is we add a one to
-  //  the result and shift it (the result) left by one, we repeat this
-  //  process 32 times (for all bits), and the value we are left with is a
-  //  reminder.
-  ///////////////////////////////////////////////////////////////////////////
+  /*
+   * Divider
+   *  Divider works by shifting left the dividend and subtracting divisor
+   *  from it if the shifted value is big enough, if it is we add a one to
+   *  the result and shift it (the result) left by one, we repeat this
+   *  process 32 times (for all bits), and the value we are left with is a
+   *  reminder.
+   */
   // A register - dividend
   // B register - divisor
   // Q register - accumulator (result)

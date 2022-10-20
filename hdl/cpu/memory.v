@@ -1,3 +1,23 @@
+/****************************************************************************
+ * Copyright 2022 Lukasz Forenc
+ *
+ * File: memory.v
+ *
+ * This file contains the read decoder, and write encoder, read decoder
+ * shifts and sign extends the read data, while write encoder shifts the
+ * write data and generates write enable signal.
+ *
+ * i_data_rd   - Data from memory to be loaded
+ * i_data_wr   - Data from regs to be stored
+ * i_shift     - Data shift (last 2 bits of the dest/src address)
+ * i_length    - Data length (0-byte, 1-halfword, 2-word)
+ * i_signed_rd - Signed read signal
+ *
+ * o_data_rd   - Data for the registers to be loaded
+ * o_data_wr   - Data for memory to be stored
+ * o_we        - Write enable for the memory (already shifted by i_shift)
+ ***************************************************************************/
+
 module memory (
 
   input  [31:0] i_data_rd,

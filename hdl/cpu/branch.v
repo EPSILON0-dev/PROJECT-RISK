@@ -1,3 +1,21 @@
+/****************************************************************************
+ * Copyright 2022 Lukasz Forenc
+ *
+ * file: branch.v
+ *
+ * This file contains the 3 comparators used for assessing the branch
+ * condition, at the end they are connected with a MUX4 and xored with the
+ * contition inversion bit.
+ *
+ * i_dat_a  - Data input A for the comparators
+ * i_dat_b  - Data input B for the comparators
+ * i_funct3 - Branch condition selector
+ * i_branch - Branch enable input (conditional jump)
+ * i_jump   - Jump enable input (unconditional branch)
+ *
+ * o_br_en  - Branch enable output (routed to the fetch unit)
+ ***************************************************************************/
+
 module branch (
   input  [31:0] i_dat_a,
   input  [31:0] i_dat_b,

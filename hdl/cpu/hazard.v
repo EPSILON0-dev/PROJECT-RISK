@@ -1,3 +1,38 @@
+/****************************************************************************
+ * Copyright 2022 Lukasz Forenc
+ *
+ * file: hazard.v
+ *
+ * This file contains the 3 comparators used for assessing the branch
+ * condition, at the end they are connected with a MUX4 and xored with the
+ * contition inversion bit.
+ *
+ * i_hz_rs1    - Hazard on RS1 enable
+ * i_hz_rs2    - Hazard on RS2 enable
+ * i_rs1       - Current RS1 register
+ * i_rs2       - Current RS2 register
+ * i_ex_wb_reg - RD register in EX phase
+ * i_ma_wb_reg - RD register in MA phase
+ * i_wb_wb_reg - RD register in WB phase
+ * i_ex_wb_en  - Write back EX in phase
+ * i_ma_wb_en  - Write back MA in phase
+ * i_wb_wb_en  - Write back WB in phase
+ * i_rs1_raw_d - Data from RS1
+ * i_rs2_raw_d - Data from RS2
+ *
+ * i_ex_wb_mux - Write back source in EX phase
+ * i_ma_wb_mux - Write back source in MA phase
+ * i_ex_ret    - Data in EX return address register
+ * i_ma_rd_dat - Load data in MA circuitry
+ * i_ma_res    - Data in ALU result in MA phase
+ * i_ma_ret    - Data in MA return address register
+ * i_wb_wb_d   - Data in WB phase write back register
+ *
+ * o_rs1_d     - Forwarded data from RS1
+ * o_rs2_d     - Forwarded data from RS2
+ * o_hz_data   - Unforwardable hazard output (also normal hazard when
+ *  forwarding is disabled)
+ ***************************************************************************/
 `include "config.v"
 
 module hazard (
@@ -36,12 +71,12 @@ module hazard (
 );
 
 `ifdef HAZARD_DATA_FORWARDNG
-  ///////////////////////////////////////////////////////////////////////////
-  // If hazard data forwarding is enabled hazard unit tries to forward the
-  //  data from the pipeline, if it cannot be done data hazard is generated,
-  //  using MUX6 to do the switching isn't ideal but it's the least bad
-  //  option that I have
-  ///////////////////////////////////////////////////////////////////////////
+  /*
+   * If hazard data forwarding is enabled hazard unit tries to forward the
+   *  data from the pipeline, if it cannot be done data hazard is generated,
+   *  using MUX6 to do the switching isn't ideal but it's the least bad
+   *  option that I have
+   */
 
   // Hazard enables for read registers
   wire        rs1_hz_en;
@@ -141,11 +176,11 @@ module hazard (
   assign hz_data = hz_ex_rd1 || hz_ex_rd2 || hz_ex_res1 || hz_ex_res2;
 
 `else
-  ///////////////////////////////////////////////////////////////////////////
-  // This version of hazard unit is like a crying baby that cannot do
-  //  anything on it's own and cries "data hazard" every time something
-  //  goes at least slightly wrong
-  ///////////////////////////////////////////////////////////////////////////
+  /*
+   * This version of hazard unit is like a crying baby that cannot do
+   *  anything on it's own and cries "data hazard" every time something
+   *  goes at least slightly wrong
+   */
   wire        hz_dat_rs1;
   wire        hz_dat_rs2;
   wire        hz_data;

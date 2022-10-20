@@ -1,3 +1,27 @@
+/****************************************************************************
+ * Copyright 2022 Lukasz Forenc
+ *
+ * File: alu.v
+ *
+ * This file contains the whole ALU and connection to the shifter and
+ * multiplier modules. Shifter module was separated because of it's complexity.
+ * All logic functions are implemented with the simple verilog operations,
+ * adder and subtractor are integrated into a single adder with XOR gates
+ * on B input. At the end all operations are combined with a MUX8, then the
+ * result of MUX8 is multiplexed with the result from multiplier.
+ *
+ * i_clk_n   - Inverted clock input
+ * i_rst     - Reset input
+ * i_in_a    - Data input A
+ * i_in_B    - Data input B
+ * i_funct3  - Main function selector
+ * i_funct7  - Secondary (alternative or Mul/Div) function selector
+ * i_alu_en  - ALU enable (when disabled addition is performed)
+ * i_alu_imm - ALU input B immediate (some function selections depend on it)
+ *
+ * o_alu_out - ALU operation result
+ * o_busy    - ALU busy (routed from Mul/Div and shifter circuitry)
+ ***************************************************************************/
 `include "config.v"
 `include "shifter.v"
 
@@ -96,6 +120,7 @@ module alu (
    */
   shifter shifter_i (
     .i_clk_n    (i_clk_n),
+    .i_rst      (i_rst),
     .i_in_a     (i_in_a),
     .i_in_b     (i_in_b[4:0]),
     .i_funct3   (i_funct3),
