@@ -36,6 +36,7 @@ module uart_baud_gen(
   end
   assign clk_cnt_2_top = (clk_cnt_2 == 3'd7);
 
+  // Output assignments
   assign o_ce_x8 = clk_cnt_1_top;
   assign o_ce    = clk_cnt_2_top && clk_cnt_1_top;
 

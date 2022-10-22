@@ -5,24 +5,28 @@ MODULES		:= cpu
 TSTSRC		:= $(patsubst %, %_tb.v, $(MODULES))
 TSTOBJ		:= $(patsubst %, %_tb.obj, $(MODULES))
 CPUTSTOBJ	:= cpu_tb.obj
-TEST		?= NONE
-
-all: compile_tst
+TEST			?= NONE
 
 #############################  Test Compilation  ##############################
 
-fresh: clean compile_tst
-
-compile_tst: $(TSTOBJ)
-
 %.obj: %.v
 	@$(IVERILOG) -grelative-include -o $@ $<
+
+###########################  Universal TB Testing  ############################
+
+fresh_tb: clean_tb $(patsubst %.v, %.obj, $(TEST))
+
+clean_tb:
+	@-rm $(patsubst %.v, %.obj, $(TEST))
+
+test_tb: $(patsubst %.v, %.obj, $(TEST))
+	@vvp $(patsubst %.v, %.obj, $(TEST))
 
 ##############################  CPU TB Testing  ###############################
 
 fresh_tst: clean test_cpu
 
-selftest: fresh
+selftest: $(CPUTSTOBJ)
 	@python3 ./selftest.py
 
 test_cpu: $(CPUTSTOBJ)
@@ -32,7 +36,10 @@ test_cpu: $(CPUTSTOBJ)
 ##################################  Watchers  #################################
 
 watch_tst:
-	@while [ true ]; do printf "\033[2J\033[H"; make -s fresh; make -s test_cpu; printf "\n"; inotifywait -r -q -e modify ../cpu; done
+	@while [ true ]; do printf "\033[2J\033[H"; make -s clean; make -s test_cpu; printf "\n"; inotifywait -r -q -e modify ../cpu; done
+
+watch_tb:
+	@while [ true ]; do printf "\033[2J\033[H"; make -s fresh_tb TEST=$(TEST); printf "\n"; inotifywait -r -q -e modify ..; done
 
 lint:
 	@while [ true ]; do printf "\033[2J\033[H"; verilator --lint-only --relative-includes -Wall ../cpu/cpu.v; printf "\n"; inotifywait -r -q -e modify ../cpu; done

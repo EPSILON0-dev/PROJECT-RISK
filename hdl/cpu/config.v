@@ -11,8 +11,8 @@
 // `define HAZARD_DATA_FORWARDNG
 // `define CLEAN_DATA
 
-`define INCLUDE_CSR
-`define CSR_EXTERNAL_BUS
+// `define INCLUDE_CSR
+// `define CSR_EXTERNAL_BUS
 
 // `define C_EXTENSION
 // `define C_FETCH_T2
