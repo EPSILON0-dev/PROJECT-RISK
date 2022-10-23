@@ -62,7 +62,7 @@ module uart_tx(
   wire       parity_gen;
 
   /**
-   * FSM load sthe next state when the clock is enabled
+   * FSM loads the next state when the clock is enabled
    */
   always @(posedge i_clk) begin
     if (i_rst) begin
@@ -128,7 +128,7 @@ module uart_tx(
         end
 
       // This state is a one-cycle delay for when two stop bits are enabled,
-      // it does nothing and goes to the actual sto bit state.
+      // it does nothing and goes to the actual stop bit state.
       S_STOP_2:
         begin
           load_shreg = 0;

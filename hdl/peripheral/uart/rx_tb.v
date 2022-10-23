@@ -2,13 +2,18 @@
 
 module rx_tb;
 
+  initial begin
+    $dumpfile("rx_log.vcd");
+    $dumpvars(0, rx_i);
+  end
+
   reg        clk = 0;
   reg        ce = 1;
   reg        rst = 1;
-  reg  [1:0] length = 0;
-  reg        stop2 = 0;
-  reg        parity = 0;
-  reg        odd = 0;
+  reg  [1:0] length = 3;
+  reg        stop2 = 1;
+  reg        parity = 1;
+  reg        odd = 1;
   reg        rx = 1;
 
   wire [8:0] data;
@@ -33,14 +38,14 @@ module rx_tb;
     #16 rx = 0; // Start
     #16 rx = 1; // b0
     #16 rx = 0; // b1
-    #16 rx = 0; // b2
+    #16 rx = 1; // b2
     #16 rx = 0; // b3
-    #16 rx = 0; // b4
+    #16 rx = 1; // b4
     #16 rx = 0; // b5
-    #16 rx = 0; // b6
-    #16 rx = 1; // b7
-    // #16 rx = 0; // b8
-    // #16 rx = 0; // parity
+    #16 rx = 1; // b6
+    #16 rx = 0; // b7
+    #16 rx = 1; // b8
+    #16 rx = 0; // parity
     #16 rx = 1; // stop
     #16 rx = 1; // stop2
   end
@@ -49,6 +54,7 @@ module rx_tb;
     .i_clk         (clk),
     .i_ce          (ce),
     .i_rst         (rst),
+    .i_rst_err     (1'b0),
     .i_length      (length),
     .i_stop2       (stop2),
     .i_parity      (parity),
