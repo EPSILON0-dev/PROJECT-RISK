@@ -549,5 +549,4 @@ module decoder (
   assign o_wb_mux     = wb_mux;
   assign o_wb_en      = wb_en;
 
-
 endmodule

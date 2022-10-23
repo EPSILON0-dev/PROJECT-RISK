@@ -1,3 +1,22 @@
+/****************************************************************************
+ * Copyright 2022 Lukasz Forenc
+ *
+ * File: baud_gen.v
+ *
+ * This file contains the baud rate generator for the UART module, it
+ * generates two clock enable signals, the faster one o_ce_8x, and 8 times
+ * slower o_ce, the faster one is used for the RX where we need faster clock
+ * to sync up with the start bit of the incoming transmission, the slower one
+ * is used for the TX as it doesn't have to sync up with anything.
+ *
+ * i_clk     - Clock input
+ * i_rst     - Reset input
+ * i_clk_div - Clock division amount
+ *
+ * o_ce_8x   - faster clock enable
+ * o_ce      - slower clock enable
+ ***************************************************************************/
+
 module uart_baud_gen(
   input         i_clk,
   input         i_rst,

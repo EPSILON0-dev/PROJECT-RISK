@@ -31,7 +31,7 @@
  * o_rs1_d     - Forwarded data from RS1
  * o_rs2_d     - Forwarded data from RS2
  * o_hz_data   - Unforwardable hazard output (also normal hazard when
- *  forwarding is disabled)
+ *               forwarding is disabled)
  ***************************************************************************/
 `include "config.v"
 

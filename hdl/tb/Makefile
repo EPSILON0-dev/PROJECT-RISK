@@ -14,7 +14,7 @@ TEST			?= NONE
 
 ###########################  Universal TB Testing  ############################
 
-fresh_tb: clean_tb $(patsubst %.v, %.obj, $(TEST))
+fresh_tb: clean_tb test_tb
 
 clean_tb:
 	@-rm $(patsubst %.v, %.obj, $(TEST))
