@@ -53,6 +53,9 @@ module branch (
    *  Bits 2:1 of the funct3 are condition selectors
    *  Bit 0 tells if condition should be inverted or not
    */
+`ifdef HARDWARE_TIPS
+  (* parallel_case *)
+`endif
   always @* begin
     case (i_funct3[2:1])
       2'b00:   condition_mux = equal;

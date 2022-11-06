@@ -139,6 +139,9 @@ module alu (
   /**
    * Final ALU MUX
    */
+`ifdef HARDWARE_TIPS
+  (* parallel_case *)
+`endif
   always @* begin
     case (i_funct3 & {3{i_alu_en}})
       3'b000: mux = adder_out;

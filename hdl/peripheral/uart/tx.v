@@ -59,6 +59,7 @@ module uart_tx(
   reg        load_shreg;
 
   // Parity generator
+  reg  [8:0] parity_buff;
   wire       parity_gen;
 
   /**
@@ -190,9 +191,17 @@ module uart_tx(
   assign initial_data = i_data;
 
   /**
-   * Parity is generated based on all bits as they are filtered somewhere else
+   * Parity is generated based on the bits stored in the parity buffer which
+   * is preloaded with shift register
    */
-  assign parity_gen = ^initial_data ^ i_odd;
+  always @(posedge i_clk) begin
+    if (i_rst) begin
+      parity_buff <= 0;
+    end else if (i_ce && load_shreg) begin
+      parity_buff <= initial_data;
+    end
+  end
+  assign parity_gen = ^parity_buff ^ i_odd;
 
   // In every state besides S_START, S_SHIFT and S_PARITY the TX output is one
   assign o_tx = (state != S_START) && (state != S_SHIFT) && (state != S_PARITY) ||

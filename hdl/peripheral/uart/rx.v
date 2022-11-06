@@ -183,7 +183,7 @@ module uart_rx(
   always @(posedge i_clk) begin
     if (i_rst || !ce_div_en) begin
       ce_cnt <= 0;
-    end else begin
+    end else if (i_ce) begin
       ce_cnt <= ce_cnt + 1;
     end
   end

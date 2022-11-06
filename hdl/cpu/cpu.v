@@ -436,8 +436,8 @@ module cpu (
     .o_we        (ma_we)
   );
 
-  assign ma_wr_en = ma_we & {4{ma_wr}};
-  assign ma_rd_en = ma_rd;
+  assign ma_wr_en = ma_we & {4{ma_wr & clk_ce}};
+  assign ma_rd_en = ma_rd & clk_ce;
 
   ///////////////////////////////////////////////////////////////////////////
   // WRITE BACK STAGE
@@ -458,6 +458,9 @@ module cpu (
     end
   end
 
+`ifdef HARDWARE_TIPS
+  (* parallel_case *)
+`endif
   always @* begin
     case (ma_wb_mux)
       default: wb_dat_mux = ma_res;

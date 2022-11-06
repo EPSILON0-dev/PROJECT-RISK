@@ -25,10 +25,12 @@ module uart_baud_gen(
   output        o_ce
 );
 
-  reg [15:0] clk_cnt_1;
-  wire       clk_cnt_1_top;
-  reg [ 2:0] clk_cnt_2;
-  wire       clk_cnt_2_top;
+  // Fast counter
+  reg  [15:0] clk_cnt_1;
+  wire        clk_cnt_1_top;
+  // Slow counter
+  reg  [ 2:0] clk_cnt_2;
+  wire        clk_cnt_2_top;
 
   /* First counter - main division counter, it counts up to (and including)
    * the i_clk_div value, and on top generates the clock enable for the next

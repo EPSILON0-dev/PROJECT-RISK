@@ -22,11 +22,11 @@ module rx_tb;
   wire       parity_err;
 
   initial begin
-    $display(" len | 2stop | par | odd | rx | busy | state | ce_sel | overrun | data");
+    $display(" len | 2stop | par | odd | rx | busy | state | ce_sel | overrun | parity | data");
     #10 rst = 0;
     #800;
-    $display("  %d  |   %b   |  %b  |  %b  |  %b |   %b  |   %d   |    %b   |    %b    | %b",
-        length, stop2, parity, odd, rx, busy, rx_i.state, rx_i.ce_div_en, overrun_err, data);
+    $display("  %d  |   %b   |  %b  |  %b  |  %b |   %b  |   %d   |    %b   |    %b    |    %b   | %b",
+        length, stop2, parity, odd, rx, busy, rx_i.state, rx_i.ce_div_en, overrun_err, parity_err, data);
     $finish;
   end
 
@@ -62,7 +62,8 @@ module rx_tb;
     .i_rx          (rx),
     .o_data        (data),
     .o_overrun_err (overrun_err),
-    .o_parity_err  (parity_err)
+    .o_parity_err  (parity_err),
+    .o_busy        (busy)
   );
 
 endmodule

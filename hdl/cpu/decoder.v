@@ -424,14 +424,15 @@ module decoder (
 
 `ifdef C_EXTENSION
   reg [4:0] rs1_mux;
+  wire rs1_normal = quad3;
+  wire rs1_sp = op_caddi4spn || op_clwsp || op_cswsp;
+  wire rs1_rs1l = op_caddi16sp || op_caddi || op_cslli || op_cjr ||
+    op_cjalr || op_cadd;
+  wire rs1_rs1s = op_clw || op_csw || op_csrai || op_csrli || op_candi ||
+    op_caryth || op_cbeqz || op_cbnez;
 `ifdef HARDWARE_TIPS
   (* parallel_case *)
 `endif
-  wire rs1_normal = quad3;
-  wire rs1_sp = op_caddi4spn || op_clwsp || op_cswsp;
-  wire rs1_rs1l = op_caddi16sp || op_caddi || op_cslli || op_cjr || op_cjalr || op_cadd;
-  wire rs1_rs1s = op_clw || op_csw || op_csrai || op_csrli || op_candi ||
-    op_caryth || op_cbeqz || op_cbnez;
   always @* begin
     case (1'b1)
       rs1_normal: rs1_mux = rs1;
@@ -442,6 +443,9 @@ module decoder (
   end
 
   reg [4:0] rs2_mux;
+  wire rs2_normal = quad3;
+  wire rs2_rs2s = op_csw || op_caryth || op_cswsp;
+  wire rs2_rs2l = op_cadd || op_cmv;
 `ifdef HARDWARE_TIPS
   (* parallel_case *)
 `endif
@@ -453,11 +457,13 @@ module decoder (
       default: rs2_mux = 5'b00000;
     endcase
   end
-  wire rs2_normal = quad3;
-  wire rs2_rs2s = op_csw || op_caryth || op_cswsp;
-  wire rs2_rs2l = op_cadd || op_cmv;
 
   reg [4:0] rd_mux;
+  wire rd_normal = quad3;
+  wire rd_rs2s = op_caddi4spn || op_clw;
+  wire rd_rs1l = op_caddi16sp || op_caddi || op_cli || op_clui || op_cslli ||
+    op_cadd || op_cmv || op_clwsp;
+  wire rd_rs1s = op_csrai || op_csrli || op_candi || op_caryth;
 `ifdef HARDWARE_TIPS
   (* parallel_case *)
 `endif
@@ -470,12 +476,15 @@ module decoder (
       default: rd_mux = {4'b0000, op_cjal || op_cjalr};
     endcase
   end
-  wire rd_normal = quad3;
-  wire rd_rs2s = op_caddi4spn || op_clw;
-  wire rd_rs1l = op_caddi16sp || op_caddi || op_cli || op_clui || op_cslli || op_cadd || op_cmv || op_clwsp;
-  wire rd_rs1s = op_csrai || op_csrli || op_candi || op_caryth;
 
   reg [2:0] funct3_mux;
+  wire funct3_normal = quad3;
+  wire funct3_001    = op_cslli || op_cbnez;
+  wire funct3_010    = c_op_store || c_op_load;
+  wire funct3_100    = op_cxor;
+  wire funct3_101    = op_csrai || op_csrli;
+  wire funct3_110    = op_cor;
+  wire funct3_111    = op_candi || op_cand;
 `ifdef HARDWARE_TIPS
   (* parallel_case *)
 `endif
@@ -491,15 +500,10 @@ module decoder (
       default:       funct3_mux = 3'b000;
     endcase
   end
-  wire funct3_normal = quad3;
-  wire funct3_001    = op_cslli || op_cbnez;
-  wire funct3_010    = c_op_store || c_op_load;
-  wire funct3_100    = op_cxor;
-  wire funct3_101    = op_csrai || op_csrli;
-  wire funct3_110    = op_cor;
-  wire funct3_111    = op_candi || op_cand;
 
   reg [6:0] funct7_mux;
+  wire funct7_normal = quad3;
+  wire funct7_5 = op_csrai || op_csub;
 `ifdef HARDWARE_TIPS
   (* parallel_case *)
 `endif
@@ -509,8 +513,6 @@ module decoder (
       default: funct7_mux = {1'b0, funct7_5, 5'b00000};
     endcase
   end
-  wire funct7_normal = quad3;
-  wire funct7_5 = op_csrai || op_csub;
 
 `else
   wire [4:0] rs1_mux    = rs1;

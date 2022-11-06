@@ -54,6 +54,9 @@ module memory (
   /**
    * Length mask
    */
+`ifdef HARDWARE_TIPS
+  (* parallel_case *)
+`endif
   always @* begin
     case (i_length)
       2'b00:   length_mask = 32'h000000ff;
@@ -68,6 +71,9 @@ module memory (
    *  We only need to shift the data to prepare it, masking is unecessary as
    *  it will be done in the memory based on write enable signals.
    */
+`ifdef HARDWARE_TIPS
+  (* parallel_case *)
+`endif
   always @* begin
     case (i_shift)
       2'b01:   data_wr_shift = { i_data_wr[23:0], i_data_wr[31:24] };
@@ -84,6 +90,9 @@ module memory (
    *  Stage 2: Data is length masked
    *  Stage 3: Inverted length mask is used to sign extend the value
    */
+`ifdef HARDWARE_TIPS
+  (* parallel_case *)
+`endif
   always @* begin
     case (i_shift)
       2'b01:   data_rd_shift = { i_data_rd[ 7:0], i_data_rd[31:8 ] };
@@ -104,6 +113,9 @@ module memory (
    *  Stage 1: Length is calculated
    *  Stage 2: Length is offset by the address
    */
+`ifdef HARDWARE_TIPS
+  (* parallel_case *)
+`endif
   always @* begin
     case (i_length)
       2'b00:   we_lenght = 4'b0001;
@@ -113,6 +125,9 @@ module memory (
     endcase
   end
 
+`ifdef HARDWARE_TIPS
+  (* parallel_case *)
+`endif
   always @* begin
     case (i_shift)
       2'b01:   we_shifted = { we_lenght[2:0], 1'b0 };

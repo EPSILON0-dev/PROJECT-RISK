@@ -23,7 +23,7 @@
 // `define M_FAST_MULTIPLIER
 // `define M_FAST_MUL_DELAY
 
-// `define HARDWARE_TIPS
+`define HARDWARE_TIPS
 // `define REGS_DISTRIBUTED
 
 `endif
