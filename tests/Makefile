@@ -40,7 +40,8 @@ xor xori \
 mul mulh mulhsu mulhu \
 div divu \
 rem remu \
-rvc
+rvc \
+essa
 
 OBJ 			:= $(addprefix $(OBJDIR)/, $(addsuffix .o, $(TESTS)))
 BIN 			:= $(addprefix $(BINDIR)/, $(addsuffix .hex, $(TESTS)))
