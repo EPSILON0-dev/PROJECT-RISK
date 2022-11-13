@@ -1,4 +1,5 @@
 `include "../cpu/cpu.v"
+`include "../peripheral/uart/uart_regs.v"
 
 `define BRAM(name, i)                   \
   RAMB16BWER #(                         \
@@ -21,7 +22,7 @@
       .DOA    (bram_a_out[i*2+1:i*2]),  \
       .DOB    (bram_b_out[i*2+1:i*2]),  \
       .ENA    (1'b1),                   \
-      .ENB    (bram_en),                \
+      .ENB    (1'b1),                   \
       .REGCEA (1'b0),                   \
       .REGCEB (1'b0),                   \
       .RSTA   (1'b0),                   \
@@ -32,10 +33,17 @@
 
 module top (
   input CLK_100MHz,
-  input [0:0] Switch,
+  input UART_RX,
+  output UART_TX,
+  input [5:0] Switch,
+  input [7:0] DPSwitch,
   output [7:0] LED
 );
 
+  reg [7:0] boot_reset = 8'hFF;
+  wire reset;
+
+  reg [31:0] counter = 0;
   reg clk = 0;
 
   wire [13:0] bram_a_addr;
@@ -55,11 +63,28 @@ module top (
   wire        cpu_d_data_rd;
 
   wire [31:0] io_out;
+  wire [31:0] uart_out;
+  reg [7:0] led_reg;
+  wire led_en;
+  wire uart_en;
 
   // Clocking stuff
   always @(posedge CLK_100MHz) begin
-    clk <= !clk;
+    if (counter == 0) begin
+      counter <= 0;
+      clk <= !clk;
+    end else begin
+      counter <= counter + 1;
+    end
   end
+
+  // Reset stuff
+  always @(posedge clk) begin
+    if (|boot_reset) begin
+      boot_reset <= boot_reset - 1;
+    end
+  end
+  assign reset = !Switch[0] || |boot_reset;
 
   // Memory stuff
   `BRAM(bram0, 15)
@@ -82,14 +107,14 @@ module top (
   assign bram_a_addr = { cpu_i_addr[14:2], 1'b0 };
   assign bram_b_addr = { cpu_d_addr[14:2], 1'b0 };
   assign bram_b_in = cpu_d_data_out;
-  assign bram_b_wr = cpu_d_data_wr;
-  assign bram_en = (d_addr < 32'h00008000);
+  assign bram_b_wr = cpu_d_data_wr & {4{bram_en}};
+  assign bram_en = (cpu_d_addr < 32'h00008000);
 
   // CPU stuff
   cpu cpu_i (
     .i_clk       (clk),
     .i_clk_ce    (1'b1),
-    .i_rst       (!Switch[0]),
+    .i_rst       (reset),
     .o_addr_i    (cpu_i_addr),
     .i_data_in_i (cpu_i_data_in),
     .o_addr_d    (cpu_d_addr),
@@ -103,15 +128,28 @@ module top (
   assign cpu_d_data_in = (bram_en) ? bram_b_out : io_out;
 
   // IO stuff
-  assign io_out = {24'd0, led_reg};
+  assign io_out = uart_en ? uart_out : {19'd0, Switch[5:1], DPSwitch};
 
-  wire led_en = (d_addr == 32'h00010000);
-  reg [7:0] led_reg = 0;
+  assign led_en = (cpu_d_addr == 32'h00008010);
   always @(negedge clk) begin
-    if (d_data_wr[0] && led_en) begin
-      led_reg <= d_data_out[7:0];
+    if (cpu_d_data_wr[0] && led_en) begin
+      led_reg <= cpu_d_data_out[7:0];
     end
   end
+
+  assign uart_en = (cpu_d_addr[31:4] == 28'h0000800);
+  uart_regs uart_regs_i (
+    .i_clk      (!clk),
+    .i_rst      (reset),
+    .i_wr       (&cpu_d_data_wr),
+    .i_rd       (cpu_d_data_rd),
+    .i_cs       (uart_en),
+    .i_addr     (cpu_d_addr[3:2]),
+    .i_data_in  (cpu_d_data_out),
+    .o_data_out (uart_out),
+    .o_tx       (UART_TX),
+    .i_rx       (UART_RX)
+);
 
   assign LED = led_reg;
 

@@ -20,6 +20,7 @@
  * o_id_ret  - Return address in ID phase (used for JAL and JALR)
  * o_id_ir   - Instruction in ID phase (guess what this is used for)
  ***************************************************************************/
+ `include "config.v"
 
 module fetch (
   input         i_clk,
@@ -83,7 +84,7 @@ module fetch (
   always @(posedge i_clk) begin
     if (i_rst) begin
       // Clear on reset
-      if_pc <= 0;
+      if_pc <= `RESET_VECTOR;
     end else begin
       // Update if pc should be updated
       if (i_clk_ce && (!i_hz_data || i_br_en)) begin
@@ -210,7 +211,7 @@ module fetch (
   always @(posedge i_clk) begin
     if (i_rst) begin
       // Clear on reset
-      if_pc <= 0;
+      if_pc <= `RESET_VECTOR;
       hz_br <= 0;
     end else begin
       // Clear branch hazard if set

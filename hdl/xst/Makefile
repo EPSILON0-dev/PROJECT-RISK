@@ -133,10 +133,14 @@ $(BITFILE): project.cfg $(VSOURCE) $(CONSTRAINTS) build/$(PROJECT).prj build/$(P
 	    -w $(PROJECT).ncd $(PROJECT).bit
 	@echo -ne "\e[1;32m======== OK ========\e[m\n"
 
-
 ###########################################################################
 # Testing (work in progress)
 ###########################################################################
+
+fresh_bmm:
+	$(call RUN,bitgen) -bd ../$(MEMFILE).mem $(COMMON_OPTS) $(BITGEN_OPTS) \
+	    -w $(PROJECT).ncd $(PROJECT).bit
+	@echo -ne "\e[1;32m======== OK ========\e[m\n"
 
 trace: project.cfg $(BITFILE)
 	$(call RUN,trce) $(COMMON_OPTS) $(TRACE_OPTS) \

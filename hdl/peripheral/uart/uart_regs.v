@@ -56,7 +56,7 @@ module uart_regs(
     A_DATA   = 3;
 
   reg [15:0] clk_div_reg = 0;
-  reg [ 6:0] config_reg  = 0;
+  reg [ 6:0] config_reg  = 7'h40;
 
   wire [8:0] read_data;
   wire       overrun_err;

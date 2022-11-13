@@ -1,5 +1,3 @@
-################################## Definitions #################################
-
 RISCV_PREFIX	:= riscv64-elf-
 RISCV_GCC 		:= $(RISCV_PREFIX)gcc
 
@@ -47,18 +45,12 @@ OBJ 			:= $(addprefix $(OBJDIR)/, $(addsuffix .o, $(TESTS)))
 BIN 			:= $(addprefix $(BINDIR)/, $(addsuffix .hex, $(TESTS)))
 DUMP 			:= $(addprefix $(DUMPDIR)/, $(addsuffix .dump, $(TESTS)))
 
-##################################     All     #################################
-
 .PHONEY: all
 all:
-	@$(MAKE) -s banner
-	@$(MAKE) -s msg
 	@$(MAKE) -s compile
 
 .PHONEY: fresh
 fresh:
-	@$(MAKE) -s banner
-	@$(MAKE) -s msg
 	@$(MAKE) -s realclean
 	@$(MAKE) -s compile
 
@@ -74,30 +66,6 @@ directories:
 	@$(MK) $(OBJDIR)
 	@$(MK) $(DUMPDIR)
 	@$(MK) $(BINDIR)
-
-##################################  Messages  ##################################
-
-BANNER		:= "\033[38;5;88m ╔═╗ ╦═╗ ╔═╗  ╦ ╔═╗ ╔═╗ ╔╦╗     ╦═╗ ╦ ╔═╗ ╦╔═\n\
-\033[38;5;124m╠═╝ ╠╦╝ ║ ║  ║ ║╣  ║    ║  ─── ╠╦╝ ║ ╚═╗ ╠╩╗\n\
-\033[38;5;160m╩   ╩╚═ ╚═╝ ╚╝ ╚═╝ ╚═╝  ╩      ╩╚═ ╩ ╚═╝ ╩ ╩\033[m\n"
-PLATFORM	:= $(shell uname)
-ARCH 		:= $(shell $(CXX) -dumpmachine)
-CXX_M		:= $(shell $(CXX) -dumpfullversion)
-
-.PHONY: banner
-banner:
-	@printf $(BANNER)
-
-.PHONY: msg
-msg:
-	@printf "\033[32;1mPLATFORM   \033[33;1m?| \033[m$(PLATFORM)\n"
-	@printf "\033[36;1mARCH       \033[33;1m?| \033[m$(ARCH)\n"
-	@printf "\033[33;1mCXX        \033[33;1m?| \033[m$(CXX)\n"
-	@printf "\033[34;1mFLAGS      \033[34;1m:| \033[m$(FLAGS)\n"
-	@printf "\n"
-
-
-##################################   Objects   #################################
 
 obj: $(OBJ)
 
@@ -118,8 +86,6 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	@$(OBJCOPY) $@ $(@:obj/%.o=bin/%.hex)
 	@printf "\033[u\033[36C\033[32;1m-> \033[37;1m$(@:obj/%.o=bin/%.hex)\n"
 	$(OBJSIZE) $@
-
-##################################  Cleaning  ##################################
 
 .PHONY: clean
 clean:
