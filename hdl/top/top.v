@@ -41,7 +41,7 @@ module top (
 );
 
   reg [7:0] boot_reset = 8'hFF;
-  wire reset;
+  reg reset;
 
   reg [31:0] counter = 0;
   reg clk = 0;
@@ -83,8 +83,8 @@ module top (
     if (|boot_reset) begin
       boot_reset <= boot_reset - 1;
     end
+    reset <= !Switch[0] || |boot_reset;
   end
-  assign reset = !Switch[0] || |boot_reset;
 
   // Memory stuff
   `BRAM(bram0, 15)

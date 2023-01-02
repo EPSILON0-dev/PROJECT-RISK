@@ -26,57 +26,83 @@ setup_uart:
 pattern:                                #
   li x4, 0                              # Load zero to the LED state register
   li x5, 15                             # Load 15 to the repeat counter register
-pattern_l0:                             #
+pattern_1:                              #
   xori x4, x4, 1                        # Switch the LED state
   sw x4, LED_REG(x2)                    # Store LED state to LED register
   li x3, 0x80000                        # Load the delay counter register
-pattern_l1:                             #
+pattern_2:                              #
   addi x3, x3, -1                       # Decrease the delay counter
-  bnez x3, pattern_l1                   # Continue decreasing until zero reached
+  bnez x3, pattern_2                    # Continue decreasing until zero reached
   addi x5, x5, -1                       # Decrease the repeat counter
-  bnez x5, pattern_l0                   # Continue until the repeat counter reaches zero
+  bnez x5, pattern_1                    # Continue until the repeat counter reaches zero
 
   # Loop the command execution
 loop:                                   #
+  li x9, 1                              # Preload the counter register
   jal ra, get_uart_data                 # Get the intruction from UART
   addi x3, x3, -'0'                     # Remove the ascii offset from the instruction number
-  beqz x3, instr_rd                     # If instruction is zero jump to the read instruction
+  beqz x3, instr_rd                     # If instruction is 0 jump to the read instruction
   addi x3, x3, -1                       # Check the next instruction
-  beqz x3, instr_wr                     # If instruction is one jump to the write instruction
+  beqz x3, instr_wr                     # If instruction is 1 jump to the write instruction
   addi x3, x3, -1                       # Check the next instruction
-  beqz x3, instr_ex                     # If instruction is two exit the bootloader
+  beqz x3, instr_rd_cnt                 # If instruction is 2 jump to the read instruction
+  addi x3, x3, -1                       # Check the next instruction
+  beqz x3, instr_wr_cnt                 # If instruction is 3 jump to the write instruction
+  addi x3, x3, -1                       # Check the next instruction
+  beqz x3, instr_clr                    # If instruction is 4 clear the memory
+  addi x3, x3, -1                       # Check the next instruction
+  beqz x3, instr_ex                     # If instruction is 5 exit the bootloader
   li x3, 'e'                            # If instruction is unknown prepare the error character
   sw x3, UART_DATA(x2)                  # Send the error character through UART
   j loop                                # Repeat the loop
 
-  # Read a single byte from a given address
+  # Wipe the whole memory, no questions asked, no data preserved
+instr_clr:                              #
+  li x3, 0                              # Clear the pointer
+  li x4, BLD_ADDRESS                    # Set the end pointer
+  li x5, 0x0000006f                     # Set the value to be written (halt, infinite loop)
+instr_clr_1:                            #
+  sw x5, 0(x3)                          # Store the nop instruction
+  addi x3, x3, 4                        # Advance to the next address
+  blt x3, x4, instr_clr_1               # Repeat until the end address is reached
+  li x3, 'c'                            # Prepare the "clean" message
+  sw x3, UART_DATA(x2)                  # Send the "clean" message through UART
+  j loop                                # Repeat the loop
+
+  # Read from a given address
+instr_rd_cnt:                           #
+  li x6, 4                              # Set the 4 characters for count read
+  jal ra, get_hex_num                   # Get the count
+  mv x9, x7                             # Copy the value to repeat counter
 instr_rd:                               #
   li x6, 4                              # Set the 4 characters for address read
   jal ra, get_hex_num                   # Get the address
+instr_rd_0:                             #
   lbu x3, 0(x7)                         # Get the value at the given address
-  jal ra, val_to_hex                    # Convert the value to two hex digits
-  sw x4, UART_DATA(x2)                  # Send higher hex digit
-  sw x3, UART_DATA(x2)                  # Send lower hex digit
+  jal ra, print_hex                     # Print the hex value
+  addi x7, x7, 1                        # Increase the address pointer
+  addi x9, x9, -1                       # Decrease the repeat counter
+  bnez x9, instr_rd_0                   # If repeat counter not zero repeat the loop
   j loop                                # Repeat the loop
 
-  # Write a single byte to the given address
+  # Write the given address
+instr_wr_cnt:                           #
+  li x6, 4                              # Set the 4 characters for count read
+  jal ra, get_hex_num                   # Get the count
+  mv x9, x7                             # Copy the value to repeat counter
 instr_wr:                               #
   li x6, 4                              # Set the 4 characters for address read
   jal ra, get_hex_num                   # Get the address
   mv x8, x7                             # Copy the address to x8
   li x6, 2                              # Set the 2 characters for the data
+instr_wr_0:                             #
   jal ra, get_hex_num                   # Get the write data
-  li x6, BLD_ADDRESS                    # Load the bootloader address to compare register
-  blt x7, x6, instr_wr_ok               # Check if address isn't bootloader's
-  li x6, BLD_ADDRESS + BLD_SIZE         # Load the end of the bootloader to compare register
-  bge x7, x6, instr_wr_ok               # Check if address isn't bootloader's
-  li x3, 'p'                            # Load the 'protected' message to x3
-  sw x3, UART_DATA(x2)                  # Send the 'protected' message through UART
-  j loop                                # Repeat the loop
-instr_wr_ok:                            #
   sb x7, 0(x8)                          # Write the byte
   li x3, 'k'                            # Load the 'ok' message to x3
   sw x3, UART_DATA(x2)                  # Send the 'ok' message through UART
+  addi x8, x8, 1                        # Increase the address pointer
+  addi x9, x9, -1                       # Decrease the repeat counter
+  bnez x9, instr_wr_0                   # If repeat counter not zero repeat the loop
   j loop                                # Repeat the loop
 
   # Exit the bootloader
@@ -85,6 +111,8 @@ instr_ex:
   sw x3, UART_DATA(x2)                  # Send the 'starting' message through UART
   mv x3, zero                           # Clear the x3
   sw x3, LED_REG(x2)                    # Clear the regs
+  li ra, BLD_ADDRESS                    # Load the bootloader address to the return address
+  li sp, BLD_ADDRESS - 4                # Preload the stack pointer (I'll forget to do this in start.S)
   jr zero                               # Start executing code
 
   # Get the byte from uart
@@ -99,12 +127,12 @@ get_uart_data:                          #
 hex_to_val:                             #
   li x4, 10                             # Load 10 to compare register
   addi x3, x3, -'0'                     # Remove the ASCII digit offset
-  blt x3, x4, hex_to_val_end            # Check if it was a digit
+  blt x3, x4, hex_to_val_1              # Check if it was a digit
   li x4, 16                             # Load 16 to compare register
   addi x3, x3, -('A' - '0' - 10)        # Remove the ASCII uppercase offset
-  blt x3, x4, hex_to_val_end            # Check if it was an upparcase digit
+  blt x3, x4, hex_to_val_1              # Check if it was an upparcase digit
   addi x3, x3, -('a' - 'A')             # Remove the ASCII lowercase offset
-hex_to_val_end:                         #
+hex_to_val_1:                           #
   ret                                   # Return from subroutine
 
   # Convert the value to two hex digits
@@ -124,15 +152,26 @@ val_to_hex_1:                           #
 val_to_hex_2:                           #
   ret                                   # Return from the subroutine
 
+  # Print the hex value (2 hex digits)
+print_hex:                              #
+  lw x4, UART_STATUS(x2)                # Load the status register
+  andi x4, x4, 1<<UART_TX_EMPTY         # Mask the buffer empty full bit
+  beqz x4, print_hex                    # Repeat if the buffer if more than half full
+  mv x6, ra                             # Copy the return address to x6
+  jal ra, val_to_hex                    # Convert the value to two hex digits
+  sw x4, UART_DATA(x2)                  # Send higher hex digit
+  sw x3, UART_DATA(x2)                  # Send lower hex digit
+  jr x6                                 # Return using the address in x6 (coppied at start)
+
   # Get a multicharacter hex value
 get_hex_num:                            #
   mv x5, ra                             # Copy the return address to x5
   li x7, 0                              # Clear the result register
-get_hex_num_loop:                       #
+get_hex_num_1:                          #
   slli x7, x7, 4                        # Shift the value 4 bits left (single hex char)
   jal ra, get_uart_data                 # Get the character from UART
   jal ra, hex_to_val                    # Convert the character to hex
   add x7, x7, x3                        # Add the hex value to tohe result
   addi x6, x6, -1                       # Decrease the character counter
-  bnez x6, get_hex_num_loop             # If counter didn't reach zero repeat
+  bnez x6, get_hex_num_1                # If counter didn't reach zero repeat
   jr x5                                 # Return using the address in x5 (coppied at start)
