@@ -169,13 +169,9 @@ isimgui: build/isim_$(TB)$(EXE)
 # Programming
 ###########################################################################
 
-# Get sudo priviledges on the console (for uart access)
-sudocons:
-	@sudo true
-
 ifeq ($(PROGRAMMER), mimasv2)
-prog: $(BITFILE) sudocons
-	@sudo /./opt/MimasV2/mimasv2-prog --filename build/$(PROJECT).bin
+prog: $(BITFILE)
+	/./opt/MimasV2/mimasv2-prog --filename build/$(PROJECT).bin
 endif
 
 ifeq ($(PROGRAMMER), impact)

@@ -1,6 +1,10 @@
 tests/obj/
 tests/bin/
 tests/dump/
+software/*/bin/
+software/*/dump/
+software/*/bin/*
+software/*/dump/*
 *.o
 *.obj
 *.vcd

@@ -1,8 +1,10 @@
 #include "hardware.h"
 
-#define UART_CONFIGURATION (2<<UART_LENGTH) | (1<<UART_RX_EN) | (1<<UART_TX_EN)
-#define BLD_ADDRESS 0x00007E00
-#define BLD_SIZE 0x00000200
+#define UART_CONFIGURATION  (2<<UART_LENGTH) | (1<<UART_RX_EN) | (1<<UART_TX_EN)
+#define BLD_ADDRESS         0x00007E00
+#define BLD_SIZE            0x00000200
+#define F_CPU               25000000
+#define BAUD_RATE           115200
 
 .section .text
 .fill BLD_ADDRESS / 4, 4, 0x0000006f
@@ -35,6 +37,12 @@ pattern_2:                              #
   bnez x3, pattern_2                    # Continue decreasing until zero reached
   addi x5, x5, -1                       # Decrease the repeat counter
   bnez x5, pattern_1                    # Continue until the repeat counter reaches zero
+
+  li x3, 0x55
+  sw x3, 16(zero)
+  li x3, 0x00
+  lw x3, 16(zero)
+  sw x3, LED_REG(x2)
 
   # Loop the command execution
 loop:                                   #
@@ -87,11 +95,11 @@ instr_rd_0:                             #
 
   # Write the given address
 instr_wr_cnt:                           #
-  li x6, 4                              # Set the 4 characters for count read
+  li x6, 4                              # Set the 4 characters for count write
   jal ra, get_hex_num                   # Get the count
   mv x9, x7                             # Copy the value to repeat counter
 instr_wr:                               #
-  li x6, 4                              # Set the 4 characters for address read
+  li x6, 4                              # Set the 4 characters for address write
   jal ra, get_hex_num                   # Get the address
   mv x8, x7                             # Copy the address to x8
   li x6, 2                              # Set the 2 characters for the data

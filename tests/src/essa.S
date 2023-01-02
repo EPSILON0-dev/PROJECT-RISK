@@ -17,6 +17,10 @@ RVTEST_CODE_BEGIN
 
 # Tu pisze:
 nop
+li x3, 0x55
+sw x3, 16(zero)
+li x3, 0
+lw x3, 16(zero)
 # Tu juz ma nie pisac:
 
 RVTEST_PASS

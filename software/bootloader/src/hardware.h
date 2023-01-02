@@ -1,6 +1,3 @@
-#define F_CPU             50000000
-#define BAUD_RATE         115200
-
 #define IO_BLOCK          0x00008000
 #define UART_CLOCK        0x0
 #define UART_CONFIG       0x4

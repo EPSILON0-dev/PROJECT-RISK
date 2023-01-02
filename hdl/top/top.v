@@ -14,7 +14,7 @@
       .WRITE_MODE_B  ("WRITE_FIRST")    \
     ) name (                            \
       .ADDRA  (bram_a_addr),            \
-      .ADDRB  (bram_b_addr),            \
+      .ADDRB  ({ cpu_d_addr[14:2], 1'b0 }),            \
       .CLKA   (!clk),                   \
       .CLKB   (!clk),                   \
       .DIA    (2'b00),                  \
@@ -22,7 +22,7 @@
       .DOA    (bram_a_out[i*2+1:i*2]),  \
       .DOB    (bram_b_out[i*2+1:i*2]),  \
       .ENA    (1'b1),                   \
-      .ENB    (1'b1),                   \
+      .ENB    (bram_en),                \
       .REGCEA (1'b0),                   \
       .REGCEB (1'b0),                   \
       .RSTA   (1'b0),                   \
@@ -70,7 +70,7 @@ module top (
 
   // Clocking stuff
   always @(posedge CLK_100MHz) begin
-    if (counter == 0) begin
+    if (counter == 1) begin
       counter <= 0;
       clk <= !clk;
     end else begin

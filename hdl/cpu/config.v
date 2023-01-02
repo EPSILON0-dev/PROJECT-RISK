@@ -10,7 +10,7 @@
 
 `define RESET_VECTOR 32'h00007E00
 
-// `define HAZARD_DATA_FORWARDNG
+`define HAZARD_DATA_FORWARDNG
 // `define CLEAN_DATA
 
 // `define INCLUDE_CSR

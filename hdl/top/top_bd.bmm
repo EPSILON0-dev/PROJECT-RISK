@@ -1,7 +1,7 @@
 // BMM LOC annotation file.
 //
 // Release 14.6 -  P.20131013, build 3.0.10 Apr 3, 2013
-// Copyright (c) 1995-2022 Xilinx, Inc.  All rights reserved.
+// Copyright (c) 1995-2023 Xilinx, Inc.  All rights reserved.
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -12,22 +12,22 @@
 
 ADDRESS_SPACE bram_block RAMB16 [0x00000000:0x00007FFF]
     BUS_BLOCK
-        bram0 RAMB16 [31:30] [0:8191] PLACED = X0Y20;
-        bram1 RAMB16 [29:28] [0:8191] PLACED = X0Y22;
-        bram2 RAMB16 [27:26] [0:8191] PLACED = X0Y24;
-        bram3 RAMB16 [25:24] [0:8191] PLACED = X0Y14;
-        bram4 RAMB16 [23:22] [0:8191] PLACED = X0Y18;
-        bram5 RAMB16 [21:20] [0:8191] PLACED = X1Y12;
-        bram6 RAMB16 [19:18] [0:8191] PLACED = X0Y12;
-        bram7 RAMB16 [17:16] [0:8191] PLACED = X1Y20;
+        bram0 RAMB16 [31:30] [0:8191] PLACED = X1Y16;
+        bram1 RAMB16 [29:28] [0:8191] PLACED = X1Y20;
+        bram2 RAMB16 [27:26] [0:8191] PLACED = X0Y4;
+        bram3 RAMB16 [25:24] [0:8191] PLACED = X1Y4;
+        bram4 RAMB16 [23:22] [0:8191] PLACED = X1Y14;
+        bram5 RAMB16 [21:20] [0:8191] PLACED = X1Y18;
+        bram6 RAMB16 [19:18] [0:8191] PLACED = X1Y2;
+        bram7 RAMB16 [17:16] [0:8191] PLACED = X1Y0;
         bram8 RAMB16 [15:14] [0:8191] PLACED = X0Y10;
-        bram9 RAMB16 [13:12] [0:8191] PLACED = X1Y24;
-        bram10 RAMB16 [11:10] [0:8191] PLACED = X1Y14;
-        bram11 RAMB16 [9:8] [0:8191] PLACED = X1Y16;
-        bram12 RAMB16 [7:6] [0:8191] PLACED = X1Y18;
-        bram13 RAMB16 [5:4] [0:8191] PLACED = X1Y22;
-        bram14 RAMB16 [3:2] [0:8191] PLACED = X1Y10;
-        bram15 RAMB16 [1:0] [0:8191] PLACED = X1Y26;
+        bram9 RAMB16 [13:12] [0:8191] PLACED = X0Y14;
+        bram10 RAMB16 [11:10] [0:8191] PLACED = X1Y6;
+        bram11 RAMB16 [9:8] [0:8191] PLACED = X1Y10;
+        bram12 RAMB16 [7:6] [0:8191] PLACED = X1Y12;
+        bram13 RAMB16 [5:4] [0:8191] PLACED = X0Y12;
+        bram14 RAMB16 [3:2] [0:8191] PLACED = X0Y8;
+        bram15 RAMB16 [1:0] [0:8191] PLACED = X1Y22;
     END_BUS_BLOCK;
 END_ADDRESS_SPACE;
 

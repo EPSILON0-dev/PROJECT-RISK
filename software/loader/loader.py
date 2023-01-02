@@ -6,6 +6,7 @@ EXPECTED_SIGNATURE = b'37839363'
 END_ADDRESS = 0x8000
 BLOCK_SIZE = 0x200
 SERIAL = '/dev/ttyACM1'
+FILE = ''
 
 def show_header():
   print("\nPROJECT-RISK loader v1.0")
@@ -59,33 +60,53 @@ def get_memory(ser):
   print()
   return res
 
-def check_memmap_byte(mem, i, j, k):
-  byte0 = mem[i * 1024 + j * 16 + k * 2]
-  byte1 = mem[i * 1024 + j * 16 + k * 2 + 1]
-  return (byte0.bit_count() % 2 != 0) ^ (byte1.bit_count() % 2 != 0)
+def set_memory(ser, memory: bytes):
+  print(f"Writing memory contents ({len(memory) / 1024:.1f}Kb):")
+  print_progress_bar(0, len(memory), prefix = 'Writing:')
+  for i in range(len(memory)):
+    write_address(ser, i, memory[i])
+    print_progress_bar(i + 1, len(memory), prefix = 'Writing:')
+  print()
 
-def show_memory_map(mem):
-  print('Memory map:\n' + '+' + '-' * 66 + '+')
-  for i in range(len(mem) // 1024):
-    print(end='| ')
-    for j in range(64):
-      char = 0x2800
-      char += check_memmap_byte(mem, i, j, 0) << 0
-      char += check_memmap_byte(mem, i, j, 1) << 1
-      char += check_memmap_byte(mem, i, j, 2) << 2
-      char += check_memmap_byte(mem, i, j, 3) << 6
-      char += check_memmap_byte(mem, i, j, 4) << 3
-      char += check_memmap_byte(mem, i, j, 5) << 4
-      char += check_memmap_byte(mem, i, j, 6) << 5
-      char += check_memmap_byte(mem, i, j, 7) << 7
-      print(chr(char), end='')
-    print(' |')
-  print('+' + '-' * 66 + '+')
-  pass
+def main():
+  show_header()
 
-show_header()
-ser = open_serial()
-check_signature(ser)
-memory = bytes.fromhex(str(get_memory(ser))[2:-1])
-show_memory_map(memory)
-ser.close()
+  if len(sys.argv) != 4:
+    print("Usage: ./loader.py [PORT] [read/write/verify] [FILE]")
+    sys.exit(1)
+
+  global SERIAL
+  SERIAL = sys.argv[1]
+  ser = open_serial()
+
+  global FILE
+  FILE = sys.argv[3]
+
+  if sys.argv[2] == 'read':
+    memory = bytes.fromhex(str(get_memory(ser))[2:-1])
+    f = open(FILE, 'wb')
+    f.write(memory)
+    f.close()
+
+  elif sys.argv[2] == 'write':
+    f = open(FILE, 'rb')
+    memory = f.read()
+    f.close()
+    if len(memory) > END_ADDRESS:
+      print('File to big to write')
+      sys.exit(1)
+    set_memory(ser, memory)
+
+  elif sys.argv[2] == 'verify':
+    f = open(FILE, 'rb')
+    memory_orig = f.read()
+    f.close()
+    memory = bytes.fromhex(str(get_memory(ser))[2:-1])
+    if memory_orig != memory[0:len(memory_orig)-1]:
+      print("Verify failed")
+      sys.exit(1)
+
+  ser.close()
+
+if __name__ == '__main__':
+  main()
