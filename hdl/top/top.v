@@ -14,7 +14,7 @@
       .WRITE_MODE_B  ("WRITE_FIRST")    \
     ) name (                            \
       .ADDRA  (bram_a_addr),            \
-      .ADDRB  ({ cpu_d_addr[14:2], 1'b0 }),            \
+      .ADDRB  (bram_b_addr),            \
       .CLKA   (!clk),                   \
       .CLKB   (!clk),                   \
       .DIA    (2'b00),                  \
@@ -107,7 +107,7 @@ module top (
   assign bram_a_addr = { cpu_i_addr[14:2], 1'b0 };
   assign bram_b_addr = { cpu_d_addr[14:2], 1'b0 };
   assign bram_b_in = cpu_d_data_out;
-  assign bram_b_wr = cpu_d_data_wr & {4{bram_en}};
+  assign bram_b_wr = {4{|cpu_d_data_wr}} & {4{bram_en}};
   assign bram_en = (cpu_d_addr < 32'h00008000);
 
   // CPU stuff
