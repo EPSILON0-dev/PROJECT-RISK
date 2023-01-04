@@ -1,4 +1,7 @@
 #!/bin/python3
+"""
+  Simple Loader for working with the bootloader.
+"""
 import serial
 import sys
 

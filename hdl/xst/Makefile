@@ -122,25 +122,20 @@ $(BITFILE): project.cfg $(VSOURCE) $(CONSTRAINTS) build/$(PROJECT).prj build/$(P
 	$(call RUN,xst) $(COMMON_OPTS) \
 	    -ifn $(PROJECT).scr
 	$(call RUN,ngdbuild) $(COMMON_OPTS) $(NGDBUILD_OPTS) \
-	    -p $(TARGET_PART) -bm ../$(MEMFILE).bmm -uc ../$(CONSTRAINTS) \
+	    -p $(TARGET_PART) -uc ../$(CONSTRAINTS) \
 	    $(PROJECT).ngc $(PROJECT).ngd
 	$(call RUN,map) $(COMMON_OPTS) $(MAP_OPTS) \
 	    -p $(TARGET_PART) \
 	    -w $(PROJECT).ngd -o $(PROJECT).map.ncd $(PROJECT).pcf
 	$(call RUN,par) $(COMMON_OPTS) $(PAR_OPTS) \
 	    -w $(PROJECT).map.ncd $(PROJECT).ncd $(PROJECT).pcf
-	$(call RUN,bitgen) -bd ../$(MEMFILE).mem $(COMMON_OPTS) $(BITGEN_OPTS) \
+	$(call RUN,bitgen) $(COMMON_OPTS) $(BITGEN_OPTS) \
 	    -w $(PROJECT).ncd $(PROJECT).bit
 	@echo -ne "\e[1;32m======== OK ========\e[m\n"
 
 ###########################################################################
 # Testing (work in progress)
 ###########################################################################
-
-fresh_bmm:
-	$(call RUN,bitgen) -bd ../$(MEMFILE).mem $(COMMON_OPTS) $(BITGEN_OPTS) \
-	    -w $(PROJECT).ncd $(PROJECT).bit
-	@echo -ne "\e[1;32m======== OK ========\e[m\n"
 
 trace: project.cfg $(BITFILE)
 	$(call RUN,trce) $(COMMON_OPTS) $(TRACE_OPTS) \

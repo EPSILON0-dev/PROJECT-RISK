@@ -1,13 +1,19 @@
+/**
+ * Copyright 2023 Lukasz Forenc
+ *
+ * file: start.S
+ *
+ * This is a bootloader for the
+ */
 #include "hardware.h"
 
 #define UART_CONFIGURATION  (2<<UART_LENGTH) | (1<<UART_RX_EN) | (1<<UART_TX_EN)
-#define BLD_ADDRESS         0x00007E00
-#define BLD_SIZE            0x00000200
-#define F_CPU               25000000
+#define MEMORY_END          0x00008000
+#define BLD_ADDRESS         0x00010000
+#define F_CPU               6250000
 #define BAUD_RATE           115200
 
 .section .text
-.fill BLD_ADDRESS / 4, 4, 0x0000006f
 
 .globl _start
   # Enter the bootloader if ISP button held down
@@ -37,12 +43,12 @@ pattern_2:                              #
   bnez x3, pattern_2                    # Continue decreasing until zero reached
   addi x5, x5, -1                       # Decrease the repeat counter
   bnez x5, pattern_1                    # Continue until the repeat counter reaches zero
-
-  li x3, 0x55
-  sw x3, 16(zero)
-  li x3, 0x00
-  lw x3, 16(zero)
-  sw x3, LED_REG(x2)
+mem_test:                               #
+  li x3, 0x1                            # Set the x3 register for memory test
+  sw x3, 16(zero)                       # Store the test data to memory
+  li x3, 0x00                           # Clear the x3 register
+  lw x3, 16(zero)                       # Load the test data from memory
+  sw x3, LED_REG(x2)                    # Display the test data on LEDs
 
   # Loop the command execution
 loop:                                   #
@@ -67,7 +73,7 @@ loop:                                   #
   # Wipe the whole memory, no questions asked, no data preserved
 instr_clr:                              #
   li x3, 0                              # Clear the pointer
-  li x4, BLD_ADDRESS                    # Set the end pointer
+  li x4, MEMORY_END                     # Set the end pointer
   li x5, 0x0000006f                     # Set the value to be written (halt, infinite loop)
 instr_clr_1:                            #
   sw x5, 0(x3)                          # Store the nop instruction
@@ -120,7 +126,7 @@ instr_ex:
   mv x3, zero                           # Clear the x3
   sw x3, LED_REG(x2)                    # Clear the regs
   li ra, BLD_ADDRESS                    # Load the bootloader address to the return address
-  li sp, BLD_ADDRESS - 4                # Preload the stack pointer (I'll forget to do this in start.S)
+  li sp, MEMORY_END - 4                 # Preload the stack pointer (I'll forget to do this in start.S)
   jr zero                               # Start executing code
 
   # Get the byte from uart
