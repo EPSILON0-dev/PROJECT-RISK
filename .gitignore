@@ -1,10 +1,8 @@
-tests/obj/
-tests/bin/
-tests/dump/
-software/*/bin/
-software/*/dump/
-software/*/bin/*
-software/*/dump/*
+obj/
+dump/
+build/
+bin/
+*.out
 *.o
 *.obj
 *.vcd
@@ -12,5 +10,3 @@ software/*/dump/*
 *.dump
 *.bak
 .vscode/
-TODO
-hdl/xst/build/

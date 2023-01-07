@@ -30,6 +30,14 @@ def write_address(ser, addr, data):
   ser.write(bytes(f"1{addr:04x}{data:02x}", encoding='ASCII'))
   return (ser.read(1) == b'g')
 
+def write_bytes(ser, addr, data, length):
+  ser.write(bytes(f"3{length:04x}", encoding='ASCII'))
+  for i in length:
+    ser.write(bytes(f"{data[i]:02x}"))
+    if (ser.read(1) != b'k'):
+      return False
+  return True
+
 def get_signature(ser):
   signature  = read_address(ser, 0x7E00)
   signature += read_address(ser, 0x7E04)
@@ -37,7 +45,7 @@ def get_signature(ser):
   signature += read_address(ser, 0x7E0C)
   return signature
 
-def print_progress_bar (iteration, total, prefix = '', suffix = 'Complete', decimals = 1, length = 60, fill = '█', print_end = "\r"):
+def print_progress_bar (iteration, total, prefix = '', suffix = 'Complete', decimals = 1, length = 60, fill = '#', print_end = "\r"):
   percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
   filled_length = int(length * iteration // total)
   bar = fill * filled_length + '-' * (length - filled_length)
@@ -53,14 +61,13 @@ def check_signature(ser):
     sys.exit(1)
   print("(\033[32mOK\033[0m)\n")
 
-def get_memory(ser):
-  print(f"Reading memory contents ({END_ADDRESS / 1024}Kb):")
+def get_memory(ser, length):
+  print(f"Reading memory contents ({length / 1024:.1f}Kb):")
   res = bytes()
-  print_progress_bar(0, END_ADDRESS, prefix = 'Reading:')
-  for i in range(0, END_ADDRESS, BLOCK_SIZE):
+  print_progress_bar(0, length, prefix = 'Reading:')
+  for i in range(0, length, BLOCK_SIZE):
     res += read_bytes(ser, i, BLOCK_SIZE)
-    print_progress_bar(i + BLOCK_SIZE, END_ADDRESS, prefix = 'Reading:')
-  print()
+    print_progress_bar(min(i + BLOCK_SIZE, length), length, prefix = 'Reading:')
   return res
 
 def set_memory(ser, memory: bytes):
@@ -69,7 +76,6 @@ def set_memory(ser, memory: bytes):
   for i in range(len(memory)):
     write_address(ser, i, memory[i])
     print_progress_bar(i + 1, len(memory), prefix = 'Writing:')
-  print()
 
 def main():
   show_header()
@@ -85,8 +91,10 @@ def main():
   global FILE
   FILE = sys.argv[3]
 
+  verify = False
+
   if sys.argv[2] == 'read':
-    memory = bytes.fromhex(str(get_memory(ser))[2:-1])
+    memory = bytes.fromhex(str(get_memory(ser, END_ADDRESS))[2:-1])
     f = open(FILE, 'wb')
     f.write(memory)
     f.close()
@@ -99,15 +107,20 @@ def main():
       print('File to big to write')
       sys.exit(1)
     set_memory(ser, memory)
+    verify = True
 
-  elif sys.argv[2] == 'verify':
+  if sys.argv[2] == 'verify' or verify:
     f = open(FILE, 'rb')
     memory_orig = f.read()
     f.close()
-    memory = bytes.fromhex(str(get_memory(ser))[2:-1])
-    if memory_orig != memory[0:len(memory_orig)-1]:
-      print("Verify failed")
-      sys.exit(1)
+    ok = True
+    memory = bytes.fromhex(str(get_memory(ser, len(memory_orig)))[2:-1])
+    for i in range(len(memory_orig)):
+      if memory_orig[i] != memory[i]:
+        ok = False
+        print(f"Verify failed on address {i:04X} {memory_orig[i]:02X} => {memory[i]:02X}")
+    if ok:
+      print("Verified OK.")
 
   ser.close()
 
