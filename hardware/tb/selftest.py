@@ -26,7 +26,7 @@ def find_line(arr, pattern):
 
 # Run given test
 def run_test(test_name):
-    run(f'./test.py ../../tests/bin/{test_name}.hex')
+    run(f'./test.py ../../software/selftests/build/{test_name}.hex')
     result = run('vvp cpu_tb.obj')
     result_line = find_line(result, '(00010000)')
     cycles_taken = result[-1].split(' ')[-1]
@@ -34,7 +34,10 @@ def run_test(test_name):
         print(f'\033[32;1mPassed test \033[97;1m{test_name} \033[20G\033[0m({cycles_taken})')
         return cycles_taken
     else:
-        print(f'\033[31;1mFailed test \033[97;1m{test_name} \033[20G\033[0m(Failed Test {result_line.split(" ")[-2]})')
+        result_str = result_line.split(" ")[-2]
+        if result_str == 'by':
+            result_str = 'killed by timeout'
+        print(f'\033[31;1mFailed test \033[97;1m{test_name} \033[20G\033[0m({result_str})')
         return -1
 
 # Run given tests array

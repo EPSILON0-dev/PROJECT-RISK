@@ -6,6 +6,7 @@ bin/
 *.o
 *.obj
 *.vcd
+*.mem
 *.hex
 *.dump
 *.bak
