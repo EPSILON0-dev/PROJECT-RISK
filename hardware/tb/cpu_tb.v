@@ -57,7 +57,7 @@ module cpu_tb;
     i_data_rd_d = 0;
     #10 i_rst = 0;
 
-    #10000 $display("Killed by timeout"); $finish;
+    #1000000 $display("Killed by timeout"); $finish;
   end
 
 

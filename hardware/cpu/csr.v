@@ -23,6 +23,7 @@
  * i_wr_data     - CSR write data input
  * o_rd_data     - CSR read data output
  ***************************************************************************/
+`include "config.v"
 
 module csr (
   input         i_clk,
@@ -47,12 +48,6 @@ module csr (
   output [31:0] o_rd_data
 );
 
-
-  // Temporary registers for testing
-  reg [31:0] reg_200;
-  reg [31:0] reg_800;
-  reg [31:0] reg_F00;
-
   // Read circuitry
   reg  [31:0] read_data;
 
@@ -62,15 +57,16 @@ module csr (
   wire [31:0] clr_data;
   wire [31:0] write_data;
 
-
   /**
    * Read from currently selected CSR
    */
   always @* begin
     case (i_addr)
-      12'h200: read_data = reg_200;
-      12'h800: read_data = reg_800;
-      12'hF00: read_data = reg_F00;
+      12'h301: read_data = `CSR_MISA;
+      12'hF11: read_data = `CSR_MVENDORID;
+      12'hF12: read_data = `CSR_MARCHID;
+      12'hF13: read_data = `CSR_MIMPID;
+      12'hF14: read_data = `CSR_MHARTID;
 `ifdef CSR_EXTERNAL_BUS
       default: read_data = i_ext_rd_data;
 `else
@@ -98,9 +94,6 @@ module csr (
   always @(posedge i_clk) begin
     if (write_enable) begin
       case (i_addr)
-        12'h200: reg_200 <= write_data;
-        12'h800: reg_800 <= write_data;
-        12'hF00: reg_F00 <= write_data;
         default: begin end  // Empty expression
       endcase
     end

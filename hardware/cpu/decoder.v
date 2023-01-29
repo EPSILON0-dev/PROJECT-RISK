@@ -444,8 +444,8 @@ module decoder (
 
   reg [4:0] rs2_mux;
   wire rs2_normal = quad3;
-  wire rs2_rs2s = op_csw || op_caryth || op_cswsp;
-  wire rs2_rs2l = op_cadd || op_cmv;
+  wire rs2_rs2s = op_csw || op_caryth;
+  wire rs2_rs2l = op_cadd || op_cmv || op_cswsp;
 `ifdef HARDWARE_TIPS
   (* parallel_case *)
 `endif
@@ -480,7 +480,7 @@ module decoder (
   reg [2:0] funct3_mux;
   wire funct3_normal = quad3;
   wire funct3_001    = op_cslli || op_cbnez;
-  wire funct3_010    = c_op_store || c_op_load;
+  wire funct3_010    = (c_op_store || c_op_load) && !quad3;
   wire funct3_100    = op_cxor;
   wire funct3_101    = op_csrai || op_csrli;
   wire funct3_110    = op_cor;

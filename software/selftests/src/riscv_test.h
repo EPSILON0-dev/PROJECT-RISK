@@ -64,18 +64,29 @@ reset_vector:                                                           \
 // Pass/Fail Macro
 //-----------------------------------------------------------------------
 
+#ifndef HARDWARE_TEST
 #define RVTEST_PASS                                                     \
         li TESTNUM, 0x555;                                              \
         lui x31, 0x10;                                                  \
         sw TESTNUM, 0x0(x31);                                           \
         jalr zero, x31, 0
-
 #define TESTNUM gp
 #define RVTEST_FAIL                                                     \
-        addi a0, TESTNUM, 0;                                            \
         lui x31, 0x10;                                                  \
         sw TESTNUM, 0x0(x31);                                           \
         jalr zero, x31, 0
+#else
+#define RVTEST_PASS                                                     \
+        li TESTNUM, 0x55;                                               \
+        lui x31, 0x8;                                                   \
+        sw TESTNUM, 16(x31);                                            \
+        1: j 1b
+#define TESTNUM gp
+#define RVTEST_FAIL                                                     \
+        lui x31, 0x8;                                                   \
+        sw TESTNUM, 16(x31);                                            \
+        1: j 1b
+#endif
 
 //-----------------------------------------------------------------------
 // Data Section Macro

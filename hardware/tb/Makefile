@@ -13,7 +13,7 @@ cpu_selftest: cpu_clean cpu_tb.obj
 
 .PHONY: cpu_test
 cpu_test: cpu_clean cpu_tb.obj
-	python3 ./test.py ../../software/selftests/build/$(TEST).hex
+	python3 ./test.py $(TEST)
 	vvp cpu_tb.obj
 
 .PHONY: uart_clean

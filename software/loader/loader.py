@@ -106,6 +106,8 @@ def main():
     if len(memory) > END_ADDRESS:
       print('File to big to write')
       sys.exit(1)
+    ser.write(b'4')
+    ser.read()
     set_memory(ser, memory)
     verify = True
 

@@ -16,11 +16,14 @@ RVTEST_RV32U
 RVTEST_CODE_BEGIN
 
 # Tu pisze:
-nop
-li x3, 0x55
-sw x3, 16(zero)
-li x3, 0
-lw x3, 16(zero)
+la x1, 0x4000
+li x2, 0x12345678
+sw x2, 0(x1)
+lb x2, 0(x1)
+la x1, 0x8010
+srli x2, x2, 8
+sw x2, 0(x1)
+1: j 1b
 # Tu juz ma nie pisac:
 
 RVTEST_PASS

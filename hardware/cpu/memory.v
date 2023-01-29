@@ -17,6 +17,7 @@
  * o_data_wr   - Data for memory to be stored
  * o_we        - Write enable for the memory (already shifted by i_shift)
  ***************************************************************************/
+`include "config.v"
 
 module memory (
 
@@ -54,9 +55,6 @@ module memory (
   /**
    * Length mask
    */
-`ifdef HARDWARE_TIPS
-  (* parallel_case *)
-`endif
   always @* begin
     case (i_length)
       2'b00:   length_mask = 32'h000000ff;
@@ -113,9 +111,6 @@ module memory (
    *  Stage 1: Length is calculated
    *  Stage 2: Length is offset by the address
    */
-`ifdef HARDWARE_TIPS
-  (* parallel_case *)
-`endif
   always @* begin
     case (i_length)
       2'b00:   we_lenght = 4'b0001;

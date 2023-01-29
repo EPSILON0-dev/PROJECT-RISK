@@ -8,12 +8,15 @@ RM      := rm -r
 MK      := mkdir -p
 
 TESTS := $(patsubst src/%.S, build/%, $(wildcard src/*.S))
+FLAGS := -DHARDWARE_TEST
 
 .PHONY: all
 all: compile
 
 .PHONY: fresh
-fresh: clean compile
+fresh:
+	$(MAKE) clean
+	$(MAKE) compile
 
 compile:
 	$(MAKE) directories
@@ -25,7 +28,7 @@ directories:
 obj: $(TESTS)
 
 build/%: src/%.S
-	$(CXX) -T./src/link.ld -o $@ $<
+	$(CXX) -T./src/link.ld -o $@ $< $(FLAGS)
 	$(OBJDUMP) $@ > $@.dump
 	$(OBJCOPY) $@ $@.hex
 

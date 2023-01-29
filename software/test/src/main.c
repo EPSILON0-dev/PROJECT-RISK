@@ -14,12 +14,26 @@
 
 int main()
 {
-  // Set the pattern
-  leds_setall(0b01111110);
+  size_t csr_data;
 
   // Print the hello world
   uart_begin(115200);
-  uart_printstring("Hello, World!\n\r");
+
+  uart_printstring("MISA CSR: 0x");
+  uart_printhex(2137, 8, true);
+
+  uart_printstring("\n\rMVENDORID CSR: 0x");
+  uart_printhex(2137, 8, true);
+
+  uart_printstring("\n\rMARCHID CSR: 0x");
+  uart_printhex(2137, 8, true);
+
+  uart_printstring("\n\rMIMPID CSR: 0x");
+  uart_printhex(2137, 8, true);
+
+  uart_printstring("\n\rMHARTID CSR: 0x");
+  uart_printhex(2137, 8, true);
+
   uart_end();
 
   // Halt and catch fire

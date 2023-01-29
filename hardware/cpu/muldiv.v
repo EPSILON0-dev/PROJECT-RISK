@@ -51,20 +51,10 @@ module muldiv (
   wire        div_s;
   wire        rem_s;
   wire        div_rem_s;
-`ifdef M_INPUT_REG
-  wire [31:0] in_a_c;
-  wire [31:0] in_b_c;
-  reg  [31:0] in_a;
-  reg  [31:0] in_b;
-`else
   wire [31:0] in_a;
   wire [31:0] in_b;
-`endif
 
   // Enable signal
-`ifdef M_INPUT_REG
-  reg  md_en_t1;
-`endif
   wire md_en;
 
   // Multiply postprocessing
@@ -109,68 +99,16 @@ module muldiv (
   assign div_rem_s = (i_funct3[1]) ? rem_s : div_s;
 
   // Final inputs (unsigned or sign inverted), created either as reg or wire
-`ifdef M_INPUT_REG
-  always @(negedge i_clk_n) begin
-    md_en_t1 <= i_md_en;
-    in_a <= in_a_c;
-    in_b <= in_b_c;
-  end
-  assign in_a_c = (a_se) ? a_s : i_in_a;
-  assign in_b_c = (b_se) ? b_s : i_in_b;
-  assign md_en = i_md_en && md_en_t1;
-`else
   assign in_a = (a_se) ? a_s : i_in_a;
   assign in_b = (b_se) ? b_s : i_in_b;
   assign md_en = i_md_en;
-`endif
-
 
   /*
-   * Fast multiplier is just a verilog built-in combinational multiplier
-   */
-`ifdef M_FAST_MULTIPLIER
-
-  wire [63:0] mul_mul;
-  wire        mul_busy;
-
-  assign mul_mul = $unsigned(in_a) * $unsigned(in_b);
-
-  /*
-   * DSPs in FPGAs can be a bit slow, especially when they have to do
-   *  32x32bit multiplication (like in this case), this circuit creates one
-   *  cycle hazard during multiplication which allows signal to overcome DSPs
-   *  combinational delay and reach next phase registers
-   */
-`ifdef M_FAST_MUL_DELAY
-  reg  mul_delay;
-  wire mul_en;
-
-  always @(posedge i_clk_n) begin
-    if (i_rst) begin
-      mul_delay <= 0;
-    end else begin
-      if (mul_delay) begin
-        mul_delay <= 0;
-      end else if (!mul_delay && mul_en) begin
-        mul_delay <= 1'b1;
-      end
-    end
-  end
-
-  assign mul_en = md_en && !i_funct3[2];
-  assign mul_busy = mul_delay;
-`else
-  assign mul_busy = 0;
-`endif
-
-  /*
-   * Slow multiplier is a shift-and-add multiplier, at every clock cycle
+   * Multiplier is a shift-and-add multiplier, at every clock cycle
    *  A operand is added to result if the zeroth bit in B register is set
    *  after that A operand is shifted left and B is shifted right, we keep
    *  adding shifted A until all ones are shifted out of B register
    */
-`else
-
   // A register - multiplicand
   // B register - multiplier
   // MUL register - accumulator (product)
@@ -207,8 +145,6 @@ module muldiv (
   // Busy and enable signal
   assign mul_busy = |mul_b_reg;
   assign mul_en = md_en && !i_funct3[2];
-
-`endif
 
   // Multiplier "postprocessing"
   //  If result sign is negative then the result is in inverted
@@ -275,11 +211,6 @@ module muldiv (
   // Final result MUX and busy signal
   assign o_result = (i_funct3[2]) ? div : mul;
 
-`ifdef M_INPUT_REG
-  // This version also generates busy signal on startup
-  assign o_busy = mul_busy || div_busy || (i_md_en && !md_en);
-`else
   assign o_busy = mul_busy || div_busy;
-`endif
 
 endmodule

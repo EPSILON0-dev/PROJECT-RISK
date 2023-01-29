@@ -56,10 +56,8 @@ module top (
   reg   [7:0] ram_array_0 [0:8191];
   wire [12:0] ram_addr_i;
   wire [12:0] ram_addr_d;
-  wire [31:0] ram_data_in_d;
   reg  [31:0] ram_data_out_i;
   reg  [31:0] ram_data_out_d;
-  wire  [3:0] ram_wr_d;
   wire        ram_en;
 
   always @(negedge clk) begin
@@ -77,28 +75,26 @@ module top (
       ram_array_0[ram_addr_d]
     };
 
-    if (ram_wr_d[0] && ram_en) begin
-      ram_array_0[ram_addr_d] <= ram_data_in_d[7:0];
+    if (cpu_d_data_wr[0] && ram_en) begin
+      ram_array_0[ram_addr_d] <= cpu_d_data_out[7:0];
     end
 
-    if (ram_wr_d[1] && ram_en) begin
-      ram_array_1[ram_addr_d] <= ram_data_in_d[15:8];
+    if (cpu_d_data_wr[1] && ram_en) begin
+      ram_array_1[ram_addr_d] <= cpu_d_data_out[15:8];
     end
 
-    if (ram_wr_d[2] && ram_en) begin
-      ram_array_2[ram_addr_d] <= ram_data_in_d[23:16];
+    if (cpu_d_data_wr[2] && ram_en) begin
+      ram_array_2[ram_addr_d] <= cpu_d_data_out[23:16];
     end
 
-    if (ram_wr_d[3] && ram_en) begin
-      ram_array_3[ram_addr_d] <= ram_data_in_d[31:24];
+    if (cpu_d_data_wr[3] && ram_en) begin
+      ram_array_3[ram_addr_d] <= cpu_d_data_out[31:24];
     end
   end
 
   assign ram_addr_i = cpu_i_addr[14:2];
   assign ram_addr_d = cpu_d_addr[14:2];
   assign ram_en = (cpu_d_addr < 32'h00008000);
-  assign ram_wr_d = cpu_d_data_wr;
-  assign ram_data_in_d = cpu_d_data_out;
 
   // bootloader stuff
   wire [31:0] bld_data;

@@ -2,22 +2,21 @@ cmake_minimum_required(VERSION 3.13)
 enable_language(C ASM)
 
 # Project setup
-set (_PROJECT_NAME "template")
+set (_PROJECT_NAME "primes")
 set (_SOURCE_DIR "src")
 set (_TOOLCHAIN_PREFIX "riscv64-elf-")
 set (_LINKER_SCRIPT "linker.ld")
 project (${_PROJECT_NAME})
 
 # Custom flags for the project
-# set (_ARCH_FLAGS    "-march=rv32i -mabi=ilp32")
 set (_ARCH_FLAGS    "-march=rv32imc -mabi=ilp32")
 set (_WARN_FLAGS    "-Wall -Wextra")
-set (_OPT_FLAGS     "-O1 -g")
+set (_OPT_FLAGS     "-O2 -g -mdiv -mrelax")
 set (_DEF_FLAGS     "")
 set (_CXX_FLAGS     "-std=c++11")
 set (_C_FLAGS       "-std=c11")
 set (_ASM_FLAGS     "")
-set (_LINK_FLAGS    "-nostartfiles" "-lm" "-lc" "-lgcc")
+set (_LINK_FLAGS    "-nostartfiles" "-lc" "-lm" "-lgcc")
 
 # Toolchain setup
 set (_COMBINED_FLAGS "${_WARN_FLAGS} ${_ARCH_FLAGS} ${_OPT_FLAGS} ${_DEF_FLAGS}")

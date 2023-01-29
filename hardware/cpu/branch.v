@@ -15,6 +15,7 @@
  *
  * o_br_en  - Branch enable output (routed to the fetch unit)
  ***************************************************************************/
+`include "config.v"
 
 module branch (
   input  [31:0] i_dat_a,
