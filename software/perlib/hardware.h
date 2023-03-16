@@ -30,4 +30,6 @@
 #define UART_RX_HALF      6
 #define UART_RX_FULL      7
 
+#define F_CPU 50000000
+
 #endif

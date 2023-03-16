@@ -4,10 +4,8 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include "io_address.h"
-#include "leds.h"
+#include "hardware.h"
 
-#define F_CPU 50000000
 #define PERLIB_UART_IMPL
 
 #ifdef PERLIB_UART_IMPL

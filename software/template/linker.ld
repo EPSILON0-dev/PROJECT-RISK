@@ -23,10 +23,8 @@ SECTIONS
   {
     . = ALIGN(4);
     *(.isr_vectors)
-    *(.text)
-    *(.rodata)
-    *(.init)
-    *(.fini)
+    *(.text*)
+    *(.rodata*)
     . = ALIGN(4);
   } > m_text
 
@@ -34,6 +32,8 @@ SECTIONS
 
   __etext = .;
   __DATA_ROM = .;
+  text_end = ORIGIN(m_text) + LENGTH(m_text);
+  ASSERT(__DATA_END <= text_end, "region m_text overflowed")
 
   /* Data section */
   .data :
@@ -41,15 +41,12 @@ SECTIONS
     . = ALIGN(4);
     __DATA_RAM = .;
     __data_start__ = .;
-    *(.data)
     *(.data*)
-    . = ALIGN(4);
+    *(.sdata*)
     __data_end__ = .;
   } > m_data
 
   __DATA_END = __DATA_ROM + (__data_end__ - __data_start__);
-  text_end = ORIGIN(m_text) + LENGTH(m_text);
-  ASSERT(__DATA_END <= text_end, "region m_text overflowed")
 
   /* Uninitialized data section */
   .bss :
@@ -57,8 +54,8 @@ SECTIONS
     . = ALIGN(4);
     __START_BSS = .;
     __bss_start__ = .;
-    *(.bss)
     *(.bss*)
+    *(.sbss*)
     *(COMMON)
     . = ALIGN(4);
     __bss_end__ = .;

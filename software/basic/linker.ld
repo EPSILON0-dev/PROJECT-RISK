@@ -24,6 +24,7 @@ SECTIONS
     . = ALIGN(4);
     *(.isr_vectors)
     *(.text)
+    *(.text*)
     *(.rodata)
     *(.init)
     *(.fini)
@@ -43,6 +44,8 @@ SECTIONS
     __data_start__ = .;
     *(.data)
     *(.data*)
+    *(.sdata)
+    *(.sdata*)
     . = ALIGN(4);
     __data_end__ = .;
   } > m_data
