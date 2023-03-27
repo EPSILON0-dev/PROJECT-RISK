@@ -1,41 +1,52 @@
-/**
- * Copyright 2023 Lukasz Forenc
- *
- * file: main.c
- *
- * This is a main file of the prime generator, it generates prime numbers.
- */
-#define F_CPU 50000000
-#define PERLIB_LEDS_IMPL
-#define PERLIB_UART_IMPL
-#include "../../perlib/leds.h"
-#include "../../perlib/uart.h"
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <math.h>
+#include "../include/hardware.h"
 
-#define MAX_PRIME 100000
+#define F_CPU       10000000ULL
+#define BAUD_RATE   115200
+#define MAX_PRIME   10000
 
-int main()
+void uart_setup(void)
 {
-  // Print primes
-  uart_begin(115200);
-  uart_printstring("RV32IMC primes generator, generating ");
-  uart_printunsigned(MAX_PRIME);
-  uart_printstring(" primes:\n\r");
-  for (int num = 2; num < MAX_PRIME; num++) {
-    bool prime = true;
-    for (int div = 2; div < num / 2 + 1; div++) {
-      if (num % div == 0) {
-        prime = false;
-        break;
-      }
-    }
-    if (prime) {
-      uart_printunsigned(num);
-      uart_printchar(' ');
+  UART_CONFIG = (1 << UART_TX_EN) | (3 << UART_LENGTH);
+  UART_CLOCK = F_CPU / BAUD_RATE / 8;
+}
+
+void uart_print(const char *string)
+{
+  size_t i = 0;
+  while (string[i] != 0) {
+    while (!(UART_STATUS & (1 << UART_TX_EMPTY)));
+    UART_DATA = string[i++];
+  }
+}
+
+bool is_prime(int n)
+{
+  if (n < 2) {
+    return false;
+  }
+  for (int i = 2; i <= ceil(sqrt(n)); i++) {
+    if (n % i == 0) {
+      return false;
     }
   }
-  uart_printstring("\n\rDone.\n\r");
-  uart_end();
+  return true;
+}
 
-  // Halt and catch fire
+int main(void)
+{
+  uart_setup();
+  char buffer[64];
+
+  for (int i = 2; i <= MAX_PRIME; i++) {
+    if (is_prime(i)) {
+      sprintf(buffer, "%d ", i);
+      uart_print(buffer);
+    }
+  }
+
   while (1);
 }
