@@ -346,12 +346,12 @@ module cpu (
    */
 `ifdef INCLUDE_CSR
 `ifdef CSR_EXTERNAL_BUS
-  wire [31:0] csr_rd_data;
   wire [11:0] csr_ext_addr;
   wire [31:0] csr_ext_wr_data;
   wire        csr_ext_wr;
   wire        csr_ext_rd;
 `endif
+  wire [31:0] csr_rd_data;
   wire [31:0] csr_wr_data;
   wire        csr_wr_en;
   wire        csr_rd;

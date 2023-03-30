@@ -1,16 +1,12 @@
-#ifndef __PERLIB_IO_ADDRESS
-#define __PERLIB_IO_ADDRESS
-
 #include <stdint.h>
+#define __REG32(x)        *(uint32_t*)(x)
 
-#define DEF_REG32(x) (*(volatile uint32_t*)(x))
-
-#define LEDS_ADDRESS              0x00008010
-
-#define UART_CLOCK_ADDRESS        0x00008000
-#define UART_CONFIG_ADDRESS       0x00008004
-#define UART_STATUS_ADDRESS       0x00008008
-#define UART_DATA_ADDRESS         0x0000800C
+#define UART_CLOCK        __REG32(0x8000)
+#define UART_CONFIG       __REG32(0x8004)
+#define UART_STATUS       __REG32(0x8008)
+#define UART_DATA         __REG32(0x800C)
+#define LED_REG           __REG32(0x8010)
+#define BUTTON_REG        __REG32(0x8010)
 
 #define UART_TX_EN        0
 #define UART_RX_EN        1
@@ -29,7 +25,3 @@
 #define UART_RX_EMPTY     5
 #define UART_RX_HALF      6
 #define UART_RX_FULL      7
-
-#define F_CPU 50000000
-
-#endif

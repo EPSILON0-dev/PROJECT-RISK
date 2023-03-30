@@ -10,7 +10,7 @@
 #define UART_CONFIGURATION  (2<<UART_LENGTH) | (1<<UART_RX_EN) | (1<<UART_TX_EN)
 #define MEMORY_END          0x00008000
 #define BLD_ADDRESS         0x00010000
-#define F_CPU               50000000
+#define F_CPU               10000000
 #define BAUD_RATE           115200
 
 .section .text
@@ -37,7 +37,7 @@ pattern:                                #
 pattern_1:                              #
   xori x4, x4, 1                        # Switch the LED state
   sw x4, LED_REG(x2)                    # Store LED state to LED register
-  li x3, 0x80000                        # Load the delay counter register
+  li x3, 0x28000                        # Load the delay counter register
 pattern_2:                              #
   addi x3, x3, -1                       # Decrease the delay counter
   bnez x3, pattern_2                    # Continue decreasing until zero reached

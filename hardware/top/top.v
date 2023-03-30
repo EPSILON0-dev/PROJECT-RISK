@@ -18,7 +18,7 @@ module top (
   reg [31:0] counter = 0;
   reg clk = 0;
   always @(posedge CLK_100MHz) begin
-    if (counter == 0) begin
+    if (counter == 4) begin
       counter <= 0;
       clk <= !clk;
     end else begin
